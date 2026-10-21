@@ -1,0 +1,23 @@
+---
+import { NAV } from '../data/site.js';
+const { path } = Astro.props;
+---
+<header id="site-header" class="header-one fixed-scroll custom-bg dyn-styles clr" itemscope="itemscope" itemtype="http://schema.org/WPHeader">
+  <div id="site-header-inner" class="container clr">
+    <div id="site-logo" class="site-branding clr header-one-logo">
+      <div id="site-logo-inner" class="clr"><a href="/" rel="home" class="main-logo"><img src="/wp-content/uploads/2020/06/logo-1.png" alt="Safe Swimming School" class="logo-img" data-no-retina="data-no-retina" /></a></div>
+    </div>
+    <div id="site-navigation-wrap" class="navbar-style-one wpex-dropdowns-caret hide-at-mm-breakpoint clr">
+      <nav id="site-navigation" class="navigation main-navigation main-navigation-one clr" itemscope="itemscope" itemtype="http://schema.org/SiteNavigationElement" aria-label="Main menu">
+        <ul id="menu-main" class="dropdown-menu main-navigation-ul sf-menu">
+          {NAV.map((n) => (
+            <li class:list={['menu-item menu-item-type-post_type menu-item-object-page', { 'current-menu-item': n.href === path }]}>
+              <a href={n.href} aria-current={n.href === path ? 'page' : undefined}><span class="link-inner">{n.label}</span></a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+    <div id="mobile-menu" class="wpex-mobile-menu-toggle show-at-mm-breakpoint wpex-clr"><a href="#" class="mobile-menu-toggle" role="button" aria-label="Toggle mobile menu" aria-expanded="false"><span class="wpex-bars" aria-hidden="true"><span></span></span></a></div>
+  </div>
+</header>

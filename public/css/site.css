@@ -1,0 +1,7 @@
+/* Additions for the static rebuild (Books & Gear, adaptive, water aerobics) */
+.sss-book{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap;margin:10px 0 30px}
+.sss-book img{width:300px;max-width:100%;height:auto;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.sss-book .sss-book-text{flex:1;min-width:260px}
+.sss-btn{display:inline-block;background:#2ea3f2;color:#fff !important;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:500}
+.sss-btn:hover{opacity:.9}
+.footer-quick-links a{white-space:nowrap}

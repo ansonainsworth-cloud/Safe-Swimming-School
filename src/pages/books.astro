@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { pageChrome, webPage, SITE } from '../data/newpage.js';
+const path = '/books/';
+const title = 'Splash Buddies Swim Books & Gear | Safe Swimming School';
+const description = 'Picture books from Safe Swimming School that help young swimmers get comfortable in the water. Find The Day I Found My Float on Amazon.';
+const amazon = 'https://www.amazon.com/dp/B0HNP7NKDM';
+const book = {
+  '@type': 'Book', name: 'The Day I Found My Float', bookFormat: 'https://schema.org/Paperback',
+  author: { '@type': 'Person', name: 'Anson Ainsworth' }, publisher: { '@type': 'Organization', name: 'Safe Swimming School' },
+  isPartOf: { '@type': 'BookSeries', name: 'Splash Buddies' }, image: SITE + '/images/books/splash-buddies-book1-cover.jpg', url: amazon,
+  offers: { '@type': 'Offer', price: '13.99', priceCurrency: 'USD', url: amazon, availability: 'https://schema.org/InStock' },
+};
+const upcoming = ['Bubbles and Wet Eyes', 'The Water Holds Me!', 'Roll to Your Back', 'If You Sit Up, You Sink', 'Bye-Bye, Puddle Jumper', 'I. Will. Be. Brave.', 'Wait for Miss Finn', 'Calm Kai', 'Kick, Kick, Reach'];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ogImage="/images/books/splash-buddies-book1-cover.jpg" ldjson={[webPage(path, 'Books & Gear', description, [book])]}>
+<PageShell h1="Books & Gear">
+<p>Our Splash Buddies picture books follow young swimmers and their instructor, Miss Finn, through the small wins that happen in a lesson. They’re written by Safe Swimming School cofounder and lead instructor Anson Ainsworth, and are made for reading at home before and after pool time.</p>
+<h2 class="wp-block-heading">Book 1: The Day I Found My Float</h2>
+<div class="sss-book">
+  <img src="/images/books/splash-buddies-book1-cover.jpg" alt="Cover of The Day I Found My Float" width="882" height="882" loading="eager" />
+  <div class="sss-book-text">
+    <p>Pearl is nervous about the water, and with Miss Finn by her side, she learns to lie back and let the water hold her up.</p>
+    <p><strong>Paperback:</strong> $13.99</p>
+    <p><a class="sss-btn" href={amazon} target="_blank" rel="noopener">Get it on Amazon →</a></p>
+  </div>
+</div>
+<h2 class="wp-block-heading">More Splash Buddies books coming</h2>
+<ol class="wp-block-list">{upcoming.map((b) => <li>{b}</li>)}</ol>
+<h2 class="wp-block-heading">Merch coming soon</h2>
+<p>Splash Buddies gear for swim days is in the works. Check back here for updates.</p>
+<p>Questions about lessons? Text us at <a href="sms:+15612368260">561-236-8260</a>.</p>
+</PageShell>
+</Base>

@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
+const path = '/water-aerobics/';
+const title = 'Water Aerobics Instructor for HOA & Senior Community Pools | Palm Beach Gardens | Safe Swimming School';
+const description = 'Water aerobics classes at your community’s own pool for retirement, 55+, independent living communities and HOAs in Palm Beach Gardens and northern Palm Beach County. Fully insured. Call 561-236-8260.';
+const faqs = [
+  ['Do you come to our community’s pool?', 'Yes. Water aerobics classes are held at your community’s own pool.'],
+  ['What kinds of communities do you work with?', 'Retirement communities, 55+ communities, independent living communities, and HOAs in northern Palm Beach County.'],
+  ['Are you insured?', 'Yes. Safe Swimming School is fully insured and will add your community as an additional insured.'],
+  ['Have you taught water aerobics at a senior community before?', 'Yes. We’ve run resident water aerobics classes at Brookdale Palm Beach Gardens.'],
+  ['How much does it cost, and how long are classes?', 'Classes are $45 each and run 30 minutes. Contact us and we’ll go over the schedule and details for your community.'],
+];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Water Aerobics', description), faqSchema(faqs)]}>
+<PageShell h1="Water Aerobics Instructor for HOA and Senior Community Pools in Palm Beach Gardens">
+<p>Safe Swimming School brings water aerobics classes to retirement communities, 55+ communities, independent living communities, and HOAs in Palm Beach Gardens and across northern Palm Beach County. Classes are held at your community’s own pool, so residents don’t need to travel anywhere. Our cofounder and lead instructor, Anson, has 18 years of experience.</p>
+<p><strong>Call or text <a href="tel:+15612368260">561-236-8260</a> · Email <a href="mailto:info@safeswimmingschool.com">info@safeswimmingschool.com</a></strong></p>
+<h2 class="wp-block-heading">Who it’s for</h2>
+<ul class="wp-block-list"><li>Retirement communities</li><li>55+ communities</li><li>Independent living communities</li><li>HOAs with a community pool</li></ul>
+<p>If your community is in Jupiter, Palm Beach Gardens, North Palm Beach, Tequesta, Jupiter Farms, Westlake, Juno Beach, or Riviera Beach and has its own pool, we can come to you.</p>
+<h2 class="wp-block-heading">What your community gets</h2>
+<ul class="wp-block-list">
+<li><strong>An instructor who comes to your pool.</strong> Classes take place at your community’s own pool.</li>
+<li><strong>Senior community experience.</strong> We’ve run resident water aerobics classes at Brookdale Palm Beach Gardens.</li>
+<li><strong>18 years of experience.</strong> Our cofounder and lead instructor, Anson, has 18 years of experience in the water.</li>
+<li><strong>Full insurance.</strong> Safe Swimming School is fully insured and will add your community as an additional insured.</li>
+<li><strong>Class length:</strong> 30 minutes</li>
+<li><strong>Pricing:</strong> $45 per class</li>
+</ul>
+<h2 class="wp-block-heading">How to set it up</h2>
+<ol class="wp-block-list">
+<li><strong>Your community manager or activities director contacts us</strong> at 561-236-8260 or info@safeswimmingschool.com (8 AM–7 PM).</li>
+<li><strong>We talk through your community and pool</strong> and the schedule you have in mind.</li>
+<li><strong>We send insurance details</strong> and add your community as an additional insured.</li>
+<li><strong>Classes start at your pool</strong> on the agreed schedule.</li>
+</ol>
+<h2 class="wp-block-heading">Towns we serve</h2>
+<p>Jupiter · Palm Beach Gardens · North Palm Beach · Tequesta · Jupiter Farms · Westlake · Juno Beach · Riviera Beach</p>
+<h2 class="wp-block-heading">FAQ</h2>
+{faqs.map(([q, a]) => (<Fragment><p><strong>{q}</strong></p><p>{a}</p></Fragment>))}
+<h2 class="wp-block-heading">Bring water aerobics to your community’s pool</h2>
+<p>Community managers and activities directors: call or text <a href="tel:+15612368260"><strong>561-236-8260</strong></a> (8 AM–7 PM) or email <a href="mailto:info@safeswimmingschool.com"><strong>info@safeswimmingschool.com</strong></a> to set up water aerobics classes for your residents.</p>
+</PageShell>
+</Base>
