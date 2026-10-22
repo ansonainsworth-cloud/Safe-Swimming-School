@@ -1,6 +1,8 @@
 ---
 import { NAV } from '../data/site.js';
+import { bookingHref } from '../data/payment-links';
 const { path } = Astro.props;
+const linkHref = (label: string, href: string) => (label === 'Enroll' || label === 'Book' ? bookingHref() : href);
 ---
 <header id="site-header" class="header-one fixed-scroll custom-bg dyn-styles clr" itemscope="itemscope" itemtype="http://schema.org/WPHeader">
   <div id="site-header-inner" class="container clr">
@@ -12,7 +14,7 @@ const { path } = Astro.props;
         <ul id="menu-main" class="dropdown-menu main-navigation-ul sf-menu">
           {NAV.map((n) => (
             <li class:list={['menu-item menu-item-type-post_type menu-item-object-page', { 'current-menu-item': n.href === path }]}>
-              <a href={n.href} aria-current={n.href === path ? 'page' : undefined}><span class="link-inner">{n.label}</span></a>
+              <a href={linkHref(n.label, n.href)} aria-current={n.href === path ? 'page' : undefined}><span class="link-inner">{n.label}</span></a>
             </li>
           ))}
         </ul>

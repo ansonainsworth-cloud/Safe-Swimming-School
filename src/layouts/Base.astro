@@ -2,6 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
+import { bookingHref } from '../data/payment-links';
 const { title, description, path, bodyClass = 'page wpex-theme wpex-responsive full-width-main-layout no-composer content-full-width sidebar-widget-icons hasnt-overlay-header smooth-fonts wpex-mobile-toggle-menu-icon_buttons has-mobile-menu wpex-disable-mm-focus-styles wpb-js-composer js-comp-ver-6.1 vc_responsive', pageStyle = '', ldjson = [], robots = 'index, follow, max-image-preview:large', ogImage = '/wp-content/uploads/2020/06/logo-1.png', ogType = 'website' } = Astro.props;
 const canonical = SITE + path;
 const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","menuSearchStyle":"drop_down","siteHeaderStyle":"one","megaMenuJS":"1","superfishDelay":"600","superfishSpeed":"fast","superfishSpeedOut":"fast","menuWidgetAccordion":"1","hasMobileMenu":"1","mobileMenuBreakpoint":"959","mobileMenuStyle":"toggle","mobileMenuToggleStyle":"icon_buttons","scrollToHash":"1","scrollToHashTimeout":"500","localScrollUpdateHash":"","localScrollHighlight":"1","localScrollSpeed":"1000","localScrollEasing":"easeInOutExpo","scrollTopSpeed":"1000","scrollTopOffset":"100","responsiveDataBreakpoints":{"tl":"1024px","tp":"959px","pl":"767px","pp":"479px"},"ajaxurl":"","loadMore":{"text":"Load More","loadingText":"Loading&hellip;","failedText":"Failed to load posts."},"i18n":{"openSubmenu":"Open submenu of %s","closeSubmenu":"Close submenu of %s"},"hasStickyHeader":"1","stickyheaderCustomLogo":"/wp-content/uploads/2020/06/logo-1.png","stickyHeaderStyle":"standard","hasStickyMobileHeader":"","overlayHeaderStickyTop":"0","stickyHeaderBreakPoint":"960","animateMobileToggle":"1","mobileToggleMenuPosition":"afterheader","customSelects":""};`;
@@ -48,7 +49,7 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <main id="main" class="site-main clr"><slot /></main>
 <Footer />
 </div></div>
-<nav class="sss-mobile-bar" aria-label="Quick contact"><a href="sms:+15612368260">Text us</a><a href="mailto:info@safeswimmingschool.com">Email</a><a href="/enroll/" class="sss-mobile-bar-cta">Enroll</a></nav>
+<nav class="sss-mobile-bar" aria-label="Quick contact"><a href="sms:+15612368260">Text us</a><a href="mailto:info@safeswimmingschool.com">Email</a><a href={bookingHref()} class="sss-mobile-bar-cta">Enroll</a></nav>
 <a href="#outer-wrap" id="site-scroll-top"><span class="ticon ticon-chevron-up" aria-hidden="true"></span><span class="screen-reader-text">Back To Top</span></a>
 <script is:inline src="/wp-includes/js/jquery/jquery.min.js"></script>
 <script is:inline src="/wp-includes/js/jquery/jquery-migrate.min.js"></script>

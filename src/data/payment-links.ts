@@ -4,7 +4,7 @@ export type PaymentLink = {
   url: string;
 };
 
-/** Paste a Stripe Payment Link into `url`. Leave it empty to send Pay to /enroll/. */
+/** Square payment link. Paste it into `url`, or leave `url` empty so Pay stays on /enroll/. */
 export const paymentLinks: PaymentLink[] = [
   { label: 'Trial', price: '$75', url: '' },
   { label: 'Registration', price: '$35', url: '' },
@@ -14,15 +14,21 @@ export const paymentLinks: PaymentLink[] = [
   { label: 'Water aerobics', price: '$45 per class', url: '' },
 ];
 
+/** Optional. When set, main Enroll and Book buttons use this URL. Empty keeps /enroll/. */
+export const bookingUrl = '';
+
 export function paymentLink(label: string): PaymentLink {
   const link = paymentLinks.find((item) => item.label === label);
   if (!link) throw new Error(`Unknown payment link: ${label}`);
   return link;
 }
 
+export function bookingHref(): string {
+  return bookingUrl.trim() || '/enroll/';
+}
+
 export function payHref(link: PaymentLink): string {
-  const url = link.url.trim();
-  return url || '/enroll/';
+  return link.url.trim() || '/enroll/';
 }
 
 function escapeAttr(value: string): string {
@@ -33,4 +39,10 @@ export function payButtonHtml(link: PaymentLink): string {
   const href = escapeAttr(payHref(link));
   const name = escapeAttr(`Pay ${link.label}, ${link.price}`);
   return `<a class="sss-btn" href="${href}" aria-label="${name}">Pay</a>`;
+}
+
+/** Point anchors labeled Enroll or Book at `bookingUrl` once it is set. */
+export function rewriteBookingButtons(html: string): string {
+  const href = escapeAttr(bookingHref());
+  return html.replace(/<a href="\/enroll\/">((?:Enroll|Book))<\/a>/g, `<a href="${href}">$1</a>`);
 }
