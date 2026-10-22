@@ -1,6 +1,6 @@
 import pages from '../data/migrated-pages.json';
 const SITE = 'https://safeswimmingschool.com';
-const extra = ['/books/', '/adaptive-swim-lessons/', '/water-aerobics/'];
+const extra = ['/books/', '/adaptive-swim-lessons/', '/water-aerobics/', '/baby-bath-time-water-comfort/'];
 export function GET() {
   const paths = [...pages.map((p) => p.path), ...extra];
   const today = new Date().toISOString().slice(0, 10);
