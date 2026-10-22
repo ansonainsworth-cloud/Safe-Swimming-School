@@ -61,3 +61,9 @@
 /testimonial / 301
 /testimonial/ / 301
 /testimonial/* / 301
+/palm-beach-county.html /locations/ 301
+/site-map.html / 301
+/locations/juno-beach /locations/ 302
+/locations/juno-beach/ /locations/ 302
+/locations/riviera-beach /locations/ 302
+/locations/riviera-beach/ /locations/ 302
