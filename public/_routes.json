@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "include": [
+    "/team",
+    "/team/",
+    "/team/*",
+    "/portfolio-item",
+    "/portfolio-item/",
+    "/portfolio-item/*",
+    "/footer",
+    "/footer/"
+  ],
+  "exclude": []
+}

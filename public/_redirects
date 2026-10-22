@@ -41,3 +41,23 @@
 /post-sitemap.xml /sitemap.xml 301
 /category-sitemap.xml /sitemap.xml 301
 /wp-sitemap.xml /sitemap.xml 301
+
+# GSC map 2026-10-22. Targets are Astro routes only. www and http host rules are not here
+# (Pages _redirects cannot match a host); set those in the Cloudflare dashboard at cutover.
+# /team/*, /portfolio-item/*, and /footer/ are 410s from the Pages Function, not this file.
+/houston.html /locations/ 301
+/south-florida.html /locations/ 301
+/enroll.html /enroll/ 301
+/about-us.html /about-us/ 301
+/contact-us.html /contact-us/ 301
+/services.html /service/ 301
+/author/safeswimming /about-us/ 301
+/author/safeswimming/ /about-us/ 301
+/category/uncategorized /blog/ 301
+/category/uncategorized/ /blog/ 301
+/tag /blog/ 301
+/tag/ /blog/ 301
+/tag/* /blog/ 301
+/testimonial / 301
+/testimonial/ / 301
+/testimonial/* / 301
