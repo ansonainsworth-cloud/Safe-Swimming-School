@@ -1,0 +1,5 @@
+---
+import { payButtonHtml, type PaymentLink } from '../data/payment-links';
+const { link } = Astro.props as { link: PaymentLink };
+---
+<Fragment set:html={payButtonHtml(link)} />
