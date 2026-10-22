@@ -5,3 +5,13 @@
 .sss-btn{display:inline-block;background:#2ea3f2;color:#fff !important;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:500}
 .sss-btn:hover{opacity:.9}
 .footer-quick-links a{white-space:nowrap}
+/* Sticky mobile contact bar */
+.sss-mobile-bar{display:none}
+@media (max-width:767px){
+.sss-mobile-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#033761;box-shadow:0 -2px 8px rgba(0,0,0,.2)}
+.sss-mobile-bar a{flex:1;text-align:center;padding:14px 4px;color:#fff;font-weight:700;font-size:15px;text-decoration:none;border-right:1px solid rgba(255,255,255,.2)}
+.sss-mobile-bar a:last-child{border-right:0}
+.sss-mobile-bar .sss-mobile-bar-cta{background:#f5b11f;color:#033761}
+body{padding-bottom:52px}
+#site-scroll-top{bottom:70px!important}
+}
