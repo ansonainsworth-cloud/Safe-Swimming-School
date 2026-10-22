@@ -6,12 +6,12 @@ export type PaymentLink = {
 
 /** Square payment link. Paste it into `url`, or leave `url` empty so Pay stays on /enroll/. */
 export const paymentLinks: PaymentLink[] = [
-  { label: 'Trial', price: '$75', url: '' },
-  { label: 'Registration', price: '$35', url: '' },
-  { label: '8 lessons', price: '$520', url: '' },
-  { label: '12 lessons', price: '$720', url: '' },
-  { label: '20 lessons', price: '$1,100', url: '' },
-  { label: 'Water aerobics', price: '$45 per class', url: '' },
+  { label: 'Trial', price: '$75', url: 'https://square.link/u/bYM8aAup' },
+  { label: 'Registration', price: '$35', url: 'https://square.link/u/AbfxxGYu' },
+  { label: '8 lessons', price: '$520', url: 'https://square.link/u/wTx6tPan' },
+  { label: '12 lessons', price: '$720', url: 'https://square.link/u/ZpLS9ENJ' },
+  { label: '20 lessons', price: '$1,100', url: 'https://square.link/u/RSY4plY8' },
+  { label: 'Water aerobics', price: '$45 per class', url: 'https://square.link/u/UeHllrka' },
 ];
 
 /** Optional. When set, main Enroll and Book buttons use this URL. Empty keeps /enroll/. */
