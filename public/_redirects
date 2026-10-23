@@ -45,8 +45,8 @@
 # GSC map 2026-10-22. Targets are Astro routes only. www and http host rules are not here
 # (Pages _redirects cannot match a host); set those in the Cloudflare dashboard at cutover.
 # /team/*, /portfolio-item/*, and /footer/ are 410s from the Pages Function, not this file.
-/houston.html /locations/ 301
-/south-florida.html /locations/ 301
+/houston.html / 301
+/south-florida.html / 301
 /enroll.html /enroll/ 301
 /about-us.html /about-us/ 301
 /contact-us.html /contact-us/ 301
