@@ -57,9 +57,9 @@
 /category/uncategorized/ /blog/ 301
 /tag /blog/ 301
 /tag/ /blog/ 301
-/tag/* /blog/ 301
 /testimonial / 301
 /testimonial/ / 301
-/testimonial/* / 301
 /palm-beach-county.html /locations/ 301
 /site-map.html / 301
+/tag/* /blog/ 301
+/testimonial/* / 301
