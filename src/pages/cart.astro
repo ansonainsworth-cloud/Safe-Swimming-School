@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { pageChrome } from '../data/newpage.js';
+import { payButtonHtml, paymentLinks } from '../data/payment-links';
+const path = '/cart/';
+const title = 'Cart | Safe Swimming School';
+const description = 'Review private lesson packages and water aerobics classes before checkout.';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<PageShell h1="Cart">
+<div id="sss-cart-root"><p>Your cart is empty. See <a href="/pricing/">lesson packages</a> or <a href="/water-aerobics/">water aerobics</a>.</p></div>
+<form id="sss-checkout-form" class="sss-cart-form" method="post" action="/api/checkout">
+<label>Name<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
+<label>Email<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
+<label>Phone <span class="sss-optional">(optional)</span><input name="phone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel"></label>
+<p class="sss-cart-note">The $35 annual registration fee is added at checkout if we don't have a registration from you in the last 12 months.</p>
+<button id="sss-checkout-button" class="sss-btn" type="submit" disabled>Checkout</button>
+<p id="sss-checkout-message" class="sss-cart-message" hidden></p>
+</form>
+<div id="sss-pay-fallback" hidden>
+<p>Checkout isn’t available right now. You can still pay with these Square payment links.</p>
+<ul>
+{paymentLinks.map((link) => (
+  <li><strong>{link.label}:</strong> {link.price}<br /><Fragment set:html={payButtonHtml(link)} /></li>
+))}
+</ul>
+</div>
+</PageShell>
+</Base>

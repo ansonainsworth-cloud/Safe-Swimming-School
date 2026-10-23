@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import PageShell from '../components/PageShell.astro';
 import PayButton from '../components/PayButton.astro';
+import CartAdd from '../components/CartAdd.astro';
 import { paymentLink } from '../data/payment-links';
 import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
 const path = '/water-aerobics/';
@@ -29,7 +30,7 @@ const faqs = [
 <li><strong>20 and 18 years of experience.</strong> Our founder, Cortney Berry, has 20 years of experience, and our cofounder, Anson, has 18 years of experience in the water.</li>
 <li><strong>Full insurance.</strong> Safe Swimming School is fully insured and will add your community as an additional insured.</li>
 <li><strong>Class length:</strong> 30 minutes</li>
-<li><strong>Pricing:</strong> $45 per class<br /><PayButton link={paymentLink('Water aerobics')} /></li>
+<li><strong>Pricing:</strong> $45 per class<br /><PayButton link={paymentLink('Water aerobics')} /> <CartAdd id="water-aerobics" /></li>
 </ul>
 <p>Looking for swim lessons instead? Our swim lessons are private, one-on-one, at your home pool or community pool. See <a href="/service/">private swim lessons</a>.</p>
 <h2 class="wp-block-heading">How to set it up</h2>

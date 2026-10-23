@@ -3,7 +3,24 @@
 .sss-book img{width:300px;max-width:100%;height:auto;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 .sss-book .sss-book-text{flex:1;min-width:260px}
 .sss-btn{display:inline-block;background:#2ea3f2;color:#fff !important;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:500}
+button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-btn:hover{opacity:.9}
+.sss-btn:disabled{opacity:.55;cursor:default}
+#sss-cart-link{display:inline-block;margin:0 0 6px;font-weight:700;font-size:15px;color:#033761;text-decoration:none}
+.sss-cart-add{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sss-qty{font-size:15px;color:#033761;font-weight:500}
+.sss-qty input{width:4.2rem;margin-left:4px;padding:6px}
+.sss-cart-line{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #d7e3ee}
+.sss-cart-line p{margin:0}
+.sss-cart-line p:first-child{flex:1 1 200px}
+.sss-cart-subtotal{font-size:1.15em;margin-top:16px}
+.sss-remove{background:none;border:0;padding:0;color:#033761;font-weight:700;text-decoration:underline;cursor:pointer}
+.sss-cart-form label{display:block;margin:14px 0;font-weight:500;color:#033761}
+.sss-cart-form input{display:block;width:100%;max-width:420px;margin-top:4px;padding:8px}
+.sss-optional{font-weight:400}
+.sss-cart-note{background:#f4f8fb;padding:12px 14px;border-radius:4px}
+.sss-cart-message{margin-top:14px}
+#sss-pay-fallback{margin-top:24px}
 .footer-quick-links a{white-space:nowrap}
 /* Sticky mobile contact bar */
 .sss-mobile-bar{display:none}

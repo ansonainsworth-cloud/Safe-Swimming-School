@@ -6,7 +6,9 @@
     "/portfolio-item",
     "/portfolio-item/*",
     "/footer",
-    "/footer/*"
+    "/footer/*",
+    "/api/checkout",
+    "/api/square-webhook"
   ],
   "exclude": []
 }

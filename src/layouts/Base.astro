@@ -3,7 +3,9 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
 import { bookingHref } from '../data/payment-links';
-const { title, description, path, bodyClass = 'page wpex-theme wpex-responsive full-width-main-layout no-composer content-full-width sidebar-widget-icons hasnt-overlay-header smooth-fonts wpex-mobile-toggle-menu-icon_buttons has-mobile-menu wpex-disable-mm-focus-styles wpb-js-composer js-comp-ver-6.1 vc_responsive', pageStyle = '', ldjson = [], robots = 'index, follow, max-image-preview:large', ogImage = '/images/brand/safe-swimming-school-logo-800.png', ogType = 'website' } = Astro.props;
+import { clientCatalog } from '../../functions/_lib/prices';
+const { title, description, path, bodyClass = 'page wpex-theme wpex-responsive full-width-main-layout no-composer content-full-width sidebar-widget-icons hasnt-overlay-header smooth-fonts wpex-mobile-toggle-menu-icon_buttons has-mobile-menu wpex-disable-mm-focus-styles wpb-js-composer js-comp-ver-6.1 vc_responsive', pageStyle = '', ldjson = [], robots = 'index, follow, max-image-preview:large', ogImage = '/images/brand/safe-swimming-school-logo-800.png', ogType = 'website', trackAnalytics = true } = Astro.props;
+const catalog = clientCatalog();
 const canonical = SITE + path;
 const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","menuSearchStyle":"drop_down","siteHeaderStyle":"one","megaMenuJS":"1","superfishDelay":"600","superfishSpeed":"fast","superfishSpeedOut":"fast","menuWidgetAccordion":"1","hasMobileMenu":"1","mobileMenuBreakpoint":"959","mobileMenuStyle":"toggle","mobileMenuToggleStyle":"icon_buttons","scrollToHash":"1","scrollToHashTimeout":"500","localScrollUpdateHash":"","localScrollHighlight":"1","localScrollSpeed":"1000","localScrollEasing":"easeInOutExpo","scrollTopSpeed":"1000","scrollTopOffset":"100","responsiveDataBreakpoints":{"tl":"1024px","tp":"959px","pl":"767px","pp":"479px"},"ajaxurl":"","loadMore":{"text":"Load More","loadingText":"Loading&hellip;","failedText":"Failed to load posts."},"i18n":{"openSubmenu":"Open submenu of %s","closeSubmenu":"Close submenu of %s"},"hasStickyHeader":"1","stickyheaderCustomLogo":"/images/brand/safe-swimming-school-logo-800.png","stickyHeaderStyle":"standard","hasStickyMobileHeader":"","overlayHeaderStickyTop":"0","stickyHeaderBreakPoint":"960","animateMobileToggle":"1","mobileToggleMenuPosition":"afterheader","customSelects":""};`;
 ---
@@ -27,8 +29,8 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="icon" href="/wp-content/uploads/2026/05/favicon-512-150x150.png" sizes="32x32" />
 <link rel="icon" href="/wp-content/uploads/2026/05/favicon-512-300x300.png" sizes="192x192" />
 <link rel="apple-touch-icon" href="/wp-content/uploads/2026/05/favicon-512-300x300.png" />
-<script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
-<script is:inline define:vars={{ GA_ID }}>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',GA_ID);</script>
+{trackAnalytics && <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>}
+{trackAnalytics && <script is:inline define:vars={{ GA_ID }}>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',GA_ID);</script>}
 <link rel="stylesheet" href="/wp-content/plugins/js_composer/assets/css/js_composer.min.css" />
 <link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css" />
 <link rel="stylesheet" href="/wp-content/themes/Total/style.css" />
@@ -41,7 +43,7 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>
 <body class={bodyClass}>
-<div class="custom-topbar"><div id="text-5" class="sidebar-box widget widget_text clr"><div class="textwidget"><div style="padding:10px 0; line-height:1.4; text-align:right;"><a href="sms:+15612368260" style="display:block; font-weight:700; font-size:15px; color:#033761; text-decoration:none; margin-bottom:4px;">Text 561-236-8260</a><span style="display:block; font-size:11px; color:#033761; opacity:0.8; letter-spacing:0.5px; text-transform:uppercase;">Palm Beach County</span></div></div></div></div>
+<div class="custom-topbar"><div id="text-5" class="sidebar-box widget widget_text clr"><div class="textwidget"><div style="padding:10px 0; line-height:1.4; text-align:right;"><a href="/cart/" id="sss-cart-link">Cart (<span id="sss-cart-count">0</span>)</a><a href="sms:+15612368260" style="display:block; font-weight:700; font-size:15px; color:#033761; text-decoration:none; margin-bottom:4px;">Text 561-236-8260</a><span style="display:block; font-size:11px; color:#033761; opacity:0.8; letter-spacing:0.5px; text-transform:uppercase;">Palm Beach County</span></div></div></div></div>
 <div class="wpex-site-overlay"></div>
 <a href="#content" class="skip-to-content">skip to Main Content</a>
 <div id="outer-wrap" class="clr"><div id="wrap" class="clr">
@@ -56,5 +58,7 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <script is:inline set:html={wpexLocalize}></script>
 <script is:inline src="/wp-content/themes/Total/assets/js/total.min.js"></script>
 <script is:inline src="/wp-content/plugins/js_composer/assets/js/dist/js_composer_front.min.js"></script>
+<script is:inline define:vars={{ SSS_CATALOG: catalog }}>window.SSS_CATALOG = SSS_CATALOG;</script>
+<script is:inline src="/js/cart.js"></script>
 </body>
 </html>
