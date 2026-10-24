@@ -1,4 +1,4 @@
-import { countLesson, moveLessonToEnd, readBooking, rescheduleLesson, signToken, bookingSecret, CANCELLATION_POLICY, MAIL_FROM, type BookingEnv } from '../_lib/booking';
+import { countLesson, moveLessonToEnd, readBooking, rescheduleLesson, signToken, syncBooking, bookingSecret, CANCELLATION_POLICY, MAIL_FROM, type BookingEnv } from '../_lib/booking';
 import { allowCheckout } from '../_lib/rate-limit';
 import { json } from '../_lib/http';
 import { formatSlot } from '../_lib/schedule';
@@ -53,6 +53,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     return json({ error: 'invalid-action' }, 400);
   }
   if ('error' in result) return json({ error: result.error }, 400);
+  if (body.action === 'count') await syncBooking(env, result.booking);
   const token = await signToken(result.booking, secret);
   const origin = new URL(request.url).origin;
   return json({

@@ -7,7 +7,19 @@ type PagesContext = { request: Request; env: BookingEnv };
 export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   if (!allowCheckout(ip)) return json({ error: 'too-many-requests' }, 429);
-  let body: { email?: unknown; parent?: unknown; child?: unknown; itemId?: unknown; quantity?: unknown; slots?: unknown };
+  let body: {
+    email?: unknown;
+    parent?: unknown;
+    phone?: unknown;
+    child?: unknown;
+    childDob?: unknown;
+    sibling?: unknown;
+    siblingDob?: unknown;
+    poolAddress?: unknown;
+    itemId?: unknown;
+    quantity?: unknown;
+    slots?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -19,7 +31,12 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     requestUrl: request.url,
     email: typeof body.email === 'string' ? body.email : '',
     parent: typeof body.parent === 'string' ? body.parent : '',
+    phone: typeof body.phone === 'string' ? body.phone : '',
     child: typeof body.child === 'string' ? body.child : '',
+    childDob: typeof body.childDob === 'string' ? body.childDob : '',
+    sibling: typeof body.sibling === 'string' ? body.sibling : '',
+    siblingDob: typeof body.siblingDob === 'string' ? body.siblingDob : '',
+    poolAddress: typeof body.poolAddress === 'string' ? body.poolAddress : '',
     itemId: typeof body.itemId === 'string' ? body.itemId : '',
     quantity: typeof body.quantity === 'number' ? body.quantity : 1,
     slots,

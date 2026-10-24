@@ -4,17 +4,12 @@ export const DAY_START_MINUTES = 8 * 60;
 export const DAY_END_MINUTES = 19 * 60;
 export const HOLD_MS = 15 * 60 * 1000;
 export const CANCELLATION_POLICY = "Cancel at least 24 hours ahead to reschedule online. Cancellations within 24 hours count as a lesson taught. If you don't pick a new time, we'll add the lesson to the end of your package.";
-export const DEFAULT_EVENT_TITLE = 'Swim: [Child] ([Parent])';
 
 const BLOCKED_NAMES = ['asher', 'gavin', 'malachi'];
 
 export function usesBlockedName(value: string): boolean {
   const haystack = value.toLowerCase();
   return BLOCKED_NAMES.some((name) => haystack.includes(name));
-}
-
-export function eventTitle(template: string, child: string, parent: string): string {
-  return template.replaceAll('[Child]', child).replaceAll('[Parent]', parent);
 }
 
 export function timeZoneOffsetMs(instant: Date, timeZone = TIME_ZONE): number {

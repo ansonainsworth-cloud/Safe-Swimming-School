@@ -230,6 +230,7 @@
     }
     if (form && record.parent && !form.name.value) form.name.value = record.parent;
     if (form && record.email && !form.email.value) form.email.value = record.email;
+    if (form && record.phone && form.phone && !form.phone.value) form.phone.value = record.phone;
     list.innerHTML = record.slots.map(function (start) {
       var label = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(start));
       var child = String(record.child).replace(/[&<>"']/g, function (ch) {

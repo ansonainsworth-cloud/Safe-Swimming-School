@@ -109,6 +109,23 @@ export function normalizeEmail(value: unknown): string | null {
   return email;
 }
 
+export function normalizeDob(value: unknown): string | null {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  if (value < '1920-01-01' || value > today) return null;
+  return value;
+}
+
+export function normalizeAddress(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const address = value.trim().replace(/\s+/g, ' ');
+  if (address.length < 5 || address.length > 200) return null;
+  if (/[\u0000-\u001f]/.test(address)) return null;
+  return address;
+}
+
 export function normalizeName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const name = value.trim().replace(/\s+/g, ' ');

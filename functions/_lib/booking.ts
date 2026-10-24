@@ -1,21 +1,30 @@
-import { getCalendar, type CalendarAdapter, type CalendarEvent } from './calendar';
+import { getCalendar, type CalendarAdapter } from './calendar';
+import { createDriveTime } from './drive-time';
+import {
+  bookingEventMode,
+  buildBookingNotice,
+  buildLessonEvents,
+  deliverNotice,
+  isPackageSchedule,
+  isSlotBlocked,
+  noticeTarget,
+  type BuiltLessonEvent,
+} from './lesson-events';
 import { isProductionSurface, type SquareEnv } from './square';
 import {
   CANCELLATION_POLICY,
-  DEFAULT_EVENT_TITLE,
   HOLD_MS,
   canReschedule,
   datesFrom,
-  eventTitle,
   isCanonicalSlot,
   nextUsualSlot,
   slotEnd,
   slotStartsOnDate,
   usesBlockedName,
 } from './schedule';
-import { lessonsForItem, normalizeEmail, normalizeName, type ItemId } from './prices';
+import { lessonsForItem, normalizeAddress, normalizeDob, normalizeEmail, normalizeName, normalizePhone, type ItemId } from './prices';
 
-export { CANCELLATION_POLICY, DEFAULT_EVENT_TITLE };
+export { CANCELLATION_POLICY };
 
 export const PREVIEW_BOOKING_KEY = 'preview-mock-booking-key';
 export const MAIL_FROM = 'info@safeswimmingschool.com';
@@ -33,7 +42,12 @@ export type Booking = {
   id: string;
   email: string;
   parent: string;
+  phone: string;
   child: string;
+  childDob: string;
+  sibling?: string;
+  siblingDob?: string;
+  poolAddress: string;
   itemId: ItemId;
   lessons: Lesson[];
   createdAt: string;
@@ -43,7 +57,12 @@ export type Hold = {
   id: string;
   email: string;
   parent: string;
+  phone: string;
   child: string;
+  childDob: string;
+  sibling?: string;
+  siblingDob?: string;
+  poolAddress: string;
   itemId: ItemId;
   slots: string[];
   expiresAt: string;
@@ -51,7 +70,10 @@ export type Hold = {
 
 export type BookingEnv = SquareEnv & {
   BOOKING_TOKEN_SECRET?: string;
-  BOOKING_EVENT_TITLE?: string;
+  BOOKING_EVENT_MODE?: string;
+  BOOKING_NOTICE_TARGET?: string;
+  DRIVE_TIME_MINUTES?: string;
+  DRIVE_TIME_PROVIDER?: string;
   GOOGLE_SERVICE_ACCOUNT_JSON?: string;
   GOOGLE_CALENDAR_ID?: string;
   GOOGLE_SHEET_ID?: string;
@@ -161,19 +183,21 @@ function calendarOf(env: BookingEnv): CalendarAdapter {
   return getCalendar(env);
 }
 
-export async function listSlots(env: BookingEnv, now = new Date(), days = 14): Promise<Array<{ start: string; end: string; state: 'open' | 'busy' }>> {
+export async function listSlots(env: BookingEnv, now = new Date(), days = 14, poolAddress?: string): Promise<Array<{ start: string; end: string; state: 'open' | 'busy' }>> {
   const dates = datesFrom(now, days);
   const starts = dates.flatMap((date) => slotStartsOnDate(date.year, date.month, date.day));
   const from = starts[0] ?? now.toISOString();
   const to = starts.length ? slotEnd(starts[starts.length - 1]) : now.toISOString();
   const busy = await calendarOf(env).busyIntervals(from, to);
   const held = new Set(await getStore().activeHoldStarts(now));
-  return starts.filter((start) => Date.parse(start) > now.getTime()).map((start) => {
+  const drive = createDriveTime(env);
+  const upcoming = starts.filter((start) => Date.parse(start) > now.getTime());
+  const states = await Promise.all(upcoming.map(async (start) => {
     const end = slotEnd(start);
-    const overlaps = busy.some((interval) => interval.start < end && interval.end > start);
-    const state = overlaps || held.has(start) ? 'busy' : 'open';
-    return { start, end, state };
-  });
+    const blocked = held.has(start) || await isSlotBlocked(start, end, poolAddress, busy, drive);
+    return { start, end, state: blocked ? 'busy' as const : 'open' as const };
+  }));
+  return states;
 }
 
 export async function issueHold(input: {
@@ -181,7 +205,12 @@ export async function issueHold(input: {
   requestUrl: string;
   email: string;
   parent: string;
+  phone: string;
   child: string;
+  childDob: string;
+  sibling?: string;
+  siblingDob?: string;
+  poolAddress: string;
   itemId: string;
   quantity: number;
   slots: string[];
@@ -192,16 +221,26 @@ export async function issueHold(input: {
   const email = normalizeEmail(input.email);
   const parent = normalizeName(input.parent);
   const child = normalizeName(input.child);
-  if (!email || !parent || !child) return { error: 'invalid-buyer' };
-  if (usesBlockedName(parent) || usesBlockedName(child)) return { error: 'invalid-buyer' };
+  const phone = normalizePhone(input.phone);
+  const childDob = normalizeDob(input.childDob);
+  const poolAddress = normalizeAddress(input.poolAddress);
+  const sibling = input.sibling ? normalizeName(input.sibling) : undefined;
+  const siblingDob = input.sibling ? normalizeDob(input.siblingDob) : undefined;
+  if (!email || !parent || !child || !phone || !childDob || !poolAddress) return { error: 'invalid-buyer' };
+  if (input.sibling && (!sibling || !siblingDob)) return { error: 'invalid-buyer' };
+  if (usesBlockedName(parent) || usesBlockedName(child) || (sibling && usesBlockedName(sibling))) return { error: 'invalid-buyer' };
   const itemId = input.itemId as ItemId;
   const perItem = lessonsForItem(itemId);
   if (!perItem || !Number.isInteger(input.quantity) || input.quantity < 1) return { error: 'invalid-package' };
+  if (sibling && perItem === 1) return { error: 'invalid-package' };
   const needed = perItem * input.quantity;
   if (input.slots.length !== needed) return { error: 'invalid-slot-count' };
   if (new Set(input.slots).size !== input.slots.length) return { error: 'invalid-slot' };
+  if (perItem > 1 && !isPackageSchedule(input.slots, Boolean(sibling))) return { error: 'invalid-slot' };
   const now = input.now ?? new Date();
-  const open = new Set((await listSlots(input.env, now)).filter((slot) => slot.state === 'open').map((slot) => slot.start));
+  const latest = input.slots.reduce((max, start) => Math.max(max, Date.parse(start)), now.getTime());
+  const days = Math.min(160, Math.max(14, Math.ceil((latest - now.getTime()) / (24 * 60 * 60 * 1000)) + 3));
+  const open = new Set((await listSlots(input.env, now, days, poolAddress)).filter((slot) => slot.state === 'open').map((slot) => slot.start));
   for (const start of input.slots) {
     if (!isCanonicalSlot(start) || !open.has(start)) return { error: 'invalid-slot' };
   }
@@ -209,7 +248,12 @@ export async function issueHold(input: {
     id: crypto.randomUUID(),
     email,
     parent,
+    phone,
     child,
+    childDob,
+    sibling,
+    siblingDob,
+    poolAddress,
     itemId,
     slots: [...input.slots].sort(),
     expiresAt: new Date(now.getTime() + HOLD_MS).toISOString(),
@@ -238,6 +282,56 @@ export function lessonsFromSlots(slots: string[]): Lesson[] {
   }));
 }
 
+function lessonEvents(booking: Booking): BuiltLessonEvent[] {
+  return buildLessonEvents({
+    itemId: booking.itemId,
+    parent: booking.parent,
+    phone: booking.phone,
+    email: booking.email,
+    child: booking.child,
+    childDob: booking.childDob,
+    sibling: booking.sibling,
+    siblingDob: booking.siblingDob,
+    poolAddress: booking.poolAddress,
+    slots: [...booking.lessons].sort((a, b) => Date.parse(a.start) - Date.parse(b.start)).map((lesson) => ({ start: lesson.start, end: lesson.end })),
+  });
+}
+
+async function publishSchedule(env: BookingEnv, booking: Booking, changed: BuiltLessonEvent[]): Promise<void> {
+  if (bookingEventMode(env) === 'direct') {
+    if (changed.length) await calendarOf(env).saveEvents(changed);
+    return;
+  }
+  const events = lessonEvents(booking);
+  const notice = buildBookingNotice({
+    target: noticeTarget(env),
+    id: booking.id,
+    itemId: booking.itemId,
+    parent: booking.parent,
+    phone: booking.phone,
+    email: booking.email,
+    child: booking.child,
+    childDob: booking.childDob,
+    sibling: booking.sibling,
+    poolAddress: booking.poolAddress,
+    lessons: booking.lessons.map((lesson) => {
+      const event = events.find((item) => item.start === lesson.start);
+      return {
+        start: lesson.start,
+        end: lesson.end,
+        child: event?.child || booking.child,
+        title: event?.title || booking.child,
+        status: lesson.status,
+      };
+    }),
+  });
+  await deliverNotice(notice);
+}
+
+export async function syncBooking(env: BookingEnv, booking: Booking): Promise<void> {
+  await publishSchedule(env, booking, []);
+}
+
 export async function confirmHold(input: {
   env: BookingEnv;
   requestUrl: string;
@@ -252,18 +346,17 @@ export async function confirmHold(input: {
     id: crypto.randomUUID(),
     email: input.hold.email,
     parent: input.hold.parent,
+    phone: input.hold.phone,
     child: input.hold.child,
+    childDob: input.hold.childDob,
+    sibling: input.hold.sibling,
+    siblingDob: input.hold.siblingDob,
+    poolAddress: input.hold.poolAddress,
     itemId: input.hold.itemId,
     lessons: lessonsFromSlots(input.hold.slots),
     createdAt: now.toISOString(),
   };
-  const template = input.env.BOOKING_EVENT_TITLE || DEFAULT_EVENT_TITLE;
-  const events: CalendarEvent[] = booking.lessons.map((lesson) => ({
-    start: lesson.start,
-    end: lesson.end,
-    title: eventTitle(template, booking.child, booking.parent),
-  }));
-  await calendarOf(input.env).saveEvents(events);
+  await publishSchedule(input.env, booking, lessonEvents(booking));
   await releaseHold(input.hold.id);
   const token = await signToken(booking, secret);
   const manageUrl = `${input.origin}/booking/manage/?token=${encodeURIComponent(token)}`;
@@ -300,12 +393,8 @@ export async function rescheduleLesson(input: {
   if (!open.has(input.start) && input.start !== lesson.start) return { error: 'invalid-slot' };
   lesson.start = input.start;
   lesson.end = slotEnd(input.start);
-  const template = input.env.BOOKING_EVENT_TITLE || DEFAULT_EVENT_TITLE;
-  await calendarOf(input.env).saveEvents([{
-    start: lesson.start,
-    end: lesson.end,
-    title: eventTitle(template, input.booking.child, input.booking.parent),
-  }]);
+  const changed = lessonEvents(input.booking).filter((event) => event.start === lesson.start);
+  await publishSchedule(input.env, input.booking, changed);
   return { booking: input.booking };
 }
 
@@ -332,15 +421,24 @@ export async function moveLessonToEnd(input: {
   const taken = occupiedStarts(input.booking, lesson.id);
   const busy = await calendarOf(input.env).busyIntervals(last, new Date(Date.parse(last) + 370 * 24 * 60 * 60 * 1000).toISOString());
   for (const interval of busy) taken.add(interval.start);
-  const start = nextUsualSlot(last, lesson.start, taken);
+  const drive = createDriveTime(input.env);
+  let cursor = last;
+  let start: string | null = null;
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const candidate = nextUsualSlot(cursor, lesson.start, taken);
+    if (!candidate) return { error: 'no-slot' };
+    const blocked = await isSlotBlocked(candidate, slotEnd(candidate), input.booking.poolAddress, busy, drive);
+    if (!blocked) {
+      start = candidate;
+      break;
+    }
+    taken.add(candidate);
+    cursor = candidate;
+  }
   if (!start) return { error: 'no-slot' };
   lesson.start = start;
   lesson.end = slotEnd(start);
-  const template = input.env.BOOKING_EVENT_TITLE || DEFAULT_EVENT_TITLE;
-  await calendarOf(input.env).saveEvents([{
-    start: lesson.start,
-    end: lesson.end,
-    title: eventTitle(template, input.booking.child, input.booking.parent),
-  }]);
+  const changed = lessonEvents(input.booking).filter((event) => event.start === lesson.start);
+  await publishSchedule(input.env, input.booking, changed);
   return { booking: input.booking, start };
 }

@@ -6,13 +6,13 @@ import { CATALOG, lessonsForItem } from '../../functions/_lib/prices';
 import { CANCELLATION_POLICY } from '../../functions/_lib/schedule';
 const path = '/book/';
 const title = 'Book lessons | Safe Swimming School';
-const description = 'Choose a 30-minute lesson time for each lesson in a package.';
+const description = 'Choose a weekly 30-minute lesson time.';
 const lessons = CATALOG.filter((item) => lessonsForItem(item.id) > 0);
 const money = (cents: number) => (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 ---
 <Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome}>
 <PageShell h1="Book lessons">
-<p>Choose a package and a 30-minute time for every lesson. Two lessons in a row count as two lessons.</p>
+<p>Lessons are 30 minutes. A package uses the same day and time each week. Two lessons in a row count as two lessons.</p>
 <p id="sss-policy">{CANCELLATION_POLICY}</p>
 <form id="sss-book-form" class="sss-cart-form">
 <fieldset class="sss-packages">
@@ -22,8 +22,16 @@ const money = (cents: number) => (cents / 100).toLocaleString('en-US', { style: 
 ))}
 </fieldset>
 <label>Child<input id="sss-child" name="child" type="text" required maxlength="100" autocomplete="off"></label>
+<label>Child date of birth<input id="sss-dob" name="childDob" type="date" required min="1920-01-01" autocomplete="bday"></label>
+<div id="sss-sibling-fields">
+<label>Sibling <span class="sss-optional">(optional)</span><input id="sss-sibling" name="sibling" type="text" maxlength="100" autocomplete="off"></label>
+<label>Sibling date of birth<input id="sss-sibling-dob" name="siblingDob" type="date" min="1920-01-01"></label>
+<p class="sss-cart-note">A sibling takes the next 30 minutes each week. Each lesson counts as one.</p>
+</div>
 <label>Parent<input id="sss-parent" name="parent" type="text" required maxlength="100" autocomplete="name"></label>
 <label>Email<input id="sss-email" name="email" type="email" required maxlength="254" autocomplete="email"></label>
+<label>Phone<input id="sss-phone" name="phone" type="tel" required maxlength="40" autocomplete="tel" inputmode="tel"></label>
+<label>Pool address<textarea id="sss-address" name="poolAddress" required maxlength="200" rows="2"></textarea></label>
 <p id="sss-count">0 lessons selected</p>
 <div id="sss-slots"></div>
 <p id="sss-book-message" class="sss-cart-message"></p>
