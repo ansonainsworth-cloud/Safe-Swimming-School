@@ -1,5 +1,15 @@
 import type { PricedLine } from './prices';
 
+/** Square rejects fictional 555 numbers. Other 10-digit US numbers are sent as E.164. */
+export function squareBuyerPhone(phone: string | undefined): string | undefined {
+  if (!phone) return undefined;
+  const digits = phone.replace(/\D/g, '');
+  const national = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+  if (national.length !== 10) return undefined;
+  if (national.slice(3, 6) === '555') return undefined;
+  return `+1${national}`;
+}
+
 export function buildCreatePaymentLinkBody(input: {
   locationId: string;
   idempotencyKey: string;
@@ -10,6 +20,7 @@ export function buildCreatePaymentLinkBody(input: {
   customerId?: string;
   lines: PricedLine[];
 }) {
+  const buyerPhone = squareBuyerPhone(input.buyerPhone);
   return {
     idempotency_key: input.idempotencyKey,
     ...(input.buyerName ? { payment_note: input.buyerName } : {}),
@@ -31,7 +42,7 @@ export function buildCreatePaymentLinkBody(input: {
     },
     pre_populated_data: {
       buyer_email: input.buyerEmail,
-      ...(input.buyerPhone ? { buyer_phone_number: input.buyerPhone } : {}),
+      ...(buyerPhone ? { buyer_phone_number: buyerPhone } : {}),
     },
   };
 }

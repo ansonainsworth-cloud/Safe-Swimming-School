@@ -95,6 +95,22 @@ export async function squarePost(env: SquareEnv, path: string, body: unknown, fe
   return response.json();
 }
 
+export async function squareGet(env: SquareEnv, path: string, fetchImpl: typeof fetch = fetch): Promise<unknown> {
+  const environment = squareEnvironment(env);
+  if (!environment) throw new SquareRequestError(503);
+  if (!path.startsWith('/v2/') || path.includes('://')) throw new SquareRequestError(400);
+  const token = env.SQUARE_ACCESS_TOKEN?.trim();
+  if (!token) throw new SquareRequestError(503);
+  const response = await fetchImpl(squareOrigin(environment) + path, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Square-Version': SQUARE_VERSION,
+    },
+  });
+  if (!response.ok) throw new SquareRequestError(response.status, await squareErrorInfo(response));
+  return response.json();
+}
+
 export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fetch): SquareLookup {
   const locationId = env.SQUARE_LOCATION_ID || '';
   return {

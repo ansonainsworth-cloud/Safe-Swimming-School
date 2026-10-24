@@ -136,7 +136,7 @@ describe('CreatePaymentLink body', () => {
         metadata: { source: 'website-cart' },
       },
       checkout_options: { redirect_url: 'https://preview.example/checkout/thanks/' },
-      pre_populated_data: { buyer_email: 'parent@example.com', buyer_phone_number: '561-236-8260' },
+      pre_populated_data: { buyer_email: 'parent@example.com', buyer_phone_number: '+15612368260' },
     });
     const serialized = JSON.stringify(body);
     expect(serialized).not.toMatch(/catalog/i);
@@ -153,6 +153,15 @@ describe('CreatePaymentLink body', () => {
     });
     expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
     expect(body.order).not.toHaveProperty('customer_id');
+    const fictional = buildCreatePaymentLinkBody({
+      locationId: 'LOC123',
+      idempotencyKey: 'idem-3',
+      redirectUrl: 'https://preview.example/checkout/thanks/',
+      buyerEmail: 'jordan@example.com',
+      buyerPhone: '561-555-0134',
+      lines: [{ name: 'Single lesson', quantity: 1, priceCents: 7500 }],
+    });
+    expect(fictional.pre_populated_data).toEqual({ buyer_email: 'jordan@example.com' });
   });
 });
 
@@ -263,7 +272,7 @@ describe('checkout endpoint', () => {
     expect(sent.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
     expect(sent.payment_note).toBe('Pat Lee');
     expect(sent.pre_populated_data.buyer_email).toBe('pat@example.com');
-    expect(sent.pre_populated_data.buyer_phone_number).toBe('561-236-8260');
+    expect(sent.pre_populated_data.buyer_phone_number).toBe('+15612368260');
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('connect.squareup.com');
     expect(logs.join('\n')).not.toContain('sandbox-token');
     expect(logs.join('\n')).not.toContain('Pat@Example.com');
@@ -308,7 +317,7 @@ describe('checkout endpoint', () => {
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(502);
-    expect(await response.json()).toMatchObject({ error: 'checkout-failed' });
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
   });
 
   it('shows the existing Pay links when checkout is unavailable or Square errors', () => {
