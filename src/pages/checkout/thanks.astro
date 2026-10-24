@@ -8,10 +8,15 @@ const description = 'Your Safe Swimming School checkout is complete.';
 ---
 <Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
 <PageShell h1="Thank you">
-<p>We received your payment. We’ll be in touch to schedule.</p>
+<p>We received your payment.</p>
 <p><a href="/">Back to the homepage</a></p>
 <script is:inline>
-try { localStorage.removeItem('sss-cart'); } catch (error) {}
+try { localStorage.removeItem('sss-cart'); localStorage.removeItem('sss-booking'); } catch (error) {}
+fetch('/api/booking-finish', { method: 'POST' }).then(function (response) {
+  return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+}).then(function (result) {
+  if (result.ok && result.data && result.data.confirmationUrl) location.replace(result.data.confirmationUrl);
+}).catch(function () {});
 </script>
 </PageShell>
 </Base>

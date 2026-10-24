@@ -150,17 +150,36 @@
       message.innerHTML = '';
       var button = document.getElementById('sss-checkout-button');
       button.disabled = true;
+      var record = bookingRecord();
+      var payload = {
+        items: items.map(function (line) { return { id: line.id, quantity: line.quantity }; }),
+        buyer: buyer
+      };
+      if (record && record.holdToken) {
+        payload.holdToken = record.holdToken;
+        payload.child = record.child;
+      }
       fetch('/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map(function (line) { return { id: line.id, quantity: line.quantity }; }),
-          buyer: buyer
-        })
+        body: JSON.stringify(payload)
       }).then(function (response) {
-        if (response.status === 503) {
-          if (fallback) fallback.hidden = false;
-          return null;
+        if (response.status === 503 || response.status === 502) {
+          return response.json().then(function (data) {
+            if (fallback) fallback.hidden = false;
+            if (data && data.confirmationUrl) {
+              message.hidden = false;
+              message.textContent = 'No payment was taken. ';
+              var saved = document.createElement('a');
+              saved.href = data.confirmationUrl;
+              saved.textContent = 'View the saved lessons';
+              message.appendChild(saved);
+            }
+            return null;
+          }).catch(function () {
+            if (fallback) fallback.hidden = false;
+            return null;
+          });
         }
         return response.json().then(function (data) {
           return { ok: response.ok, data: data };
@@ -175,7 +194,7 @@
         if (result.data.registrationReason === 'lookup-error') {
           trackBeginCheckout(items);
           message.hidden = false;
-          message.textContent = 'We added the $35 annual registration fee because we couldn’t confirm a registration from the last 12 months. If you already paid it this year, we can refund it. ';
+          message.textContent = 'We added the $35 annual registration fee because we couldn\'t confirm this email. ';
           var continueLink = document.createElement('a');
           continueLink.href = result.data.url;
           continueLink.textContent = 'Continue to checkout';
@@ -186,14 +205,62 @@
           window.location.href = result.data.url;
         });
       }).catch(function () {
-        message.hidden = false;
-        message.textContent = 'We couldn’t start checkout. Please try again.';
+        if (fallback) fallback.hidden = false;
       }).finally(function () {
         button.disabled = read().length === 0;
       });
     });
   }
 
+  function bookingRecord() {
+    try {
+      return JSON.parse(localStorage.getItem('sss-booking') || 'null');
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function showTimes() {
+    var record = bookingRecord();
+    var list = document.getElementById('sss-booked-times');
+    if (!list) return;
+    if (!record || !record.slots || !record.slots.length) {
+      list.innerHTML = '';
+      return;
+    }
+    if (form && record.parent && !form.name.value) form.name.value = record.parent;
+    if (form && record.email && !form.email.value) form.email.value = record.email;
+    if (form && record.phone && form.phone && !form.phone.value) form.phone.value = record.phone;
+    list.innerHTML = record.slots.map(function (start) {
+      var label = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(start));
+      var child = String(record.child).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+      return '<li>' + child + ' — ' + label + '</li>';
+    }).join('');
+    quoteRegistration();
+  }
+
+  function quoteRegistration() {
+    if (!form || !form.email.value.trim()) return;
+    fetch('/api/registration', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: form.email.value.trim() })
+    }).then(function (response) {
+      return response.json();
+    }).then(function (data) {
+      var line = document.getElementById('sss-registration-line');
+      var note = document.getElementById('sss-registration-note');
+      if (!line || !note || !data) return;
+      line.hidden = !data.add;
+      note.hidden = data.reason !== 'lookup-error';
+    }).catch(function () {});
+  }
+
+  if (form) form.email.addEventListener('change', quoteRegistration);
+
   renderCount(read());
   renderCart(read());
+  showTimes();
 })();

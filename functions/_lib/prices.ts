@@ -1,7 +1,6 @@
 /** Server-side prices. The browser may send ids and quantities only. */
 
 export const SQUARE_VERSION = '2026-09-16';
-export const SQUARE_SANDBOX_ORIGIN = 'https://connect.squareupsandbox.com';
 export const REGISTRATION_ID = 'registration-annual';
 export const REGISTRATION_NAME = 'Annual Registration';
 
@@ -28,7 +27,7 @@ export const CATALOG: readonly CatalogItem[] = [
   { id: 'pkg-8', name: '8 Private Lessons (30 min)', priceCents: 52000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'pkg-12', name: '12 Private Lessons (30 min)', priceCents: 72000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'pkg-20', name: '20 Private Lessons (30 min)', priceCents: 110000, minQty: 1, maxQty: 3, clientOrderable: true },
-  { id: 'trial', name: 'Trial Lesson (30 min)', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
+  { id: 'trial', name: 'Single lesson', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'water-aerobics', name: 'Water Aerobics Class (30 min)', priceCents: 4500, minQty: 1, maxQty: 20, clientOrderable: true },
 ];
 
@@ -74,6 +73,21 @@ export function validateClientItems(input: unknown): { ok: true; lines: ClientLi
   return { ok: true, lines };
 }
 
+const LESSON_COUNTS: Partial<Record<ItemId, number>> = {
+  'pkg-8': 8,
+  'pkg-12': 12,
+  'pkg-20': 20,
+  trial: 1,
+};
+
+export function lessonsForItem(id: ItemId): number {
+  return LESSON_COUNTS[id] ?? 0;
+}
+
+export function lessonsForLines(lines: ClientLine[]): number {
+  return lines.reduce((sum, line) => sum + lessonsForItem(line.id) * line.quantity, 0);
+}
+
 export function priceClientLines(lines: ClientLine[], addRegistration: boolean): PricedLine[] {
   const priced = lines.map((line) => {
     const item = getItem(line.id)!;
@@ -93,6 +107,23 @@ export function normalizeEmail(value: unknown): string | null {
   const email = value.trim().toLowerCase();
   if (!EMAIL.test(email) || email.length > 254) return null;
   return email;
+}
+
+export function normalizeDob(value: unknown): string | null {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  if (value < '1920-01-01' || value > today) return null;
+  return value;
+}
+
+export function normalizeAddress(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const address = value.trim().replace(/\s+/g, ' ');
+  if (address.length < 5 || address.length > 200) return null;
+  if (/[\u0000-\u001f]/.test(address)) return null;
+  return address;
 }
 
 export function normalizeName(value: unknown): string | null {

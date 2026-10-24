@@ -6,7 +6,7 @@ export type PaymentLink = {
 
 /** Square payment link. Paste it into `url`, or leave `url` empty so Pay stays on /enroll/. */
 export const paymentLinks: PaymentLink[] = [
-  { label: 'Trial', price: '$75', url: 'https://square.link/u/bYM8aAup' },
+  { label: 'Single lesson', price: '$75', url: 'https://square.link/u/bYM8aAup' },
   { label: 'Registration', price: '$35', url: 'https://square.link/u/AbfxxGYu' },
   { label: '8 lessons', price: '$520', url: 'https://square.link/u/wTx6tPan' },
   { label: '12 lessons', price: '$720', url: 'https://square.link/u/ZpLS9ENJ' },

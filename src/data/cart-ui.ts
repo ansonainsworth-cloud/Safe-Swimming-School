@@ -1,7 +1,14 @@
-import { getItem } from '../../functions/_lib/prices';
+import { getItem, lessonsForItem } from '../../functions/_lib/prices';
 
 function escapeAttr(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+export function chooseTimesHtml(id: string): string {
+  const item = getItem(id);
+  if (!item || !lessonsForItem(item.id)) throw new Error(`Unknown lesson item: ${id}`);
+  const href = `/book/?package=${encodeURIComponent(item.id)}`;
+  return `<a class="sss-btn" href="${href}">Choose times</a>`;
 }
 
 /** Quantity control and Add to cart, beside an existing Pay link. */

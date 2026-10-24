@@ -10,11 +10,14 @@ const description = 'Review private lesson packages and water aerobics classes b
 <Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} checkoutAnalytics={true} {...pageChrome}>
 <PageShell h1="Cart">
 <div id="sss-cart-root"><p>Your cart is empty. See <a href="/pricing/">lesson packages</a> or <a href="/water-aerobics/">water aerobics</a>.</p></div>
+<ul id="sss-booked-times" class="sss-lesson-list"></ul>
 <form id="sss-checkout-form" class="sss-cart-form" method="post" action="/api/checkout">
 <label>Name<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
 <label>Email<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
 <label>Phone <span class="sss-optional">(optional)</span><input name="phone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel"></label>
-<p class="sss-cart-note">The $35 annual registration fee is added at checkout if we don't have a registration from you in the last 12 months.</p>
+<p id="sss-registration-line" hidden><strong>Annual Registration</strong><br />$35.00</p>
+<p class="sss-cart-note">The $35 annual registration fee is added to a family's first purchase.</p>
+<p id="sss-registration-note" class="sss-cart-note" hidden>We added the $35 annual registration fee because we couldn't confirm this email.</p>
 <button id="sss-checkout-button" class="sss-btn" type="submit" disabled>Checkout</button>
 <p id="sss-checkout-message" class="sss-cart-message" hidden></p>
 </form>
