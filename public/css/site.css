@@ -21,6 +21,27 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-cart-note{background:#f4f8fb;padding:12px 14px;border-radius:4px}
 .sss-cart-message{margin-top:14px}
 #sss-pay-fallback{margin-top:24px}
+.sss-mock-banner{background:#033761;color:#fff;text-align:center;font-weight:700;padding:10px 16px}
+.sss-portal-nav{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 18px}
+.sss-portal-nav a{font-weight:700}
+.sss-portal-card{background:#f4f8fb;border-radius:4px;padding:16px 18px;margin:0 0 20px}
+.sss-portal-card h2,.sss-portal-card p:last-child{margin-bottom:0}
+.sss-progress{height:12px;background:#d7e3ee;border-radius:4px;overflow:hidden;margin-top:12px}
+.sss-progress > span{display:block;height:100%;width:41.67%;background:#2ea3f2}
+.sss-lesson-list{list-style:none;margin:0 0 20px;padding:0}
+.sss-lesson{padding:12px 0;border-bottom:1px solid #d7e3ee}
+.sss-lesson p{margin:0 0 4px}
+.sss-tag{display:inline-block;background:#f5b11f;color:#033761;font-weight:700;font-size:13px;padding:2px 8px;border-radius:4px}
+.sss-portal-actions{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 24px}
+.sss-portal-form label{display:block;margin:14px 0;font-weight:500;color:#033761}
+.sss-portal-form input,.sss-portal-form select,.sss-portal-form textarea{display:block;width:100%;max-width:420px;margin-top:4px;padding:8px}
+.sss-portal-form fieldset{border:1px solid #d7e3ee;border-radius:4px;margin:0 0 16px;padding:8px 14px 12px}
+.sss-portal-form legend{font-weight:700;color:#033761;padding:0 4px}
+.sss-portal-form fieldset label{font-weight:400;margin:8px 0}
+.sss-portal-form fieldset input{display:inline-block;width:auto;max-width:none;margin:0 8px 0 0}
+.sss-date-range{display:flex;flex-wrap:wrap;gap:8px 16px}
+.sss-date-range label{flex:1 1 180px}
+.sss-portal-confirm{background:#f4f8fb;padding:16px 18px;border-radius:4px;font-size:1.1em}
 .footer-quick-links a{white-space:nowrap}
 /* Sticky mobile contact bar */
 .sss-mobile-bar{display:none}

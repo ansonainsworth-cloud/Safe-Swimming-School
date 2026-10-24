@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro';
+import PortalShell from '../../components/PortalShell.astro';
+import { pageChrome } from '../../data/newpage.js';
+const path = '/portal-mockup/sign-in/';
+const title = 'Sign in mockup | Safe Swimming School';
+const description = 'Static mockup of an email sign-in link screen.';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<PortalShell h1="Sign in">
+<div data-mock-panel>
+<form class="sss-portal-form" data-mock-form method="post" action="#sign-in">
+  <label>Email
+    <input type="email" name="email" required maxlength="254" autocomplete="email" />
+  </label>
+  <button class="sss-btn" type="submit">Email me a sign-in link</button>
+</form>
+<p class="sss-portal-confirm" data-mock-confirm hidden>Check your email for a link. It expires in 15 minutes.</p>
+</div>
+</PortalShell>
+</Base>

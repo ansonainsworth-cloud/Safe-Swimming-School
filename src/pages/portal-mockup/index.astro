@@ -1,0 +1,37 @@
+---
+import Base from '../../layouts/Base.astro';
+import PortalShell from '../../components/PortalShell.astro';
+import { pageChrome } from '../../data/newpage.js';
+import { lessons } from '../../data/portal-mockup.js';
+const path = '/portal-mockup/';
+const title = 'Parent portal mockup | Safe Swimming School';
+const description = 'Static mockup of a parent dashboard with example lesson data.';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<PortalShell h1="Hi, Smith family">
+<section class="sss-portal-card">
+  <h2>12-lesson package: 7 lessons left</h2>
+  <div class="sss-progress" role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="5" aria-label="5 of 12 lessons used, 7 lessons left"><span></span></div>
+</section>
+<h2>Upcoming lessons</h2>
+<ul class="sss-lesson-list">
+  {lessons.map((lesson) => (
+    <li class="sss-lesson">
+      <p><strong>{lesson.when}</strong> · {lesson.time} · {lesson.length}{lesson.uses ? <> · <span class="sss-tag">{lesson.uses}</span></> : null}</p>
+      <p>{lesson.swimmers}</p>
+      <p>Lesson at your home pool</p>
+    </li>
+  ))}
+</ul>
+<section class="sss-portal-card">
+  <p><strong>Paid in full, Oct 2026</strong></p>
+  <p>Annual registration active until Oct 2027</p>
+</section>
+<p class="sss-portal-actions">
+  <a class="sss-btn" href="/portal-mockup/reschedule/">Request a reschedule</a>
+  <a class="sss-btn" href="/portal-mockup/pause/">Request a pause</a>
+</p>
+<h2>Pending requests</h2>
+<p class="sss-lesson">Reschedule requested, waiting for approval</p>
+</PortalShell>
+</Base>

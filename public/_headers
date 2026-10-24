@@ -50,6 +50,10 @@
   X-Robots-Tag: noindex, nofollow
 /checkout/thanks/
   X-Robots-Tag: noindex, nofollow
+/portal-mockup/
+  X-Robots-Tag: noindex, nofollow
+/portal-mockup/*
+  X-Robots-Tag: noindex, nofollow
 /portfolio-item/*
   X-Robots-Tag: noindex, follow
 /team/*

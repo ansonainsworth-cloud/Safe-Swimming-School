@@ -1,0 +1,15 @@
+---
+import PageShell from './PageShell.astro';
+const { h1 } = Astro.props;
+---
+<div class="sss-mock-banner" role="status">Mockup with example data</div>
+<PageShell h1={h1}>
+<nav class="sss-portal-nav" aria-label="Portal mockup">
+  <a href="/portal-mockup/">Dashboard</a>
+  <a href="/portal-mockup/reschedule/">Reschedule</a>
+  <a href="/portal-mockup/pause/">Pause</a>
+  <a href="/portal-mockup/sign-in/">Sign in</a>
+</nav>
+<slot />
+</PageShell>
+<script is:inline src="/js/portal-mockup.js"></script>

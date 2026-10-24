@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import PortalShell from '../../components/PortalShell.astro';
+import { pageChrome } from '../../data/newpage.js';
+const path = '/portal-mockup/pause/';
+const title = 'Request a pause mockup | Safe Swimming School';
+const description = 'Static mockup for requesting a pause in lessons with example fields.';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<PortalShell h1="Request a pause">
+<div data-mock-panel>
+<form class="sss-portal-form" data-mock-form method="post" action="#request">
+  <div class="sss-date-range">
+    <label>From<input type="date" name="from" required /></label>
+    <label>To<input type="date" name="to" required /></label>
+  </div>
+  <label>Reason
+    <select name="reason" required>
+      <option value="">Choose a reason</option>
+      <option>Travel</option>
+      <option>Illness</option>
+      <option>Other</option>
+    </select>
+  </label>
+  <label>Note <span class="sss-optional">(optional)</span>
+    <textarea name="note" rows="3" maxlength="400"></textarea>
+  </label>
+  <button class="sss-btn" type="submit">Send request</button>
+</form>
+<p class="sss-portal-confirm" data-mock-confirm hidden>Request sent. Nothing changes until we confirm it with you.</p>
+</div>
+</PortalShell>
+</Base>
