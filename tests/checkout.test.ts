@@ -118,7 +118,7 @@ describe('CreatePaymentLink body', () => {
       locationId: 'LOC123',
       idempotencyKey: 'idem-1',
       redirectUrl: 'https://preview.example/checkout/thanks/',
-      buyerEmail: 'parent@example.com',
+      buyerEmail: 'parent@family.test',
       buyerPhone: '561-236-8260',
       customerId: 'CUST1',
       lines: priceClientLines([{ id: 'pkg-8', quantity: 1 }, { id: 'water-aerobics', quantity: 2 }], true),
@@ -136,7 +136,7 @@ describe('CreatePaymentLink body', () => {
         metadata: { source: 'website-cart' },
       },
       checkout_options: { redirect_url: 'https://preview.example/checkout/thanks/' },
-      pre_populated_data: { buyer_email: 'parent@example.com', buyer_phone_number: '+15612368260' },
+      pre_populated_data: { buyer_email: 'parent@family.test', buyer_phone_number: '+15612368260' },
     });
     const serialized = JSON.stringify(body);
     expect(serialized).not.toMatch(/catalog/i);
@@ -148,10 +148,10 @@ describe('CreatePaymentLink body', () => {
       locationId: 'LOC123',
       idempotencyKey: 'idem-2',
       redirectUrl: 'https://preview.example/checkout/thanks/',
-      buyerEmail: 'parent@example.com',
+      buyerEmail: 'parent@family.test',
       lines: [{ name: 'Single lesson', quantity: 1, priceCents: 7500 }],
     });
-    expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
+    expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@family.test' });
     expect(body.order).not.toHaveProperty('customer_id');
     const fictional = buildCreatePaymentLinkBody({
       locationId: 'LOC123',
@@ -161,7 +161,7 @@ describe('CreatePaymentLink body', () => {
       buyerPhone: '561-555-0134',
       lines: [{ name: 'Single lesson', quantity: 1, priceCents: 7500 }],
     });
-    expect(fictional.pre_populated_data).toEqual({ buyer_email: 'jordan@example.com' });
+    expect(fictional.pre_populated_data).toEqual({});
   });
 });
 
@@ -271,7 +271,7 @@ describe('checkout endpoint', () => {
     expect(sent.order.metadata).toEqual({ source: 'website-cart' });
     expect(sent.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
     expect(sent.payment_note).toBe('Pat Lee');
-    expect(sent.pre_populated_data.buyer_email).toBe('pat@example.com');
+    expect(sent.pre_populated_data.buyer_email).toBeUndefined();
     expect(sent.pre_populated_data.buyer_phone_number).toBe('+15612368260');
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('connect.squareup.com');
     expect(logs.join('\n')).not.toContain('sandbox-token');

@@ -1,5 +1,13 @@
 import type { PricedLine } from './prices';
 
+/** Square rejects reserved example.com addresses on payment links. The buyer can type one on the checkout page. */
+export function squareBuyerEmail(email: string | undefined): string | undefined {
+  if (!email) return undefined;
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (domain === 'example.com' || domain === 'example.org' || domain === 'example.net') return undefined;
+  return email;
+}
+
 /** Square rejects fictional 555 numbers. Other 10-digit US numbers are sent as E.164. */
 export function squareBuyerPhone(phone: string | undefined): string | undefined {
   if (!phone) return undefined;
@@ -20,6 +28,7 @@ export function buildCreatePaymentLinkBody(input: {
   customerId?: string;
   lines: PricedLine[];
 }) {
+  const buyerEmail = squareBuyerEmail(input.buyerEmail);
   const buyerPhone = squareBuyerPhone(input.buyerPhone);
   return {
     idempotency_key: input.idempotencyKey,
@@ -41,7 +50,7 @@ export function buildCreatePaymentLinkBody(input: {
       redirect_url: input.redirectUrl,
     },
     pre_populated_data: {
-      buyer_email: input.buyerEmail,
+      ...(buyerEmail ? { buyer_email: buyerEmail } : {}),
       ...(buyerPhone ? { buyer_phone_number: buyerPhone } : {}),
     },
   };
