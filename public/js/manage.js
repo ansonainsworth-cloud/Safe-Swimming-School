@@ -6,6 +6,8 @@
   var picker = document.getElementById('sss-reschedule');
   var pickerSlots = document.getElementById('sss-reschedule-slots');
   var activeLesson = '';
+  var bookingLessons = [];
+  var bookingPool = '';
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, function (ch) {
@@ -25,14 +27,23 @@
         status.textContent = 'This lesson link is not valid.';
         return;
       }
-      render(result.data.booking);
+      render(result.data.booking, result.data.weatherPolicy);
     });
   }
 
-  function render(booking) {
+  function render(booking, weatherPolicy) {
+    var weather = document.getElementById('sss-weather-policy');
+    if (weather) {
+      weather.hidden = !weatherPolicy;
+      weather.textContent = weatherPolicy || '';
+    }
+    bookingLessons = booking.lessons || [];
+    bookingPool = booking.poolAddress || '';
     status.textContent = booking.child + ' — ' + booking.parent;
     list.innerHTML = booking.lessons.map(function (lesson) {
-      var detail = lesson.status === 'taught' ? 'Counted as a lesson taught.' : escapeHtml(lesson.label);
+      var detail = lesson.status === 'taught'
+        ? 'Counted as a lesson taught.'
+        : escapeHtml(lesson.label) + (lesson.weatherOfferLabel ? ' Next agreeable time: ' + escapeHtml(lesson.weatherOfferLabel) + '.' : '');
       var id = escapeHtml(lesson.id);
       var actions = '';
       if (lesson.status === 'scheduled' && lesson.reschedule) {
@@ -57,13 +68,15 @@
       if (!result.ok) {
         status.textContent = result.data && result.data.error === 'counts-as-taught'
           ? 'This cancellation counts as a lesson taught.'
-          : 'That time is not open.';
+          : result.data && result.data.error === 'weather-not-taught'
+            ? 'A cold-weather cancellation does not count as a lesson taught.'
+            : 'That time is not open.';
         return;
       }
       token = result.data.token;
       history.replaceState(null, '', '/booking/manage/?token=' + encodeURIComponent(token));
       picker.hidden = true;
-      render(result.data.booking);
+      render(result.data.booking, result.data.weatherPolicy);
     });
   }
 
@@ -74,7 +87,9 @@
     if (reschedule) {
       activeLesson = reschedule.getAttribute('data-reschedule');
       picker.hidden = false;
-      fetch('/api/availability?days=21').then(function (response) { return response.json(); }).then(function (data) {
+      var lesson = (bookingLessons || []).find(function (item) { return item.id === activeLesson; });
+      var address = lesson && lesson.weatherOffer && bookingPool ? '&address=' + encodeURIComponent(bookingPool) : '';
+      fetch('/api/availability?days=21' + address).then(function (response) { return response.json(); }).then(function (data) {
         var open = (data.slots || []).filter(function (slot) { return slot.state === 'open'; }).slice(0, 12);
         pickerSlots.innerHTML = open.map(function (slot) {
           var label = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(slot.start));

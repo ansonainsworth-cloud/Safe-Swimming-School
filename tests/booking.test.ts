@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { onRequestPost } from '../functions/api/checkout';
-import { onRequestPost as bookingPost } from '../functions/api/booking';
+import { onRequestGet as bookingGet, onRequestPost as bookingPost } from '../functions/api/booking';
 import {
+  cancelForWeather,
   confirmHold,
   countLesson,
   getStore,
@@ -22,6 +23,7 @@ import { getCalendar, MockCalendar } from '../functions/_lib/calendar';
 import { googleEventInsert, isPackageSchedule, lessonEventTitle, resetNotices, sentNotices } from '../functions/_lib/lesson-events';
 import {
   CANCELLATION_POLICY,
+  WEATHER_CANCELLATION_POLICY,
   etParts,
   isCanonicalSlot,
   slotEnd,
@@ -287,8 +289,107 @@ describe('cancellation', () => {
     expect(moved.booking.lessons.find((lesson) => lesson.id === first.id)?.start).toBe(moved.start);
   });
 
+  it('does not count a cold-weather cancellation as taught, inside or outside 24 hours', async () => {
+    const laterNow = new Date('2026-10-26T00:00:00.000Z');
+    const insideWindow = await packageBooking();
+    const early = insideWindow.booking.lessons[0];
+    expect(await moveLessonToEnd({ env, booking: insideWindow.booking, lessonId: early.id, now: laterNow })).toEqual({ error: 'counts-as-taught' });
+
+    const saved = await packageBooking();
+    const soon = saved.booking.lessons.find((lesson) => lesson.start === '2026-10-26T12:00:00.000Z');
+    expect(soon).toBeTruthy();
+    const morning = slotStartsOnDate(2026, 10, 26);
+    const calendar = getCalendar(env) as MockCalendar;
+    calendar.saved.push({
+      start: morning[0],
+      end: morning[1],
+      title: 'Alex Jordan',
+      location: '200 Other Road, Jupiter, FL',
+      description: 'Parent: Pat',
+      attendeeEmail: 'pat@example.com',
+      child: 'Alex Jordan',
+    });
+    const driveEnv = { ...env, DRIVE_TIME_MINUTES: '15' };
+    const offered = await cancelForWeather({ env: driveEnv, booking: saved.booking, lessonId: soon!.id, now: laterNow });
+    if ('error' in offered || !('offered' in offered)) throw new Error('expected an offer');
+    expect(offered.offered).toBe(morning[2]);
+    expect(saved.booking.lessons.find((lesson) => lesson.id === soon!.id)?.status).toBe('scheduled');
+    expect(await countLesson(saved.booking, soon!.id, laterNow)).toEqual({ error: 'weather-not-taught' });
+    const chosen = await cancelForWeather({ env: driveEnv, booking: saved.booking, lessonId: soon!.id, start: morning[2], now: laterNow });
+    if ('error' in chosen || !('placed' in chosen)) throw new Error('expected a chosen time');
+    expect(chosen).toMatchObject({ placed: 'chosen', start: morning[2] });
+    expect(chosen.booking.lessons.find((lesson) => lesson.id === soon!.id)).toMatchObject({ status: 'scheduled', start: morning[2] });
+    expect(chosen.booking.lessons.find((lesson) => lesson.id === soon!.id)?.weatherOffer).toBeUndefined();
+
+    resetCalendar();
+    const declined = await packageBooking();
+    const first = declined.booking.lessons[0];
+    const pending = await cancelForWeather({ env, booking: declined.booking, lessonId: first.id, now: laterNow });
+    if ('error' in pending || !('offered' in pending)) throw new Error('expected an offer');
+    const moved = await moveLessonToEnd({ env, booking: declined.booking, lessonId: first.id, now: laterNow });
+    if ('error' in moved) throw new Error(moved.error);
+    expect(moved.start).toBe('2026-12-21T13:00:00.000Z');
+    expect(moved.booking.lessons.find((lesson) => lesson.id === first.id)?.status).toBe('scheduled');
+
+    resetCalendar();
+    const blocked = await packageBooking();
+    const blockedLesson = blocked.booking.lessons[0];
+    (getCalendar(env) as MockCalendar).saved.push({
+      start: '2026-10-26T00:00:00.000Z',
+      end: '2026-11-20T00:00:00.000Z',
+      title: 'Cold snap',
+      location: '',
+      description: '',
+      attendeeEmail: 'pat@example.com',
+      child: '',
+    });
+    const ended = await cancelForWeather({ env, booking: blocked.booking, lessonId: blockedLesson.id, now: laterNow });
+    if ('error' in ended || !('placed' in ended)) throw new Error('expected the end of the package');
+    expect(ended).toMatchObject({ placed: 'end', start: '2026-12-21T13:00:00.000Z' });
+    expect(ended.booking.lessons.find((lesson) => lesson.id === blockedLesson.id)?.status).toBe('scheduled');
+
+    resetCalendar();
+    const fresh = await packageBooking();
+    const request = new Request('https://preview.example/api/booking', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.44' },
+      body: JSON.stringify({ token: fresh.token, action: 'school-cancel', reason: 'weather', lessonId: fresh.booking.lessons[0].id }),
+    });
+    const response = await bookingPost({ request, env });
+    expect(response.status).toBe(200);
+    const payload = await response.json() as { policy: string; weatherPolicy: string; offered: string; token: string; booking: { lessons: Array<{ id: string; status: string; weatherOffer?: string }> } };
+    expect(payload.policy).toBe(CANCELLATION_POLICY);
+    expect(payload.weatherPolicy).toBe(WEATHER_CANCELLATION_POLICY);
+    expect(payload.offered).toEqual(expect.any(String));
+    expect(payload.booking.lessons.find((lesson) => lesson.id === fresh.booking.lessons[0].id)?.status).toBe('scheduled');
+    const read = await bookingGet({ request: new Request(`https://preview.example/api/booking?token=${encodeURIComponent(payload.token)}`), env });
+    const readBody = await read.json() as { policy: string; weatherPolicy?: string };
+    expect(readBody.policy).toBe(CANCELLATION_POLICY);
+    expect(readBody.weatherPolicy).toBe(WEATHER_CANCELLATION_POLICY);
+    const plain = await bookingGet({ request: new Request(`https://preview.example/api/booking?token=${encodeURIComponent(fresh.token)}`), env });
+    const plainBody = await plain.json() as { weatherPolicy?: string };
+    expect(plainBody.weatherPolicy).toBeUndefined();
+    const rejected = await bookingPost({
+      request: new Request('https://preview.example/api/booking', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.45' },
+        body: JSON.stringify({ token: fresh.token, action: 'school-cancel', reason: 'rain', lessonId: fresh.booking.lessons[0].id }),
+      }),
+      env,
+    });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toEqual({ error: 'invalid-reason' });
+  });
+
   it('uses the supplied cancellation words and title template', () => {
     expect(CANCELLATION_POLICY).toBe("Cancel at least 24 hours ahead to reschedule online. Cancellations within 24 hours count as a lesson taught. If you don't pick a new time, we'll add the lesson to the end of your package.");
+    expect(CANCELLATION_POLICY).not.toContain('cold weather');
+    expect(WEATHER_CANCELLATION_POLICY).toBe("When the school cancels a lesson for cold weather, it does not count as a lesson taught. We'll offer the next agreeable time. If you don't choose one, or none is open, we'll add the lesson to the end of your package.");
+    expect(readFileSync(new URL('../src/pages/booking/manage.astro', import.meta.url), 'utf8')).toContain('id="sss-weather-policy"');
+    expect(readFileSync(new URL('../public/js/manage.js', import.meta.url), 'utf8')).toContain('weatherPolicy');
+    for (const file of ['src/pages/book.astro', 'src/pages/booking/confirmed.astro', 'src/pages/booking/manage.astro']) {
+      expect(readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')).not.toContain('cold weather');
+    }
     for (const file of ['src/pages/book.astro', 'src/pages/booking/manage.astro', 'src/pages/booking/confirmed.astro']) {
       expect(readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')).toContain('{CANCELLATION_POLICY}');
     }

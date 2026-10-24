@@ -1,17 +1,18 @@
-import { countLesson, moveLessonToEnd, readBooking, rescheduleLesson, signToken, syncBooking, bookingSecret, CANCELLATION_POLICY, MAIL_FROM, type BookingEnv } from '../_lib/booking';
+import { cancelForWeather, countLesson, moveLessonToEnd, readBooking, rescheduleLesson, signToken, syncBooking, bookingSecret, CANCELLATION_POLICY, WEATHER_CANCELLATION_POLICY, MAIL_FROM, type BookingEnv } from '../_lib/booking';
 import { allowCheckout } from '../_lib/rate-limit';
 import { json } from '../_lib/http';
 import { formatSlot } from '../_lib/schedule';
 
 type PagesContext = { request: Request; env: BookingEnv };
 
-function present(booking: { lessons: Array<{ id: string; start: string; end: string; status: string }> }, now = new Date()) {
+function present(booking: { lessons: Array<{ id: string; start: string; end: string; status: string; weatherOffer?: string }> }, now = new Date()) {
   return {
     ...booking,
     lessons: booking.lessons.map((lesson) => ({
       ...lesson,
       label: formatSlot(lesson.start),
-      reschedule: lesson.status === 'scheduled' && Date.parse(lesson.start) - now.getTime() >= 24 * 60 * 60 * 1000,
+      reschedule: lesson.status === 'scheduled' && (Boolean(lesson.weatherOffer) || Date.parse(lesson.start) - now.getTime() >= 24 * 60 * 60 * 1000),
+      ...(lesson.weatherOffer ? { weatherOffer: lesson.weatherOffer, weatherOfferLabel: formatSlot(lesson.weatherOffer) } : {}),
     })),
   };
 }
@@ -22,7 +23,8 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
   const token = new URL(request.url).searchParams.get('token') || '';
   const booking = await readBooking(token, secret);
   if (!booking) return json({ error: 'invalid-token' }, 400);
-  return json({ booking: present(booking), policy: CANCELLATION_POLICY, from: MAIL_FROM, token });
+  const weatherPolicy = booking.lessons.some((lesson) => lesson.weatherOffer) ? WEATHER_CANCELLATION_POLICY : undefined;
+  return json({ booking: present(booking), policy: CANCELLATION_POLICY, ...(weatherPolicy ? { weatherPolicy } : {}), from: MAIL_FROM, token });
 }
 
 export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
@@ -30,7 +32,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   if (!allowCheckout(ip)) return json({ error: 'too-many-requests' }, 429);
   const secret = bookingSecret(env, request.url);
   if (!secret) return json({ error: 'unavailable' }, 503);
-  let body: { token?: unknown; action?: unknown; lessonId?: unknown; start?: unknown };
+  let body: { token?: unknown; action?: unknown; lessonId?: unknown; start?: unknown; reason?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -43,12 +45,26 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   if (!booking) return json({ error: 'invalid-token' }, 400);
   const now = new Date();
   let result: { booking: typeof booking } | { error: string };
+  let weatherExtra: { offered?: string; placed?: 'chosen' | 'end'; start?: string } = {};
   if (body.action === 'reschedule' && typeof body.start === 'string') {
     result = await rescheduleLesson({ env, booking, lessonId: body.lessonId, start: body.start, now });
   } else if (body.action === 'count') {
     result = await countLesson(booking, body.lessonId, now);
   } else if (body.action === 'skip') {
     result = await moveLessonToEnd({ env, booking, lessonId: body.lessonId, now });
+  } else if (body.action === 'school-cancel') {
+    if (body.reason !== 'weather') return json({ error: 'invalid-reason' }, 400);
+    const weather = await cancelForWeather({
+      env,
+      booking,
+      lessonId: body.lessonId,
+      now,
+      start: typeof body.start === 'string' ? body.start : undefined,
+    });
+    result = weather;
+    if (!('error' in weather)) {
+      weatherExtra = 'offered' in weather ? { offered: weather.offered } : { placed: weather.placed, start: weather.start };
+    }
   } else {
     return json({ error: 'invalid-action' }, 400);
   }
@@ -56,10 +72,15 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   if (body.action === 'count') await syncBooking(env, result.booking);
   const token = await signToken(result.booking, secret);
   const origin = new URL(request.url).origin;
+  const weatherPolicy = body.action === 'school-cancel' || result.booking.lessons.some((lesson) => lesson.weatherOffer)
+    ? WEATHER_CANCELLATION_POLICY
+    : undefined;
   return json({
     token,
     booking: present(result.booking, now),
     policy: CANCELLATION_POLICY,
+    ...(weatherPolicy ? { weatherPolicy } : {}),
+    ...weatherExtra,
     manageUrl: `${origin}/booking/manage/?token=${encodeURIComponent(token)}`,
   });
 }

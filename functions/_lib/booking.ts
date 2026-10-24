@@ -16,6 +16,7 @@ import {
 import { isProductionSurface, type SquareEnv } from './square';
 import {
   CANCELLATION_POLICY,
+  WEATHER_CANCELLATION_POLICY,
   HOLD_MS,
   canReschedule,
   datesFrom,
@@ -29,7 +30,7 @@ import {
 } from './schedule';
 import { lessonsForItem, normalizeAddress, normalizeDob, normalizeEmail, normalizeName, normalizePhone, type ItemId } from './prices';
 
-export { CANCELLATION_POLICY };
+export { CANCELLATION_POLICY, WEATHER_CANCELLATION_POLICY };
 
 export const PREVIEW_BOOKING_KEY = 'preview-mock-booking-key';
 export const MAIL_FROM = 'info@safeswimmingschool.com';
@@ -41,6 +42,8 @@ export type Lesson = {
   start: string;
   end: string;
   status: LessonStatus;
+  /** Next open time offered after a school cold-weather cancellation. Absent once the lesson is placed. */
+  weatherOffer?: string;
 };
 
 export type Booking = {
@@ -429,14 +432,21 @@ export async function rescheduleLesson(input: {
   const now = input.now ?? new Date();
   const lesson = input.booking.lessons.find((item) => item.id === input.lessonId);
   if (!lesson || lesson.status !== 'scheduled') return { error: 'invalid-lesson' };
-  if (!canReschedule(lesson.start, now)) return { error: 'counts-as-taught' };
-  if (!isCanonicalSlot(input.start)) return { error: 'invalid-slot' };
+  const weather = Boolean(lesson.weatherOffer);
+  if (!weather && !canReschedule(lesson.start, now)) return { error: 'counts-as-taught' };
+  if (!isCanonicalSlot(input.start) || input.start === lesson.start) return { error: 'invalid-slot' };
   const taken = occupiedStarts(input.booking, lesson.id);
   if (taken.has(input.start)) return { error: 'invalid-slot' };
-  const open = new Set((await listSlots(input.env, now, 60)).filter((slot) => slot.state === 'open').map((slot) => slot.start));
-  if (!open.has(input.start) && input.start !== lesson.start) return { error: 'invalid-slot' };
+  if (weather) {
+    const open = await openStarts(input.env, [input.start], input.booking.poolAddress, now);
+    if (!open.has(input.start)) return { error: 'invalid-slot' };
+  } else {
+    const open = new Set((await listSlots(input.env, now, 60)).filter((slot) => slot.state === 'open').map((slot) => slot.start));
+    if (!open.has(input.start)) return { error: 'invalid-slot' };
+  }
   lesson.start = input.start;
   lesson.end = slotEnd(input.start);
+  delete lesson.weatherOffer;
   const changed = lessonEvents(input.booking).filter((event) => event.start === lesson.start);
   await publishSchedule(input.env, input.booking, changed);
   return { booking: input.booking };
@@ -445,6 +455,7 @@ export async function rescheduleLesson(input: {
 export async function countLesson(booking: Booking, lessonId: string, now = new Date()): Promise<{ booking: Booking } | { error: string }> {
   const lesson = booking.lessons.find((item) => item.id === lessonId);
   if (!lesson || lesson.status !== 'scheduled') return { error: 'invalid-lesson' };
+  if (lesson.weatherOffer) return { error: 'weather-not-taught' };
   if (canReschedule(lesson.start, now)) return { error: 'outside-24-hours' };
   lesson.status = 'taught';
   return { booking };
@@ -455,11 +466,12 @@ export async function moveLessonToEnd(input: {
   booking: Booking;
   lessonId: string;
   now?: Date;
+  allowInsideWindow?: boolean;
 }): Promise<{ booking: Booking; start: string } | { error: string }> {
   const now = input.now ?? new Date();
   const lesson = input.booking.lessons.find((item) => item.id === input.lessonId);
   if (!lesson || lesson.status !== 'scheduled') return { error: 'invalid-lesson' };
-  if (!canReschedule(lesson.start, now)) return { error: 'counts-as-taught' };
+  if (!lesson.weatherOffer && !input.allowInsideWindow && !canReschedule(lesson.start, now)) return { error: 'counts-as-taught' };
   const last = input.booking.lessons.filter((item) => item.status === 'scheduled').map((item) => item.start).sort().at(-1);
   if (!last) return { error: 'invalid-lesson' };
   const taken = occupiedStarts(input.booking, lesson.id);
@@ -483,7 +495,61 @@ export async function moveLessonToEnd(input: {
   if (!start) return { error: 'no-slot' };
   lesson.start = start;
   lesson.end = slotEnd(start);
+  delete lesson.weatherOffer;
   const changed = lessonEvents(input.booking).filter((event) => event.start === lesson.start);
   await publishSchedule(input.env, input.booking, changed);
   return { booking: input.booking, start };
+}
+
+const WEATHER_OFFER_DAYS = 21;
+
+async function nextAgreeableStart(env: BookingEnv, booking: Booking, lesson: Lesson, now: Date): Promise<string | null> {
+  const taken = occupiedStarts(booking, lesson.id);
+  taken.add(lesson.start);
+  const slots = await listSlots(env, now, WEATHER_OFFER_DAYS, booking.poolAddress);
+  const next = slots.find((slot) => slot.state === 'open' && !taken.has(slot.start));
+  return next?.start ?? null;
+}
+
+/** School cold-weather cancel. Never marks the lesson taught, including inside 24 hours. */
+export async function cancelForWeather(input: {
+  env: BookingEnv;
+  booking: Booking;
+  lessonId: string;
+  start?: string;
+  now?: Date;
+}): Promise<{ booking: Booking; offered: string } | { booking: Booking; placed: 'chosen' | 'end'; start: string } | { error: string }> {
+  const now = input.now ?? new Date();
+  const lesson = input.booking.lessons.find((item) => item.id === input.lessonId);
+  if (!lesson || lesson.status !== 'scheduled') return { error: 'invalid-lesson' };
+  if (input.start) {
+    const previous = lesson.weatherOffer;
+    lesson.weatherOffer = previous || input.start;
+    const moved = await rescheduleLesson({
+      env: input.env,
+      booking: input.booking,
+      lessonId: lesson.id,
+      start: input.start,
+      now,
+    });
+    if ('error' in moved) {
+      lesson.weatherOffer = previous;
+      return moved;
+    }
+    return { booking: moved.booking, placed: 'chosen', start: input.start };
+  }
+  const offered = await nextAgreeableStart(input.env, input.booking, lesson, now);
+  if (!offered) {
+    const moved = await moveLessonToEnd({
+      env: input.env,
+      booking: input.booking,
+      lessonId: lesson.id,
+      now,
+      allowInsideWindow: true,
+    });
+    if ('error' in moved) return moved;
+    return { booking: moved.booking, placed: 'end', start: moved.start };
+  }
+  lesson.weatherOffer = offered;
+  return { booking: input.booking, offered };
 }

@@ -4,6 +4,7 @@ export const DAY_START_MINUTES = 8 * 60;
 export const DAY_END_MINUTES = 19 * 60;
 export const HOLD_MS = 15 * 60 * 1000;
 export const CANCELLATION_POLICY = "Cancel at least 24 hours ahead to reschedule online. Cancellations within 24 hours count as a lesson taught. If you don't pick a new time, we'll add the lesson to the end of your package.";
+export const WEATHER_CANCELLATION_POLICY = "When the school cancels a lesson for cold weather, it does not count as a lesson taught. We'll offer the next agreeable time. If you don't choose one, or none is open, we'll add the lesson to the end of your package.";
 
 const BLOCKED_NAMES = ['asher', 'gavin', 'malachi'];
 
