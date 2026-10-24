@@ -1,7 +1,6 @@
 /** Server-side prices. The browser may send ids and quantities only. */
 
 export const SQUARE_VERSION = '2026-09-16';
-export const SQUARE_SANDBOX_ORIGIN = 'https://connect.squareupsandbox.com';
 export const REGISTRATION_ID = 'registration-annual';
 export const REGISTRATION_NAME = 'Annual Registration';
 

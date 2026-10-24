@@ -1,19 +1,21 @@
+import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { onRequestPost } from '../functions/api/checkout';
+import { onRequestPost as webhookPost } from '../functions/api/square-webhook';
 import { buildCreatePaymentLinkBody } from '../functions/_lib/payment-link';
 import { CATALOG, priceClientLines, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
-import { SQUARE_SANDBOX_ORIGIN } from '../functions/_lib/prices';
-import { checkoutConfigured, squarePost } from '../functions/_lib/square';
+import { checkoutAllowed, checkoutConfigured, SQUARE_PRODUCTION_ORIGIN, SQUARE_SANDBOX_ORIGIN, squarePost } from '../functions/_lib/square';
 import { eventSummary, verifySquareSignature, webhookNotificationUrl } from '../functions/_lib/webhook';
 
 const env = {
-  SQUARE_ENV: 'sandbox',
+  SQUARE_ENVIRONMENT: 'sandbox',
   SQUARE_ACCESS_TOKEN: 'sandbox-token',
   SQUARE_LOCATION_ID: 'LOC123',
   SQUARE_WEBHOOK_SIGNATURE_KEY: 'sig-key',
+  CF_PAGES_BRANCH: 'booking-payments-live',
 };
 
 afterEach(() => {
@@ -168,22 +170,45 @@ describe('CreatePaymentLink body', () => {
 });
 
 describe('Square host', () => {
-  it('posts only to the sandbox host with the current Square-Version', async () => {
+  it('posts to the sandbox host when SQUARE_ENVIRONMENT is sandbox', async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ payment_link: { url: 'https://sandbox.square.link/u/abc' } }), { status: 200 }));
     await squarePost(env, '/v2/online-checkout/payment-links', { idempotency_key: 'k' }, fetchImpl);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [url, init] = fetchImpl.mock.calls[0];
     expect(url).toBe(`${SQUARE_SANDBOX_ORIGIN}/v2/online-checkout/payment-links`);
     expect(new Headers(init?.headers).get('Square-Version')).toBe('2026-09-16');
+    expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer sandbox-token');
     expect(String(url)).not.toContain('connect.squareup.com');
   });
 
-  it('refuses a non-sandbox environment before any request', async () => {
+  it('posts to the production host when SQUARE_ENVIRONMENT is production', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ payment_link: { url: 'https://square.link/u/live' } }), { status: 200 }));
+    await squarePost({ ...env, SQUARE_ENVIRONMENT: 'production', SQUARE_ACCESS_TOKEN: 'live-token' }, '/v2/online-checkout/payment-links', { idempotency_key: 'k' }, fetchImpl);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe(`${SQUARE_PRODUCTION_ORIGIN}/v2/online-checkout/payment-links`);
+    expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer live-token');
+  });
+
+  it('refuses an unknown environment before any request', async () => {
     const fetchImpl = vi.fn();
-    await expect(squarePost({ ...env, SQUARE_ENV: 'production' }, '/v2/online-checkout/payment-links', {}, fetchImpl)).rejects.toThrow(/503/);
+    await expect(squarePost({ ...env, SQUARE_ENVIRONMENT: 'test' }, '/v2/online-checkout/payment-links', {}, fetchImpl)).rejects.toThrow(/503/);
+    await expect(squarePost({ ...env, SQUARE_ENVIRONMENT: undefined }, '/v2/online-checkout/payment-links', {}, fetchImpl)).rejects.toThrow(/503/);
     expect(fetchImpl).not.toHaveBeenCalled();
-    expect(checkoutConfigured({ ...env, SQUARE_ENV: 'production' })).toBe(false);
+    expect(checkoutConfigured({ ...env, SQUARE_ENVIRONMENT: 'production' })).toBe(true);
     expect(checkoutConfigured({ ...env, SQUARE_ACCESS_TOKEN: '' })).toBe(false);
+    expect(checkoutConfigured({ ...env, SQUARE_LOCATION_ID: '' })).toBe(false);
+    expect(checkoutConfigured({})).toBe(false);
+  });
+
+  it('keeps sandbox off the production branch and live payments off a preview', () => {
+    expect(checkoutAllowed(env, 'https://booking-payments-live.safe-swimming-school.pages.dev/api/checkout')).toBe(true);
+    expect(checkoutAllowed({ ...env, CF_PAGES_BRANCH: 'main' }, 'https://booking-payments-live.safe-swimming-school.pages.dev/api/checkout')).toBe(false);
+    expect(checkoutAllowed(env, 'https://safeswimmingschool.com/api/checkout')).toBe(false);
+    expect(checkoutAllowed(env, 'https://www.safeswimmingschool.com/api/checkout')).toBe(false);
+    const live = { ...env, SQUARE_ENVIRONMENT: 'production', CF_PAGES_BRANCH: 'main' };
+    expect(checkoutAllowed(live, 'https://safeswimmingschool.com/api/checkout')).toBe(true);
+    expect(checkoutAllowed(live, 'https://safe-swimming-school.pages.dev/api/checkout')).toBe(true);
+    expect(checkoutAllowed({ ...env, SQUARE_ENVIRONMENT: 'production' }, 'https://preview.example/api/checkout')).toBe(false);
   });
 });
 
@@ -194,7 +219,7 @@ describe('checkout endpoint', () => {
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.5' },
       body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
     });
-    const response = await onRequestPost({ request, env: { SQUARE_ENV: 'sandbox' } });
+    const response = await onRequestPost({ request, env: { SQUARE_ENVIRONMENT: 'sandbox', CF_PAGES_BRANCH: 'booking-payments-live' } });
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: 'checkout-unavailable' });
   });
@@ -226,6 +251,7 @@ describe('checkout endpoint', () => {
       { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
+    expect(sent.idempotency_key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(sent.order.metadata).toEqual({ source: 'website-cart' });
     expect(sent.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
     expect(sent.payment_note).toBe('Pat Lee');
@@ -248,6 +274,44 @@ describe('checkout endpoint', () => {
     expect(response.status).toBe(400);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
+
+  it('returns 503 when sandbox credentials are on the production branch', async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal('fetch', fetchImpl);
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.8' },
+      body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+    });
+    const response = await onRequestPost({ request, env: { ...env, CF_PAGES_BRANCH: 'main' } });
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'checkout-unavailable' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 when Square errors so the page can show the Pay links', async () => {
+    const fetchImpl = vi.fn(async () => new Response('nope', { status: 500 }));
+    vi.stubGlobal('fetch', fetchImpl);
+    const request = new Request('https://preview.example/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.9' },
+      body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+    });
+    const response = await onRequestPost({ request, env });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+  });
+
+  it('shows the existing Pay links when checkout is unavailable or Square errors', () => {
+    const script = readFileSync(new URL('../public/js/cart.js', import.meta.url), 'utf8');
+    const page = readFileSync(new URL('../src/pages/cart.astro', import.meta.url), 'utf8');
+    const links = readFileSync(new URL('../src/data/payment-links.ts', import.meta.url), 'utf8');
+    expect(script).toContain('response.status === 503 || response.status === 502');
+    expect(script).toContain('fallback.hidden = false');
+    expect(page).toContain('id="sss-pay-fallback"');
+    expect(page).toContain('You can still pay with these Square payment links.');
+    expect(links).toContain('https://square.link/u/');
+  });
 });
 
 describe('webhook signature', () => {
@@ -260,6 +324,30 @@ describe('webhook signature', () => {
     expect(await verifySquareSignature({ rawBody, signatureHeader: signatureHeader.slice(0, -2) + 'xx', signatureKey, notificationUrl })).toBe(false);
     expect(await verifySquareSignature({ rawBody, signatureHeader: 'short', signatureKey, notificationUrl })).toBe(false);
     expect(await verifySquareSignature({ rawBody: rawBody + ' ', signatureHeader, signatureKey, notificationUrl })).toBe(false);
+  });
+
+  it('accepts sandbox or production webhooks and rejects a missing environment', async () => {
+    const rawBody = '{"hello":"world"}';
+    const signatureHeader = createHmac('sha256', 'asdf1234')
+      .update('https://example.com/api/square-webhook' + rawBody)
+      .digest('base64');
+    const makeRequest = () => new Request('https://example.com/api/square-webhook', {
+      method: 'POST',
+      headers: { 'x-square-hmacsha256-signature': signatureHeader },
+      body: rawBody,
+    });
+    const missing = await webhookPost({ request: makeRequest(), env: { SQUARE_WEBHOOK_SIGNATURE_KEY: 'asdf1234' } });
+    expect(missing.status).toBe(401);
+    const sandbox = await webhookPost({
+      request: makeRequest(),
+      env: { SQUARE_ENVIRONMENT: 'sandbox', SQUARE_WEBHOOK_SIGNATURE_KEY: 'asdf1234' },
+    });
+    expect(sandbox.status).toBe(200);
+    const production = await webhookPost({
+      request: makeRequest(),
+      env: { SQUARE_ENVIRONMENT: 'production', SQUARE_WEBHOOK_SIGNATURE_KEY: 'asdf1234' },
+    });
+    expect(production.status).toBe(200);
   });
 
   it('builds the notification URL from the request origin and the webhook path', () => {
