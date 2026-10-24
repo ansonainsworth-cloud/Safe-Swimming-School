@@ -375,6 +375,34 @@ describe('swim calendar rules', () => {
     expect(afterPersonal.find((slot) => slot.start === morning[1])?.state).toBe('open');
   });
 
+  it('still blocks a slot when the busy lesson started the day before or spans several days', async () => {
+    const calendar = getCalendar(env) as MockCalendar;
+    const monday = slotStartsOnDate(2026, 10, 26);
+    calendar.saved.push({
+      start: '2026-10-26T03:30:00.000Z',
+      end: monday[1],
+      title: 'Alex Jordan',
+      location: '200 Other Road, Jupiter, FL',
+      description: 'Parent: Pat',
+      attendeeEmail: 'pat@example.com',
+      child: 'Alex Jordan',
+    });
+    calendar.saved.push({
+      start: '2026-10-27T04:00:00.000Z',
+      end: '2026-10-29T04:00:00.000Z',
+      title: 'Alex Jordan',
+      location: '200 Other Road, Jupiter, FL',
+      description: 'Parent: Pat',
+      attendeeEmail: 'pat@example.com',
+      child: 'Alex Jordan',
+    });
+    const slots = await listSlots(env, now, 21, family.poolAddress);
+    expect(slots.find((slot) => slot.start === monday[0])?.state).toBe('busy');
+    expect(slots.find((slot) => slot.start === slotStartsOnDate(2026, 10, 27)[0])?.state).toBe('busy');
+    expect(slots.find((slot) => slot.start === slotStartsOnDate(2026, 10, 28)[4])?.state).toBe('busy');
+    expect(slots.find((slot) => slot.start === slotStartsOnDate(2026, 10, 29)[0])?.state).toBe('open');
+  });
+
   it('sends a booking notice by default and writes the swim calendar event only in direct mode', async () => {
     const slot = slotStartsOnDate(2026, 10, 27)[4];
     const issued = await issueHold({

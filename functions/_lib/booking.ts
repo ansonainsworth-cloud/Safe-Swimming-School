@@ -1,10 +1,13 @@
 import { getCalendar, type CalendarAdapter } from './calendar';
-import { createDriveTime } from './drive-time';
+import { createDriveTime, type DriveTimeAdapter } from './drive-time';
 import {
   bookingEventMode,
   buildBookingNotice,
   buildLessonEvents,
   deliverNotice,
+  etDayKey,
+  eventsOnDay,
+  indexBusyIntervals,
   isPackageSchedule,
   isSlotBlocked,
   noticeTarget,
@@ -183,19 +186,37 @@ function calendarOf(env: BookingEnv): CalendarAdapter {
   return getCalendar(env);
 }
 
+function rememberDrive(drive: DriveTimeAdapter): DriveTimeAdapter {
+  const cache = new Map<string, Promise<number>>();
+  return {
+    estimateMinutes(fromAddress, toAddress) {
+      const key = `${fromAddress}\n${toAddress}`;
+      const existing = cache.get(key);
+      if (existing) return existing;
+      const pending = drive.estimateMinutes(fromAddress, toAddress);
+      cache.set(key, pending);
+      return pending;
+    },
+  };
+}
+
 export async function listSlots(env: BookingEnv, now = new Date(), days = 14, poolAddress?: string): Promise<Array<{ start: string; end: string; state: 'open' | 'busy' }>> {
   const dates = datesFrom(now, days);
-  const starts = dates.flatMap((date) => slotStartsOnDate(date.year, date.month, date.day));
-  const from = starts[0] ?? now.toISOString();
-  const to = starts.length ? slotEnd(starts[starts.length - 1]) : now.toISOString();
+  const dated = dates.flatMap((date) => {
+    const day = `${date.year}-${date.month}-${date.day}`;
+    return slotStartsOnDate(date.year, date.month, date.day).map((start) => ({ start, day }));
+  });
+  const from = dated[0]?.start ?? now.toISOString();
+  const to = dated.length ? slotEnd(dated[dated.length - 1].start) : now.toISOString();
   const busy = await calendarOf(env).busyIntervals(from, to);
   const held = new Set(await getStore().activeHoldStarts(now));
-  const drive = createDriveTime(env);
-  const upcoming = starts.filter((start) => Date.parse(start) > now.getTime());
-  const states = await Promise.all(upcoming.map(async (start) => {
-    const end = slotEnd(start);
-    const blocked = held.has(start) || await isSlotBlocked(start, end, poolAddress, busy, drive);
-    return { start, end, state: blocked ? 'busy' as const : 'open' as const };
+  const drive = rememberDrive(createDriveTime(env));
+  const indexed = indexBusyIntervals(busy);
+  const upcoming = dated.filter((slot) => Date.parse(slot.start) > now.getTime());
+  const states = await Promise.all(upcoming.map(async (slot) => {
+    const end = slotEnd(slot.start);
+    const blocked = held.has(slot.start) || await isSlotBlocked(slot.start, end, poolAddress, eventsOnDay(indexed, slot.day), drive);
+    return { start: slot.start, end, state: blocked ? 'busy' as const : 'open' as const };
   }));
   return states;
 }
@@ -422,12 +443,13 @@ export async function moveLessonToEnd(input: {
   const busy = await calendarOf(input.env).busyIntervals(last, new Date(Date.parse(last) + 370 * 24 * 60 * 60 * 1000).toISOString());
   for (const interval of busy) taken.add(interval.start);
   const drive = createDriveTime(input.env);
+  const indexed = indexBusyIntervals(busy);
   let cursor = last;
   let start: string | null = null;
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const candidate = nextUsualSlot(cursor, lesson.start, taken);
     if (!candidate) return { error: 'no-slot' };
-    const blocked = await isSlotBlocked(candidate, slotEnd(candidate), input.booking.poolAddress, busy, drive);
+    const blocked = await isSlotBlocked(candidate, slotEnd(candidate), input.booking.poolAddress, eventsOnDay(indexed, etDayKey(candidate)), drive);
     if (!blocked) {
       start = candidate;
       break;

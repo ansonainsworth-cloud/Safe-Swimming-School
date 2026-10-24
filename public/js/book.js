@@ -237,6 +237,8 @@
         itemId: body.itemId
       }));
       location.href = '/cart/';
+    }).catch(function () {
+      message.textContent = 'We couldn\'t save those times. Try again.';
     });
   });
 })();

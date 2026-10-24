@@ -221,9 +221,50 @@ export function googleEventInsert(calendarId: string, event: BuiltLessonEvent): 
 
 export type LocatedInterval = { start: string; end: string; location?: string };
 
-function dayKey(iso: string): string {
+/** Events longer than this are checked on every slot. Shorter events are indexed by the ET days they touch. */
+const INDEX_SPAN_MS = 36 * 60 * 60 * 1000;
+
+export type BusyIndex = {
+  byDay: Map<string, LocatedInterval[]>;
+  spanning: LocatedInterval[];
+};
+
+export function etDayKey(iso: string): string {
   const parts = etParts(new Date(iso));
   return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function dayKey(iso: string): string {
+  return etDayKey(iso);
+}
+
+export function indexBusyIntervals(events: LocatedInterval[]): BusyIndex {
+  const byDay = new Map<string, LocatedInterval[]>();
+  const spanning: LocatedInterval[] = [];
+  for (const event of events) {
+    const startMs = Date.parse(event.start);
+    const endMs = Date.parse(event.end);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
+    if (endMs - startMs > INDEX_SPAN_MS) {
+      spanning.push(event);
+      continue;
+    }
+    const keys = new Set<string>([dayKey(event.start)]);
+    keys.add(dayKey(new Date(endMs - 1).toISOString()));
+    for (const key of keys) {
+      const list = byDay.get(key) ?? [];
+      list.push(event);
+      byDay.set(key, list);
+    }
+  }
+  return { byDay, spanning };
+}
+
+/** Day key matches `indexBusyIntervals`: ET year-month-day, month and day not zero-padded. */
+export function eventsOnDay(index: BusyIndex, day: string): LocatedInterval[] {
+  const local = index.byDay.get(day) ?? [];
+  if (!index.spanning.length) return local;
+  return local.concat(index.spanning);
 }
 
 /** Overlap blocks the slot. Drive time applies only between lessons that have pool addresses, and not before the day's first lesson. */
