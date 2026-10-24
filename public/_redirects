@@ -1,0 +1,65 @@
+# Safe Swimming School: 301 redirect map carried over from WordPress (mu-plugin + Yoast/WP redirects), checked live 2026-10-21.
+# Format: <old path> <new path> <status>
+/jupiter /locations/jupiter/ 301
+/jupiter/ /locations/jupiter/ 301
+/service/jupiter /locations/jupiter/ 301
+/service/jupiter/ /locations/jupiter/ 301
+/palm-beach-gardens /locations/palm-beach-gardens/ 301
+/palm-beach-gardens/ /locations/palm-beach-gardens/ 301
+/service/palm-beach-gardens /locations/palm-beach-gardens/ 301
+/service/palm-beach-gardens/ /locations/palm-beach-gardens/ 301
+/north-palm-beach /locations/north-palm-beach/ 301
+/north-palm-beach/ /locations/north-palm-beach/ 301
+/service/north-palm-beach /locations/north-palm-beach/ 301
+/service/north-palm-beach/ /locations/north-palm-beach/ 301
+/tequesta /locations/tequesta/ 301
+/tequesta/ /locations/tequesta/ 301
+/service/tequesta /locations/tequesta/ 301
+/service/tequesta/ /locations/tequesta/ 301
+/jupiter-farms /locations/jupiter-farms/ 301
+/jupiter-farms/ /locations/jupiter-farms/ 301
+/service/jupiter-farms /locations/jupiter-farms/ 301
+/service/jupiter-farms/ /locations/jupiter-farms/ 301
+/westlake /locations/westlake/ 301
+/westlake/ /locations/westlake/ 301
+/service/westlake /locations/westlake/ 301
+/service/westlake/ /locations/westlake/ 301
+/private-swim-lessons-palm-beach-gardens-fl /locations/palm-beach-gardens/ 301
+/private-swim-lessons-palm-beach-gardens-fl/ /locations/palm-beach-gardens/ 301
+/swim-lessons-north-palm-beach-fl /locations/north-palm-beach/ 301
+/swim-lessons-north-palm-beach-fl/ /locations/north-palm-beach/ 301
+/toddler-swim-lessons-jupiter-fl /locations/jupiter/ 301
+/toddler-swim-lessons-jupiter-fl/ /locations/jupiter/ 301
+/home-new / 301
+/home-new/ / 301
+/about /about-us/ 301
+/about/ /about-us/ 301
+/contact /contact-us/ 301
+/contact/ /contact-us/ 301
+/sitemap_index.xml /sitemap.xml 301
+/page-sitemap.xml /sitemap.xml 301
+/post-sitemap.xml /sitemap.xml 301
+/category-sitemap.xml /sitemap.xml 301
+/wp-sitemap.xml /sitemap.xml 301
+
+# GSC map 2026-10-22. Targets are Astro routes only. www and http host rules are not here
+# (Pages _redirects cannot match a host); set those in the Cloudflare dashboard at cutover.
+# /team/*, /portfolio-item/*, and /footer/ are 410s from the Pages Function, not this file.
+/houston.html / 301
+/south-florida.html / 301
+/enroll.html /enroll/ 301
+/about-us.html /about-us/ 301
+/contact-us.html /contact-us/ 301
+/services.html /service/ 301
+/author/safeswimming /about-us/ 301
+/author/safeswimming/ /about-us/ 301
+/category/uncategorized /blog/ 301
+/category/uncategorized/ /blog/ 301
+/tag /blog/ 301
+/tag/ /blog/ 301
+/testimonial / 301
+/testimonial/ / 301
+/palm-beach-county.html /locations/ 301
+/site-map.html / 301
+/tag/* /blog/ 301
+/testimonial/* / 301

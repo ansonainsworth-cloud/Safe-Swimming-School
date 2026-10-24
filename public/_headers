@@ -1,0 +1,66 @@
+# Noindex list carried over from Yoast (22 junk URLs from 2026-10-06, plus /footer/ and archive patterns).
+# These pages are not built, so they return 404; the header is a belt-and-braces signal.
+/portfolio-item/boots-are-made-for-walking/
+  X-Robots-Tag: noindex, follow
+/portfolio-item/ipads-are-fun-for-stuff/
+  X-Robots-Tag: noindex, follow
+/portfolio-item/responsive-design/
+  X-Robots-Tag: noindex, follow
+/portfolio-item/some-models-are-cute/
+  X-Robots-Tag: noindex, follow
+/portfolio-item/dont-forget-to-eat/
+  X-Robots-Tag: noindex, follow
+/portfolio-item/texting-is-fun/
+  X-Robots-Tag: noindex, follow
+/team/matt/
+  X-Robots-Tag: noindex, follow
+/team/melissa-robertson/
+  X-Robots-Tag: noindex, follow
+/team/brian-brown/
+  X-Robots-Tag: noindex, follow
+/team/shaina-johnson/
+  X-Robots-Tag: noindex, follow
+/team/aiden-cooper/
+  X-Robots-Tag: noindex, follow
+/team/brian-brown-2/
+  X-Robots-Tag: noindex, follow
+/testimonial/janet-d/
+  X-Robots-Tag: noindex, follow
+/testimonial/nikki-h/
+  X-Robots-Tag: noindex, follow
+/testimonial/jocelyn-p/
+  X-Robots-Tag: noindex, follow
+/tag/child-safety/
+  X-Robots-Tag: noindex, follow
+/tag/drowning-prevention/
+  X-Robots-Tag: noindex, follow
+/tag/palm-beach/
+  X-Robots-Tag: noindex, follow
+/tag/swim-lessons/
+  X-Robots-Tag: noindex, follow
+/tag/water-safety/
+  X-Robots-Tag: noindex, follow
+/category/uncategorized/
+  X-Robots-Tag: noindex, follow
+/author/safeswimming/
+  X-Robots-Tag: noindex, follow
+/footer/
+  X-Robots-Tag: noindex, follow
+/cart/
+  X-Robots-Tag: noindex, nofollow
+/checkout/thanks/
+  X-Robots-Tag: noindex, nofollow
+/portfolio-item/*
+  X-Robots-Tag: noindex, follow
+/team/*
+  X-Robots-Tag: noindex, follow
+/testimonial/*
+  X-Robots-Tag: noindex, follow
+/tag/*
+  X-Robots-Tag: noindex, follow
+/author/*
+  X-Robots-Tag: noindex, follow
+/wp-content/*
+  Cache-Control: public, max-age=604800
+/images/*
+  Cache-Control: public, max-age=604800

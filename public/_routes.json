@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "include": [
+    "/team",
+    "/team/*",
+    "/portfolio-item",
+    "/portfolio-item/*",
+    "/footer",
+    "/footer/*",
+    "/api/checkout",
+    "/api/square-webhook"
+  ],
+  "exclude": []
+}

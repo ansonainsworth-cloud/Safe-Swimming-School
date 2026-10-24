@@ -1,0 +1,5 @@
+---
+import { cartAddHtml } from '../data/cart-ui';
+const { id } = Astro.props as { id: string };
+---
+<Fragment set:html={cartAddHtml(id)} />

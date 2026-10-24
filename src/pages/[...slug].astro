@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import pages from '../data/migrated-pages.json';
+import { payButtonHtml, paymentLink, rewriteBookingButtons } from '../data/payment-links';
+import { cartAddHtml } from '../data/cart-ui';
+const bodies = import.meta.glob('../content/pages/*.html', { query: '?raw', import: 'default', eager: true });
+const pricingCartIds: Record<string, string> = {
+  '8 lessons': 'pkg-8',
+  '12 lessons': 'pkg-12',
+  '20 lessons': 'pkg-20',
+  Trial: 'trial',
+};
+const pricingPayButtons: Array<[string, string]> = [
+  ['<li><strong>8 lessons:</strong> $520 ($65 per lesson)</li>', '8 lessons'],
+  ['<li><strong>12 lessons:</strong> $720 ($60 per lesson)</li>', '12 lessons'],
+  ['<li><strong>20 lessons:</strong> $1,100 ($55 per lesson)</li>', '20 lessons'],
+  ['<li><strong>Annual registration fee:</strong> $35 per year, listed separately</li>', 'Registration'],
+  ['<li><strong>Single lesson:</strong> $75 (can be credited toward a package)</li>', 'Trial'],
+];
+export function getStaticPaths() {
+  return pages.map((p) => ({
+    params: { slug: p.path === '/' ? undefined : p.path.replace(/^\/|\/$/g, '') },
+    props: { page: p },
+  }));
+}
+const { page } = Astro.props;
+let body = rewriteBookingButtons(bodies[`../content/pages/${page.slug}.html`]);
+if (page.slug === 'pricing') {
+  for (const [markup, label] of pricingPayButtons) {
+    if (!body.includes(markup)) throw new Error(`Pricing page is missing the ${label} line`);
+    const cart = pricingCartIds[label] ? ` ${cartAddHtml(pricingCartIds[label])}` : '';
+    body = body.replace(markup, markup.replace('</li>', `<br>${payButtonHtml(paymentLink(label))}${cart}</li>`));
+  }
+}
+---
+<Base title={page.title} description={page.description} path={page.path} bodyClass={page.bodyClass} pageStyle={page.pageStyle} ldjson={page.ldjson} robots={page.robots}>
+  <Fragment set:html={body} />
+</Base>
