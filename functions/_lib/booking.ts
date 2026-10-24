@@ -19,11 +19,13 @@ import {
   HOLD_MS,
   canReschedule,
   datesFrom,
+  etParts,
   isCanonicalSlot,
   nextUsualSlot,
   slotEnd,
   slotStartsOnDate,
   usesBlockedName,
+  zonedTimeToUtc,
 } from './schedule';
 import { lessonsForItem, normalizeAddress, normalizeDob, normalizeEmail, normalizeName, normalizePhone, type ItemId } from './prices';
 
@@ -221,6 +223,29 @@ export async function listSlots(env: BookingEnv, now = new Date(), days = 14, po
   return states;
 }
 
+/** Checks only the requested lessons, with busy time for each of those ET days. */
+async function openStarts(env: BookingEnv, starts: string[], poolAddress: string | undefined, now: Date): Promise<Set<string>> {
+  const upcoming = starts.filter((start) => Date.parse(start) > now.getTime());
+  if (!upcoming.length) return new Set();
+  const earliest = upcoming.reduce((min, start) => (Date.parse(start) < Date.parse(min) ? start : min));
+  const latest = upcoming.reduce((max, start) => (Date.parse(start) > Date.parse(max) ? start : max));
+  const first = etParts(new Date(earliest));
+  const last = etParts(new Date(latest));
+  const from = zonedTimeToUtc(first.year, first.month, first.day, 0, 0).toISOString();
+  const to = zonedTimeToUtc(last.year, last.month, last.day + 1, 0, 0).toISOString();
+  const busy = await calendarOf(env).busyIntervals(from, to);
+  const held = new Set(await getStore().activeHoldStarts(now));
+  const drive = rememberDrive(createDriveTime(env));
+  const indexed = indexBusyIntervals(busy);
+  const open = new Set<string>();
+  for (const start of upcoming) {
+    const end = slotEnd(start);
+    const blocked = held.has(start) || await isSlotBlocked(start, end, poolAddress, eventsOnDay(indexed, etDayKey(start)), drive);
+    if (!blocked) open.add(start);
+  }
+  return open;
+}
+
 export async function issueHold(input: {
   env: BookingEnv;
   requestUrl: string;
@@ -259,9 +284,7 @@ export async function issueHold(input: {
   if (new Set(input.slots).size !== input.slots.length) return { error: 'invalid-slot' };
   if (perItem > 1 && !isPackageSchedule(input.slots, Boolean(sibling))) return { error: 'invalid-slot' };
   const now = input.now ?? new Date();
-  const latest = input.slots.reduce((max, start) => Math.max(max, Date.parse(start)), now.getTime());
-  const days = Math.min(160, Math.max(14, Math.ceil((latest - now.getTime()) / (24 * 60 * 60 * 1000)) + 3));
-  const open = new Set((await listSlots(input.env, now, days, poolAddress)).filter((slot) => slot.state === 'open').map((slot) => slot.start));
+  const open = await openStarts(input.env, input.slots, poolAddress, now);
   for (const start of input.slots) {
     if (!isCanonicalSlot(start) || !open.has(start)) return { error: 'invalid-slot' };
   }
