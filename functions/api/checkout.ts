@@ -2,7 +2,7 @@ import { normalizeEmail, normalizeName, normalizePhone, priceClientLines, valida
 import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { allowCheckout } from '../_lib/rate-limit';
 import { decideRegistration } from '../_lib/registration';
-import { checkoutConfigured, createSquareLookup, squarePost, type SquareEnv } from '../_lib/square';
+import { checkoutAllowed, createSquareLookup, squarePost, type SquareEnv } from '../_lib/square';
 
 type PagesContext = { request: Request; env: SquareEnv };
 
@@ -19,7 +19,7 @@ function json(data: unknown, status: number): Response {
 export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   if (!allowCheckout(ip)) return json({ error: 'too-many-requests' }, 429);
-  if (!checkoutConfigured(env)) return json({ error: 'checkout-unavailable' }, 503);
+  if (!checkoutAllowed(env, request.url)) return json({ error: 'checkout-unavailable' }, 503);
 
   let payload: unknown;
   try {

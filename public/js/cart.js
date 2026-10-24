@@ -158,7 +158,7 @@
           buyer: buyer
         })
       }).then(function (response) {
-        if (response.status === 503) {
+        if (response.status === 503 || response.status === 502) {
           if (fallback) fallback.hidden = false;
           return null;
         }
@@ -186,8 +186,7 @@
           window.location.href = result.data.url;
         });
       }).catch(function () {
-        message.hidden = false;
-        message.textContent = 'We couldn’t start checkout. Please try again.';
+        if (fallback) fallback.hidden = false;
       }).finally(function () {
         button.disabled = read().length === 0;
       });
