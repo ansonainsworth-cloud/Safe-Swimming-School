@@ -7,7 +7,7 @@ const path = '/cart/';
 const title = 'Cart | Safe Swimming School';
 const description = 'Review private lesson packages and water aerobics classes before checkout.';
 ---
-<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} checkoutAnalytics={true} {...pageChrome}>
 <PageShell h1="Cart">
 <div id="sss-cart-root"><p>Your cart is empty. See <a href="/pricing/">lesson packages</a> or <a href="/water-aerobics/">water aerobics</a>.</p></div>
 <form id="sss-checkout-form" class="sss-cart-form" method="post" action="/api/checkout">

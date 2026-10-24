@@ -42,6 +42,32 @@
     if (el) el.textContent = String(count(items || read()));
   }
 
+  function trackBeginCheckout(items, done) {
+    var cents = 0;
+    for (var i = 0; i < items.length; i++) {
+      var item = itemById(items[i].id);
+      if (item) cents += item.priceCents * items[i].quantity;
+    }
+    var finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      if (typeof done === 'function') done();
+    }
+    if (typeof window.gtag !== 'function') {
+      finish();
+      return;
+    }
+    window.gtag('event', 'begin_checkout', {
+      currency: 'USD',
+      value: cents / 100,
+      transport_type: 'beacon',
+      event_callback: finish,
+      event_timeout: 800
+    });
+    window.setTimeout(finish, 1000);
+  }
+
   function money(cents) {
     return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
@@ -147,6 +173,7 @@
           return;
         }
         if (result.data.registrationReason === 'lookup-error') {
+          trackBeginCheckout(items);
           message.hidden = false;
           message.textContent = 'We added the $35 annual registration fee because we couldn’t confirm a registration from the last 12 months. If you already paid it this year, we can refund it. ';
           var continueLink = document.createElement('a');
@@ -155,7 +182,9 @@
           message.appendChild(continueLink);
           return;
         }
-        window.location.href = result.data.url;
+        trackBeginCheckout(items, function () {
+          window.location.href = result.data.url;
+        });
       }).catch(function () {
         message.hidden = false;
         message.textContent = 'We couldn’t start checkout. Please try again.';
