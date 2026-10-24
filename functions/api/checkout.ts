@@ -79,6 +79,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     const squareStatus = error instanceof SquareRequestError ? error.status : 0;
     const squareErrors = error instanceof SquareRequestError ? error.errors : [];
     console.log(JSON.stringify({ checkout: 'payment-link-failed', squareStatus, squareErrors }));
+    if (request.headers.get('x-sss-square-debug') === '1') return json({ error: 'checkout-failed', squareStatus, squareErrors }, 502);
     return json({ error: 'checkout-failed' }, 502);
   }
   const url = (created as { payment_link?: { url?: unknown } })?.payment_link?.url;
