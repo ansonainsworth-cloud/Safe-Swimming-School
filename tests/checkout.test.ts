@@ -308,7 +308,7 @@ describe('checkout endpoint', () => {
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+    expect(await response.json()).toMatchObject({ error: 'checkout-failed' });
   });
 
   it('shows the existing Pay links when checkout is unavailable or Square errors', () => {

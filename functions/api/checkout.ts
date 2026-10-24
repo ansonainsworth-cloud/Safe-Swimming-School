@@ -4,7 +4,7 @@ import { json } from '../_lib/http';
 import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { lessonsForLines, normalizeEmail, normalizeName, normalizePhone, priceClientLines, validateClientItems } from '../_lib/prices';
 import { allowCheckout } from '../_lib/rate-limit';
-import { checkoutAllowed, isProductionSurface, squarePost } from '../_lib/square';
+import { checkoutAllowed, isProductionSurface, squarePost, SquareRequestError } from '../_lib/square';
 
 type PagesContext = { request: Request; env: BookingEnv };
 
@@ -74,10 +74,12 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   let created: unknown;
   try {
     created = await squarePost(env, '/v2/online-checkout/payment-links', paymentBody);
-  } catch {
+  } catch (error) {
     if (hold) await releaseHold(hold.id);
-    console.log(JSON.stringify({ checkout: 'payment-link-failed' }));
-    return json({ error: 'checkout-failed' }, 502);
+    const squareStatus = error instanceof SquareRequestError ? error.status : 0;
+    const squareErrors = error instanceof SquareRequestError ? error.errors : [];
+    console.log(JSON.stringify({ checkout: 'payment-link-failed', squareStatus, squareErrors }));
+    return json({ error: 'checkout-failed', squareStatus, squareErrors }, 502);
   }
   const url = (created as { payment_link?: { url?: unknown } })?.payment_link?.url;
   if (typeof url !== 'string' || !url.startsWith('https://')) {

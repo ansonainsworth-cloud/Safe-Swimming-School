@@ -14,12 +14,25 @@ export type SquareEnv = {
   CF_PAGES_BRANCH?: string;
 };
 
+export type SquareErrorInfo = { status: number; errors: string[] };
+
 export class SquareRequestError extends Error {
   status: number;
-  constructor(status: number) {
+  errors: string[];
+  constructor(status: number, errors: string[] = []) {
     super(`Square request failed (${status})`);
     this.name = 'SquareRequestError';
     this.status = status;
+    this.errors = errors;
+  }
+}
+
+async function squareErrorInfo(response: Response): Promise<string[]> {
+  try {
+    const body = await response.json() as { errors?: Array<{ category?: string; code?: string; field?: string; detail?: string }> };
+    return (body.errors ?? []).slice(0, 5).map((error) => [error.category, error.code, error.field, error.detail].filter(Boolean).join(' '));
+  } catch {
+    return [];
   }
 }
 
@@ -67,7 +80,7 @@ export async function squarePost(env: SquareEnv, path: string, body: unknown, fe
   const environment = squareEnvironment(env);
   if (!environment) throw new SquareRequestError(503);
   if (!path.startsWith('/v2/') || path.includes('://')) throw new SquareRequestError(400);
-  const token = env.SQUARE_ACCESS_TOKEN;
+  const token = env.SQUARE_ACCESS_TOKEN?.trim();
   if (!token) throw new SquareRequestError(503);
   const response = await fetchImpl(squareOrigin(environment) + path, {
     method: 'POST',
@@ -78,7 +91,7 @@ export async function squarePost(env: SquareEnv, path: string, body: unknown, fe
     },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new SquareRequestError(response.status);
+  if (!response.ok) throw new SquareRequestError(response.status, await squareErrorInfo(response));
   return response.json();
 }
 
