@@ -1,12 +1,16 @@
 import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
+import { issueHold, resetBookingState } from '../functions/_lib/booking';
+import { resetCalendar } from '../functions/_lib/calendar';
+import { slotStartsOnDate } from '../functions/_lib/schedule';
 import { onRequestPost } from '../functions/api/checkout';
 import { onRequestPost as webhookPost } from '../functions/api/square-webhook';
 import { buildCreatePaymentLinkBody } from '../functions/_lib/payment-link';
 import { CATALOG, priceClientLines, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
-import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
+import { customerSearchBody, orderSearchBody } from '../functions/_lib/registration';
+import { decideRegistration, MockFamilyRegistry, parentEmailInRows } from '../functions/_lib/family-registry';
 import { checkoutAllowed, checkoutConfigured, SQUARE_PRODUCTION_ORIGIN, SQUARE_SANDBOX_ORIGIN, squarePost } from '../functions/_lib/square';
 import { eventSummary, verifySquareSignature, webhookNotificationUrl } from '../functions/_lib/webhook';
 
@@ -20,6 +24,8 @@ const env = {
 
 afterEach(() => {
   resetRateLimit();
+  resetBookingState();
+  resetCalendar();
   vi.restoreAllMocks();
 });
 
@@ -35,6 +41,7 @@ describe('price validation', () => {
       'water-aerobics': 4500,
     });
     expect(CATALOG.find((item) => item.id === 'pkg-8')?.name).toBe('8 Private Lessons (30 min)');
+    expect(CATALOG.find((item) => item.id === 'trial')?.name).toBe('Single lesson');
     expect(CATALOG.find((item) => item.id === 'water-aerobics')?.maxQty).toBe(20);
     expect(CATALOG.find((item) => item.id === 'trial')?.maxQty).toBe(3);
   });
@@ -62,48 +69,28 @@ describe('price validation', () => {
 });
 
 describe('registration decision', () => {
-  const now = new Date('2026-10-23T15:00:00.000Z');
+  const registry = new MockFamilyRegistry();
 
-  function lookup(partial: Partial<SquareLookup>): SquareLookup {
-    return {
-      searchCustomers: async () => ({ customers: [] }),
-      searchOrders: async () => ({ orders: [] }),
-      ...partial,
-    };
-  }
-
-  it('skips the fee when a completed order in the window has Annual Registration', async () => {
-    const searchOrders = vi.fn(async () => ({
-      orders: [{ line_items: [{ name: '8 Private Lessons (30 min)' }, { name: 'Annual Registration' }] }],
-    }));
-    const decision = await decideRegistration('parent@example.com', lookup({
-      searchCustomers: async () => ({ customers: [{ id: 'CUST1' }] }),
-      searchOrders,
-    }), now);
-    expect(decision).toEqual({ add: false, reason: 'already-registered', customerId: 'CUST1' });
-    expect(searchOrders).toHaveBeenCalledWith('CUST1', '2025-10-23T15:00:00.000Z', undefined);
+  it('adds the fee for a parent email that is not in the tracker', async () => {
+    expect(await decideRegistration('new@example.com', registry)).toEqual({ add: true, reason: 'first-purchase' });
   });
 
-  it('adds the fee when the customer has no registration line', async () => {
-    const decision = await decideRegistration('parent@example.com', lookup({
-      searchCustomers: async () => ({ customers: [{ id: 'CUST1' }] }),
-      searchOrders: async () => ({ orders: [{ line_items: [{ name: 'Trial Lesson (30 min)' }] }] }),
-    }), now);
-    expect(decision).toEqual({ add: true, reason: 'no-recent-registration', customerId: 'CUST1' });
+  it('skips the fee when the parent email is already in the tracker', async () => {
+    expect(await decideRegistration('returning@example.com', registry)).toEqual({ add: false, reason: 'returning' });
   });
 
-  it('adds the fee when no customer exists', async () => {
-    const decision = await decideRegistration('new@example.com', lookup({
-      searchCustomers: async () => ({}),
-    }), now);
-    expect(decision).toEqual({ add: true, reason: 'no-customer' });
+  it('adds the fee and flags a lookup error instead of skipping it', async () => {
+    expect(await decideRegistration('unavailable@example.com', registry)).toEqual({ add: true, reason: 'lookup-error' });
+    expect(await decideRegistration('parent@example.com', { async lookupByParentEmail() { throw new Error('sheet down'); } })).toEqual({ add: true, reason: 'lookup-error' });
   });
 
-  it('adds the fee and flags a lookup error', async () => {
-    const decision = await decideRegistration('parent@example.com', lookup({
-      searchCustomers: async () => { throw new Error('square down'); },
-    }), now);
-    expect(decision).toEqual({ add: true, reason: 'lookup-error' });
+  it('matches the Parent email column and ignores a missing column', () => {
+    expect(parentEmailInRows([
+      ['Child', 'Parent email'],
+      ['Alex', 'Returning@example.com'],
+    ], 'returning@example.com')).toBe(true);
+    expect(parentEmailInRows([['Child', 'Parent email'], ['Alex', 'other@example.com']], 'returning@example.com')).toBe(false);
+    expect(parentEmailInRows([['Child', 'Email'], ['Alex', 'returning@example.com']], 'returning@example.com')).toBeNull();
   });
 
   it('searches Square by exact email, location, completed state, and closed date', () => {
@@ -162,7 +149,7 @@ describe('CreatePaymentLink body', () => {
       idempotencyKey: 'idem-2',
       redirectUrl: 'https://preview.example/checkout/thanks/',
       buyerEmail: 'parent@example.com',
-      lines: [{ name: 'Trial Lesson (30 min)', quantity: 1, priceCents: 7500 }],
+      lines: [{ name: 'Single lesson', quantity: 1, priceCents: 7500 }],
     });
     expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
     expect(body.order).not.toHaveProperty('customer_id');
@@ -221,7 +208,7 @@ describe('checkout endpoint', () => {
     });
     const response = await onRequestPost({ request, env: { SQUARE_ENVIRONMENT: 'sandbox', CF_PAGES_BRANCH: 'booking-payments-live' } });
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ error: 'checkout-unavailable' });
+    expect(await response.json()).toMatchObject({ error: 'checkout-unavailable', registrationAdded: true, registrationReason: 'first-purchase' });
   });
 
   it('adds registration for a new buyer and posts one sandbox payment link', async () => {
@@ -232,23 +219,40 @@ describe('checkout endpoint', () => {
     vi.stubGlobal('fetch', fetchImpl);
     const logs: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    const issued = await issueHold({
+      env,
+      requestUrl: 'https://preview.example/api/hold',
+      email: 'pat@example.com',
+      parent: 'Pat Lee',
+      child: 'Alex',
+      itemId: 'trial',
+      quantity: 1,
+      slots: [slotStartsOnDate(2026, 10, 27)[4]],
+      now: new Date(),
+    });
+    if ('error' in issued) throw new Error(issued.error);
     const request = new Request('https://preview.example/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.7' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'Pat@Example.com', phone: '561-236-8260' } }),
+      body: JSON.stringify({
+        items: [{ id: 'trial', quantity: 1 }],
+        buyer: { name: 'Pat Lee', email: 'Pat@Example.com', phone: '561-236-8260' },
+        child: 'Alex',
+        holdToken: issued.token,
+      }),
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       url: 'https://sandbox.square.link/u/test',
       registrationAdded: true,
-      registrationReason: 'no-customer',
+      registrationReason: 'first-purchase',
     });
     const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
     expect(paymentCall?.[0]).toBe('https://connect.squareupsandbox.com/v2/online-checkout/payment-links');
     const sent = JSON.parse(String(paymentCall?.[1]?.body));
     expect(sent.order.line_items).toEqual([
-      { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+      { name: 'Single lesson', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
     expect(sent.idempotency_key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -285,7 +289,9 @@ describe('checkout endpoint', () => {
     });
     const response = await onRequestPost({ request, env: { ...env, CF_PAGES_BRANCH: 'main' } });
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ error: 'checkout-unavailable' });
+    const body = await response.json();
+    expect(body).toMatchObject({ error: 'checkout-unavailable' });
+    expect(body.confirmationUrl).toBeUndefined();
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
@@ -295,7 +301,7 @@ describe('checkout endpoint', () => {
     const request = new Request('https://preview.example/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.9' },
-      body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'water-aerobics', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(502);

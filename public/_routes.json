@@ -8,7 +8,12 @@
     "/footer",
     "/footer/*",
     "/api/checkout",
-    "/api/square-webhook"
+    "/api/square-webhook",
+    "/api/availability",
+    "/api/hold",
+    "/api/registration",
+    "/api/booking",
+    "/api/booking-finish"
   ],
   "exclude": []
 }

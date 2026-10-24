@@ -1,0 +1,23 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageShell from '../../components/PageShell.astro';
+import { pageChrome } from '../../data/newpage.js';
+import { CANCELLATION_POLICY } from '../../../functions/_lib/schedule';
+const path = '/booking/confirmed/';
+const title = 'Lessons saved | Safe Swimming School';
+const description = 'Lesson times saved for this checkout.';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<PageShell h1="Lessons saved">
+<p id="sss-mock-note" hidden>No payment was taken.</p>
+<p>Email sending is not connected yet. The manage link below is what would be sent from info@safeswimmingschool.com.</p>
+<p id="sss-confirmed-status">Loading lessons.</p>
+<ul id="sss-confirmed-lessons" class="sss-lesson-list"></ul>
+<p>{CANCELLATION_POLICY}</p>
+<p><a id="sss-manage-link" href="/booking/manage/">Manage these lessons</a></p>
+</PageShell>
+<script is:inline>
+try { localStorage.removeItem('sss-cart'); localStorage.removeItem('sss-booking'); } catch (error) {}
+</script>
+<script is:inline src="/js/confirmed.js"></script>
+</Base>

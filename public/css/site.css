@@ -21,6 +21,15 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-cart-note{background:#f4f8fb;padding:12px 14px;border-radius:4px}
 .sss-cart-message{margin-top:14px}
 #sss-pay-fallback{margin-top:24px}
+.sss-day{margin:18px 0}
+.sss-day h2{font-size:1.05rem;margin:0 0 8px}
+.sss-slot{margin:0 8px 8px 0;padding:8px 10px;border:1px solid #d7e3ee;background:#fff;color:#033761;border-radius:4px;cursor:pointer}
+.sss-slot[aria-pressed="true"]{background:#033761;color:#fff}
+.sss-slot:disabled{opacity:.45;cursor:default;text-decoration:line-through}
+.sss-packages{display:flex;flex-direction:column;gap:8px;margin:12px 0 18px}
+.sss-packages label{font-weight:500;color:#033761}
+.sss-lesson-list{list-style:none;padding:0}
+.sss-lesson-list li{padding:12px 0;border-bottom:1px solid #d7e3ee}
 .footer-quick-links a{white-space:nowrap}
 /* Sticky mobile contact bar */
 .sss-mobile-bar{display:none}

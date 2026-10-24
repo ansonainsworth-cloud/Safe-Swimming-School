@@ -27,7 +27,7 @@ export const CATALOG: readonly CatalogItem[] = [
   { id: 'pkg-8', name: '8 Private Lessons (30 min)', priceCents: 52000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'pkg-12', name: '12 Private Lessons (30 min)', priceCents: 72000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'pkg-20', name: '20 Private Lessons (30 min)', priceCents: 110000, minQty: 1, maxQty: 3, clientOrderable: true },
-  { id: 'trial', name: 'Trial Lesson (30 min)', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
+  { id: 'trial', name: 'Single lesson', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'water-aerobics', name: 'Water Aerobics Class (30 min)', priceCents: 4500, minQty: 1, maxQty: 20, clientOrderable: true },
 ];
 
@@ -71,6 +71,21 @@ export function validateClientItems(input: unknown): { ok: true; lines: ClientLi
     lines.push({ id: item.id, quantity });
   }
   return { ok: true, lines };
+}
+
+const LESSON_COUNTS: Partial<Record<ItemId, number>> = {
+  'pkg-8': 8,
+  'pkg-12': 12,
+  'pkg-20': 20,
+  trial: 1,
+};
+
+export function lessonsForItem(id: ItemId): number {
+  return LESSON_COUNTS[id] ?? 0;
+}
+
+export function lessonsForLines(lines: ClientLine[]): number {
+  return lines.reduce((sum, line) => sum + lessonsForItem(line.id) * line.quantity, 0);
 }
 
 export function priceClientLines(lines: ClientLine[], addRegistration: boolean): PricedLine[] {

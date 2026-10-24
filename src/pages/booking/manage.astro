@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageShell from '../../components/PageShell.astro';
+import { pageChrome } from '../../data/newpage.js';
+import { CANCELLATION_POLICY } from '../../../functions/_lib/schedule';
+const path = '/booking/manage/';
+const title = 'Your lessons | Safe Swimming School';
+const description = 'Reschedule a lesson or leave it to be added at the end of the package.';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" trackAnalytics={false} {...pageChrome}>
+<PageShell h1="Your lessons">
+<p>{CANCELLATION_POLICY}</p>
+<p id="sss-manage-status">Loading lessons.</p>
+<ul id="sss-manage-lessons" class="sss-lesson-list"></ul>
+<div id="sss-reschedule" hidden>
+<h2>Pick a new time</h2>
+<div id="sss-reschedule-slots"></div>
+</div>
+</PageShell>
+<script is:inline src="/js/manage.js"></script>
+</Base>

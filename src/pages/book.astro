@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { pageChrome } from '../data/newpage.js';
+import { CATALOG, lessonsForItem } from '../../functions/_lib/prices';
+import { CANCELLATION_POLICY } from '../../functions/_lib/schedule';
+const path = '/book/';
+const title = 'Book lessons | Safe Swimming School';
+const description = 'Choose a 30-minute lesson time for each lesson in a package.';
+const lessons = CATALOG.filter((item) => lessonsForItem(item.id) > 0);
+const money = (cents: number) => (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome}>
+<PageShell h1="Book lessons">
+<p>Choose a package and a 30-minute time for every lesson. Two lessons in a row count as two lessons.</p>
+<p id="sss-policy">{CANCELLATION_POLICY}</p>
+<form id="sss-book-form" class="sss-cart-form">
+<fieldset class="sss-packages">
+<legend>Package</legend>
+{lessons.map((item) => (
+  <label><input type="radio" name="package" value={item.id} data-lessons={lessonsForItem(item.id)} required /> {item.name} — {money(item.priceCents)}</label>
+))}
+</fieldset>
+<label>Child<input id="sss-child" name="child" type="text" required maxlength="100" autocomplete="off"></label>
+<label>Parent<input id="sss-parent" name="parent" type="text" required maxlength="100" autocomplete="name"></label>
+<label>Email<input id="sss-email" name="email" type="email" required maxlength="254" autocomplete="email"></label>
+<p id="sss-count">0 lessons selected</p>
+<div id="sss-slots"></div>
+<p id="sss-book-message" class="sss-cart-message"></p>
+<button id="sss-continue" class="sss-btn" type="submit" disabled>Continue to cart</button>
+</form>
+</PageShell>
+<script is:inline src="/js/book.js"></script>
+</Base>
