@@ -3,7 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
 import { bookingHref } from '../data/payment-links';
-import { clientCatalog } from '../../functions/_lib/prices';
+import { clientCatalog, REGISTRATION_TIER_CENTS } from '../../functions/_lib/prices';
 const { title, description, path, bodyClass = 'page wpex-theme wpex-responsive full-width-main-layout no-composer content-full-width sidebar-widget-icons hasnt-overlay-header smooth-fonts wpex-mobile-toggle-menu-icon_buttons has-mobile-menu wpex-disable-mm-focus-styles wpb-js-composer js-comp-ver-6.1 vc_responsive', pageStyle = '', ldjson = [], robots = 'index, follow, max-image-preview:large', ogImage = '/images/brand/safe-swimming-school-logo-800.png', ogType = 'website', trackAnalytics = true, checkoutAnalytics = false } = Astro.props;
 const loadGtag = trackAnalytics || checkoutAnalytics;
 const checkoutOnly = checkoutAnalytics && !trackAnalytics;
@@ -60,7 +60,7 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <script is:inline src="/wp-includes/js/jquery/jquery-migrate.min.js"></script>
 <script is:inline set:html={wpexLocalize}></script>
 <script is:inline src="/wp-content/themes/Total/assets/js/total.min.js"></script>
-<script is:inline define:vars={{ SSS_CATALOG: catalog }}>window.SSS_CATALOG = SSS_CATALOG;</script>
+<script is:inline define:vars={{ SSS_CATALOG: catalog, SSS_REGISTRATION_TIERS: REGISTRATION_TIER_CENTS }}>window.SSS_CATALOG = SSS_CATALOG; window.SSS_REGISTRATION_TIERS = SSS_REGISTRATION_TIERS;</script>
 <script is:inline src="/js/cart.js"></script>
 {trackAnalytics && <script is:inline type="module" src="/js/ga-events.js"></script>}
 </body>

@@ -5,6 +5,23 @@ export const SQUARE_SANDBOX_ORIGIN = 'https://connect.squareupsandbox.com';
 export const REGISTRATION_ID = 'registration-annual';
 export const REGISTRATION_NAME = 'Annual Registration';
 
+/** One registration for the family. Siblings share one package, so the tier follows swimmer count, not package quantity. */
+export const REGISTRATION_TIER_CENTS = { 1: 3500, 2: 5000, 3: 6000 } as const;
+
+/** 1 swimmer, 2 siblings, or 3+ (capped). Omitted means one swimmer. Invalid input is null. */
+export function normalizeSwimmerCount(value: unknown): number | null {
+  if (value == null || value === '') return 1;
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value.trim()) : NaN;
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 20) return null;
+  return parsed;
+}
+
+export function registrationPriceCents(swimmers: number): number {
+  if (swimmers >= 3) return REGISTRATION_TIER_CENTS[3];
+  if (swimmers === 2) return REGISTRATION_TIER_CENTS[2];
+  return REGISTRATION_TIER_CENTS[1];
+}
+
 export type ItemId =
   | 'registration-annual'
   | 'pkg-8'
@@ -74,14 +91,14 @@ export function validateClientItems(input: unknown): { ok: true; lines: ClientLi
   return { ok: true, lines };
 }
 
-export function priceClientLines(lines: ClientLine[], addRegistration: boolean): PricedLine[] {
+export function priceClientLines(lines: ClientLine[], addRegistration: boolean, swimmers = 1): PricedLine[] {
   const priced = lines.map((line) => {
     const item = getItem(line.id)!;
     return { name: item.name, quantity: line.quantity, priceCents: item.priceCents };
   });
   if (addRegistration) {
     const registration = getItem(REGISTRATION_ID)!;
-    priced.push({ name: registration.name, quantity: 1, priceCents: registration.priceCents });
+    priced.push({ name: registration.name, quantity: 1, priceCents: registrationPriceCents(swimmers) });
   }
   return priced;
 }

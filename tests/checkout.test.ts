@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { onRequestPost } from '../functions/api/checkout';
 import { buildCreatePaymentLinkBody } from '../functions/_lib/payment-link';
-import { CATALOG, priceClientLines, validateClientItems } from '../functions/_lib/prices';
+import { CATALOG, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
 import { SQUARE_SANDBOX_ORIGIN } from '../functions/_lib/prices';
@@ -55,6 +55,26 @@ describe('price validation', () => {
     expect(priceClientLines(validated.lines, true)).toEqual([
       { name: '20 Private Lessons (30 min)', quantity: 2, priceCents: 110000 },
       { name: 'Annual Registration', quantity: 1, priceCents: 3500 },
+    ]);
+    expect(priceClientLines(validated.lines, true, 2)[1]).toEqual({ name: 'Annual Registration', quantity: 1, priceCents: 5000 });
+    expect(priceClientLines(validated.lines, true, 3)[1]).toEqual({ name: 'Annual Registration', quantity: 1, priceCents: 6000 });
+    expect(priceClientLines(validated.lines, true, 8)[1].priceCents).toBe(6000);
+  });
+
+  it('prices registration from swimmer count, not package quantity', () => {
+    expect(registrationPriceCents(1)).toBe(3500);
+    expect(registrationPriceCents(2)).toBe(5000);
+    expect(registrationPriceCents(3)).toBe(6000);
+    expect(normalizeSwimmerCount(undefined)).toBe(1);
+    expect(normalizeSwimmerCount('2')).toBe(2);
+    expect(normalizeSwimmerCount(0)).toBeNull();
+    expect(normalizeSwimmerCount(21)).toBeNull();
+    const validated = validateClientItems([{ id: 'pkg-8', quantity: 1 }]);
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) return;
+    expect(priceClientLines(validated.lines, true, 2)).toEqual([
+      { name: '8 Private Lessons (30 min)', quantity: 1, priceCents: 52000 },
+      { name: 'Annual Registration', quantity: 1, priceCents: 5000 },
     ]);
   });
 });
@@ -218,6 +238,7 @@ describe('checkout endpoint', () => {
       url: 'https://sandbox.square.link/u/test',
       registrationAdded: true,
       registrationReason: 'no-customer',
+      registrationCents: 3500,
     });
     const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
     expect(paymentCall?.[0]).toBe('https://connect.squareupsandbox.com/v2/online-checkout/payment-links');
@@ -234,6 +255,29 @@ describe('checkout endpoint', () => {
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('connect.squareup.com');
     expect(logs.join('\n')).not.toContain('sandbox-token');
     expect(logs.join('\n')).not.toContain('Pat@Example.com');
+  });
+
+  it('charges the registration tier for 2 and 3 swimmers on the server payment link', async () => {
+    const amounts: number[] = [];
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      const body = JSON.parse(String(init?.body));
+      const registration = body.order.line_items.find((line: { name: string }) => line.name === 'Annual Registration');
+      amounts.push(registration.base_price_money.amount);
+      return new Response(JSON.stringify({ payment_link: { url: 'https://sandbox.square.link/u/tier' } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    for (const [swimmers, ip] of [[2, '203.0.113.21'], [3, '203.0.113.22'], [5, '203.0.113.23']] as const) {
+      const request = new Request('https://preview.example/api/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip },
+        body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 1 }], swimmers, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      });
+      const response = await onRequestPost({ request, env });
+      expect(response.status).toBe(200);
+      expect((await response.json()).registrationCents).toBe(swimmers === 2 ? 5000 : 6000);
+    }
+    expect(amounts).toEqual([5000, 6000, 6000]);
   });
 
   it('returns 400 for a bad cart and does not call Square', async () => {
