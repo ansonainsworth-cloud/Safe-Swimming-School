@@ -16,7 +16,7 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-cart-subtotal{font-size:1.15em;margin-top:16px}
 .sss-remove{background:none;border:0;padding:0;color:#033761;font-weight:700;text-decoration:underline;cursor:pointer}
 .sss-cart-form label{display:block;margin:14px 0;font-weight:500;color:#033761}
-.sss-cart-form input{display:block;width:100%;max-width:420px;margin-top:4px;padding:8px}
+.sss-cart-form input,.sss-cart-form select{display:block;width:100%;max-width:420px;margin-top:4px;padding:8px}
 .sss-optional{font-weight:400}
 .sss-cart-note{background:#f4f8fb;padding:12px 14px;border-radius:4px}
 .sss-cart-message{margin-top:14px}

@@ -72,6 +72,26 @@
     return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
 
+  function swimmerCount() {
+    var el = document.getElementById('sss-swimmer-count');
+    var n = el ? parseInt(el.value, 10) : 1;
+    if (!Number.isInteger(n) || n < 1) return 1;
+    if (n > 20) return 20;
+    return n;
+  }
+
+  function registrationCents(swimmers) {
+    var tiers = window.SSS_REGISTRATION_TIERS || { 1: 3500, 2: 5000, 3: 6000 };
+    var key = swimmers >= 3 ? 3 : swimmers;
+    return tiers[key] || tiers[1] || 3500;
+  }
+
+  function registrationLabel(swimmers) {
+    if (swimmers >= 3) return 'Annual registration for 3 or more swimmers';
+    if (swimmers === 2) return 'Annual registration for 2 siblings';
+    return 'Annual registration for 1 swimmer';
+  }
+
   function clamp(item, value) {
     var qty = parseInt(value, 10);
     if (!Number.isInteger(qty)) return item.minQty;
@@ -103,6 +123,10 @@
   });
 
   document.addEventListener('change', function (event) {
+    if (event.target && event.target.id === 'sss-swimmer-count') {
+      renderCart(read());
+      return;
+    }
     var input = event.target.closest('#sss-cart-root [data-cart-qty]');
     if (!input) return;
     var line = input.closest('[data-cart-id]');
@@ -129,6 +153,9 @@
         subtotal += lineCents;
         return '<div class="sss-cart-line" data-cart-id="' + item.id + '"><p><strong>' + item.name + '</strong><br>' + money(item.priceCents) + '</p><label class="sss-qty">Qty <input type="number" min="' + item.minQty + '" max="' + item.maxQty + '" value="' + line.quantity + '" inputmode="numeric" data-cart-qty aria-label="Quantity for ' + item.name + '"></label><button type="button" class="sss-remove" data-cart-remove="' + item.id + '">Remove</button><p class="sss-line-total">' + money(lineCents) + '</p></div>';
       }).join('');
+      var fee = registrationCents(swimmerCount());
+      subtotal += fee;
+      html += '<div class="sss-cart-line"><p><strong>' + registrationLabel(swimmerCount()) + '</strong><br>' + money(fee) + ', added at checkout if registration is not already paid this year</p><p class="sss-line-total">' + money(fee) + '</p></div>';
       root.innerHTML = html + '<p class="sss-cart-subtotal"><strong>Subtotal:</strong> ' + money(subtotal) + '</p>';
     }
     var button = document.getElementById('sss-checkout-button');
@@ -155,6 +182,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           items: items.map(function (line) { return { id: line.id, quantity: line.quantity }; }),
+          swimmers: swimmerCount(),
           buyer: buyer
         })
       }).then(function (response) {
@@ -175,7 +203,9 @@
         if (result.data.registrationReason === 'lookup-error') {
           trackBeginCheckout(items);
           message.hidden = false;
-          message.textContent = 'We added the $35 annual registration fee because we couldn’t confirm a registration from the last 12 months. If you already paid it this year, we can refund it. ';
+          var added = Number(result.data.registrationCents);
+          var addedText = Number.isInteger(added) ? money(added) : money(registrationCents(swimmerCount()));
+          message.textContent = 'We added the ' + addedText + ' annual registration fee because we couldn’t confirm a registration from the last 12 months. If you already paid it this year, we can refund it. ';
           var continueLink = document.createElement('a');
           continueLink.href = result.data.url;
           continueLink.textContent = 'Continue to checkout';

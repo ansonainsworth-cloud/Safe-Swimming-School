@@ -1,4 +1,4 @@
-import { normalizeEmail, normalizeName, normalizePhone, priceClientLines, validateClientItems } from '../_lib/prices';
+import { normalizeEmail, normalizeName, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../_lib/prices';
 import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { allowCheckout } from '../_lib/rate-limit';
 import { decideRegistration } from '../_lib/registration';
@@ -28,16 +28,19 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     return json({ error: 'invalid-json' }, 400);
   }
   if (!payload || typeof payload !== 'object') return json({ error: 'invalid-json' }, 400);
-  const body = payload as { items?: unknown; buyer?: { name?: unknown; email?: unknown; phone?: unknown } };
+  const body = payload as { items?: unknown; swimmers?: unknown; buyer?: { name?: unknown; email?: unknown; phone?: unknown } };
   const items = validateClientItems(body.items);
   if (!items.ok) return json({ error: 'invalid-cart' }, 400);
+  const swimmers = normalizeSwimmerCount(body.swimmers);
+  if (swimmers == null) return json({ error: 'invalid-cart' }, 400);
   const name = normalizeName(body.buyer?.name);
   const email = normalizeEmail(body.buyer?.email);
   const phone = normalizePhone(body.buyer?.phone);
   if (!name || !email || phone === null) return json({ error: 'invalid-buyer' }, 400);
 
   const decision = await decideRegistration(email, createSquareLookup(env));
-  const lines = priceClientLines(items.lines, decision.add);
+  const lines = priceClientLines(items.lines, decision.add, swimmers);
+  const registrationCents = decision.add ? registrationPriceCents(swimmers) : undefined;
   const origin = new URL(request.url).origin;
   const paymentBody = buildCreatePaymentLinkBody({
     locationId: env.SQUARE_LOCATION_ID || '',
@@ -66,6 +69,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     url,
     registrationAdded: decision.add,
     registrationReason: decision.reason,
+    ...(registrationCents != null ? { registrationCents } : {}),
   }, 200);
 }
 
