@@ -3,11 +3,10 @@ import { toE164Phone, type PricedLine } from './prices';
 /** CreatePaymentLink only accepts https redirect URLs. Drop credentials and fragments. */
 export function httpsRedirectUrl(url: string): string {
   const parsed = new URL(url);
-  if (parsed.protocol === 'http:') parsed.protocol = 'https:';
-  parsed.username = '';
-  parsed.password = '';
-  parsed.hash = '';
-  return parsed.toString();
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new TypeError('redirect url must be http(s)');
+  }
+  return `https://${parsed.host}${parsed.pathname}${parsed.search}`;
 }
 
 export function buildCreatePaymentLinkBody(input: {
