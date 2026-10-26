@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { onRequestPost } from '../functions/api/checkout';
+import { onRequestPost as onWebhookPost } from '../functions/api/square-webhook';
 import { buildCreatePaymentLinkBody } from '../functions/_lib/payment-link';
 import { CATALOG, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
 import { SQUARE_SANDBOX_ORIGIN } from '../functions/_lib/prices';
-import { checkoutConfigured, squarePost } from '../functions/_lib/square';
+import { checkoutConfigured, SQUARE_PRODUCTION_ORIGIN, squarePost } from '../functions/_lib/square';
 import { eventSummary, verifySquareSignature, webhookNotificationUrl } from '../functions/_lib/webhook';
 
 const env = {
@@ -188,7 +189,7 @@ describe('CreatePaymentLink body', () => {
 });
 
 describe('Square host', () => {
-  it('posts only to the sandbox host with the current Square-Version', async () => {
+  it('posts sandbox calls to the sandbox host with the current Square-Version', async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ payment_link: { url: 'https://sandbox.square.link/u/abc' } }), { status: 200 }));
     await squarePost(env, '/v2/online-checkout/payment-links', { idempotency_key: 'k' }, fetchImpl);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
@@ -198,12 +199,27 @@ describe('Square host', () => {
     expect(String(url)).not.toContain('connect.squareup.com');
   });
 
-  it('refuses a non-sandbox environment before any request', async () => {
+  it('posts production calls to connect.squareup.com', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ payment_link: { url: 'https://square.link/u/abc' } }), { status: 200 }));
+    await squarePost({ ...env, SQUARE_ENV: 'production' }, '/v2/online-checkout/payment-links', { idempotency_key: 'k' }, fetchImpl);
+    const [url] = fetchImpl.mock.calls[0];
+    expect(url).toBe(`${SQUARE_PRODUCTION_ORIGIN}/v2/online-checkout/payment-links`);
+    expect(String(url)).not.toContain('squareupsandbox.com');
+  });
+
+  it('requires the token, location, and webhook key, and refuses an unknown env before any request', async () => {
     const fetchImpl = vi.fn();
-    await expect(squarePost({ ...env, SQUARE_ENV: 'production' }, '/v2/online-checkout/payment-links', {}, fetchImpl)).rejects.toThrow(/503/);
-    expect(fetchImpl).not.toHaveBeenCalled();
-    expect(checkoutConfigured({ ...env, SQUARE_ENV: 'production' })).toBe(false);
+    const production = { ...env, SQUARE_ENV: 'production' };
+    expect(checkoutConfigured(production)).toBe(true);
+    expect(checkoutConfigured(env)).toBe(true);
+    expect(checkoutConfigured({ ...production, SQUARE_ACCESS_TOKEN: '' })).toBe(false);
+    expect(checkoutConfigured({ ...production, SQUARE_LOCATION_ID: '' })).toBe(false);
+    expect(checkoutConfigured({ ...production, SQUARE_WEBHOOK_SIGNATURE_KEY: '' })).toBe(false);
     expect(checkoutConfigured({ ...env, SQUARE_ACCESS_TOKEN: '' })).toBe(false);
+    expect(checkoutConfigured({ ...production, SQUARE_ENV: 'live' })).toBe(false);
+    await expect(squarePost({ ...env, SQUARE_ENV: 'live' }, '/v2/online-checkout/payment-links', {}, fetchImpl)).rejects.toThrow(/503/);
+    await expect(squarePost({ ...production, SQUARE_ACCESS_TOKEN: '' }, '/v2/online-checkout/payment-links', {}, fetchImpl)).rejects.toThrow(/503/);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
 
@@ -280,6 +296,29 @@ describe('checkout endpoint', () => {
     expect(amounts).toEqual([5000, 6000, 6000]);
   });
 
+  it('posts a production checkout to connect.squareup.com', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response(JSON.stringify({ payment_link: { url: 'https://square.link/u/live' } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.40' },
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+    });
+    const response = await onRequestPost({
+      request,
+      env: { ...env, SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token' },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ url: 'https://square.link/u/live', registrationAdded: true });
+    const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
+    expect(paymentCall?.[0]).toBe('https://connect.squareup.com/v2/online-checkout/payment-links');
+    expect(new Headers(paymentCall?.[1]?.headers).get('Authorization')).toBe('Bearer prod-token');
+    expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('squareupsandbox.com');
+  });
+
   it('returns 400 for a bad cart and does not call Square', async () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal('fetch', fetchImpl);
@@ -310,6 +349,32 @@ describe('webhook signature', () => {
     expect(webhookNotificationUrl('https://safeswimmingschool.com/api/square-webhook?x=1')).toBe('https://safeswimmingschool.com/api/square-webhook');
   });
 
+  it('verifies the signature in production and sandbox, and rejects a bad signature, a missing key, or an unknown env', async () => {
+    const rawBody = '{"type":"payment.updated","data":{"object":{"payment":{"order_id":"ORD1","status":"COMPLETED"}}}}';
+    const notificationUrl = 'https://safeswimmingschool.com/api/square-webhook';
+    const signature = await signSquare(notificationUrl, rawBody, 'sig-key');
+    for (const squareEnv of ['production', 'sandbox']) {
+      const response = await onWebhookPost({
+        request: webhookRequest(rawBody, signature),
+        env: { ...env, SQUARE_ENV: squareEnv },
+      });
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('OK');
+    }
+    expect((await onWebhookPost({
+      request: webhookRequest(rawBody, 'not-the-signature'),
+      env: { ...env, SQUARE_ENV: 'production' },
+    })).status).toBe(401);
+    expect((await onWebhookPost({
+      request: webhookRequest(rawBody, signature),
+      env: { SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'tok', SQUARE_LOCATION_ID: 'LOC123' },
+    })).status).toBe(401);
+    expect((await onWebhookPost({
+      request: webhookRequest(rawBody, signature),
+      env: { ...env, SQUARE_ENV: 'live' },
+    })).status).toBe(401);
+  });
+
   it('summarizes payment and order events without buyer fields', () => {
     expect(eventSummary({
       type: 'payment.updated',
@@ -334,6 +399,30 @@ describe('routes', () => {
     expect(routesOverlap(routes.include)).toBe(false);
   });
 });
+
+function webhookRequest(rawBody: string, signature: string): Request {
+  return new Request('https://safeswimmingschool.com/api/square-webhook', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-square-hmacsha256-signature': signature },
+    body: rawBody,
+  });
+}
+
+async function signSquare(notificationUrl: string, rawBody: string, signatureKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(signatureKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(notificationUrl + rawBody));
+  let binary = '';
+  const bytes = new Uint8Array(mac);
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
 
 function routesOverlap(rules: string[]): boolean {
   for (const rule of rules) {
