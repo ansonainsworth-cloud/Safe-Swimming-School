@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { onRequestPost } from '../functions/api/checkout';
 import { onRequestPost as onWebhookPost } from '../functions/api/square-webhook';
-import { buildCreatePaymentLinkBody } from '../functions/_lib/payment-link';
-import { CATALOG, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
+import { buildCreatePaymentLinkBody, httpsRedirectUrl } from '../functions/_lib/payment-link';
+import { CATALOG, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
 import { SQUARE_SANDBOX_ORIGIN } from '../functions/_lib/prices';
@@ -165,10 +165,9 @@ describe('CreatePaymentLink body', () => {
           { name: 'Water Aerobics Class (30 min)', quantity: '2', base_price_money: { amount: 4500, currency: 'USD' } },
           { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
         ],
-        metadata: { source: 'website-cart' },
       },
       checkout_options: { redirect_url: 'https://preview.example/checkout/thanks/' },
-      pre_populated_data: { buyer_email: 'parent@example.com', buyer_phone_number: '561-236-8260' },
+      pre_populated_data: { buyer_email: 'parent@example.com', buyer_phone_number: '+15612368260' },
     });
     const serialized = JSON.stringify(body);
     expect(serialized).not.toMatch(/catalog/i);
@@ -185,6 +184,41 @@ describe('CreatePaymentLink body', () => {
     });
     expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
     expect(body.order).not.toHaveProperty('customer_id');
+    expect(body.order).not.toHaveProperty('metadata');
+  });
+
+  it('omits a blank phone and upgrades an http redirect to https', () => {
+    for (const buyerPhone of ['', '   ', 'not-a-phone', '12345']) {
+      const body = buildCreatePaymentLinkBody({
+        locationId: 'LOC123',
+        idempotencyKey: 'idem-blank',
+        redirectUrl: 'http://user:pass@preview.example/checkout/thanks/#fragment',
+        buyerEmail: 'parent@example.com',
+        buyerPhone,
+        lines: [
+          { name: 'Trial Lesson (30 min)', quantity: 1, priceCents: 7500 },
+          { name: 'Annual Registration', quantity: 1, priceCents: 3500 },
+        ],
+      });
+      expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
+      expect(JSON.stringify(body)).not.toContain('buyer_phone_number');
+      expect(body.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
+      expect(body.order).not.toHaveProperty('metadata');
+      expect(body.order.line_items).toEqual([
+        { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+        { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
+      ]);
+    }
+    expect(httpsRedirectUrl('https://safeswimmingschool.com/checkout/thanks/')).toBe('https://safeswimmingschool.com/checkout/thanks/');
+    expect(normalizePhone(null)).toBeUndefined();
+    expect(normalizePhone('')).toBeUndefined();
+    expect(normalizePhone(' ')).toBeUndefined();
+    expect(normalizePhone('561-236-8260')).toBe('+15612368260');
+    expect(normalizePhone('+1 (561) 236-8260')).toBe('+15612368260');
+    expect(normalizePhone('15612368260')).toBe('+15612368260');
+    expect(normalizePhone('+442079460958')).toBe('+442079460958');
+    expect(normalizePhone('12345')).toBeUndefined();
+    expect(normalizePhone(12)).toBeNull();
   });
 });
 
@@ -263,11 +297,11 @@ describe('checkout endpoint', () => {
       { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
-    expect(sent.order.metadata).toEqual({ source: 'website-cart' });
+    expect(sent.order).not.toHaveProperty('metadata');
     expect(sent.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
     expect(sent.payment_note).toBe('Pat Lee');
     expect(sent.pre_populated_data.buyer_email).toBe('pat@example.com');
-    expect(sent.pre_populated_data.buyer_phone_number).toBe('561-236-8260');
+    expect(sent.pre_populated_data.buyer_phone_number).toBe('+15612368260');
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('connect.squareup.com');
     expect(logs.join('\n')).not.toContain('sandbox-token');
     expect(logs.join('\n')).not.toContain('Pat@Example.com');
@@ -319,6 +353,38 @@ describe('checkout endpoint', () => {
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('squareupsandbox.com');
   });
 
+  it('checks out a trial plus one-swimmer registration with a blank phone', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response(JSON.stringify({ payment_link: { url: 'https://square.link/u/trial' } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const request = new Request('http://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.41' },
+      body: JSON.stringify({
+        items: [{ id: 'trial', quantity: 1 }],
+        swimmers: 1,
+        buyer: { name: 'Pat Lee', email: 'pat@example.com', phone: ' ' },
+      }),
+    });
+    const response = await onRequestPost({
+      request,
+      env: { ...env, SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token' },
+    });
+    expect(response.status).toBe(200);
+    const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
+    const sent = JSON.parse(String(paymentCall?.[1]?.body));
+    expect(sent.order.line_items).toEqual([
+      { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+      { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
+    ]);
+    expect(sent.pre_populated_data).toEqual({ buyer_email: 'pat@example.com' });
+    expect(sent.order).not.toHaveProperty('metadata');
+    expect(sent.checkout_options.redirect_url).toBe('https://safeswimmingschool.com/checkout/thanks/');
+    expect(new Headers(paymentCall?.[1]?.headers).get('Square-Version')).toBe('2026-09-16');
+  });
+
   it('returns 400 for a bad cart and does not call Square', async () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal('fetch', fetchImpl);
@@ -330,6 +396,108 @@ describe('checkout endpoint', () => {
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(400);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('Square error logs', () => {
+  function captureLogs(): string[] {
+    const logs: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    return logs;
+  }
+
+  it('logs payment-link status and Square error fields without the token or buyer detail', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+      errors: [{
+        code: 'INVALID_VALUE',
+        category: 'INVALID_REQUEST_ERROR',
+        field: 'order.metadata',
+        detail: 'parent@example.com 561-236-8260 rejected',
+      }],
+    }), { status: 400 }));
+    const logs = captureLogs();
+    await expect(squarePost(env, '/v2/online-checkout/payment-links', { idempotency_key: 'k' }, fetchImpl)).rejects.toThrow(/Square request failed \(400\)/);
+    expect(JSON.parse(logs.join('\n'))).toEqual({
+      step: 'payment-link',
+      status: 400,
+      errors: [{ code: 'INVALID_VALUE', category: 'INVALID_REQUEST_ERROR', field: 'order.metadata' }],
+    });
+    const logged = logs.join('\n');
+    expect(logged).not.toContain('sandbox-token');
+    expect(logged).not.toContain('parent@example.com');
+    expect(logged).not.toContain('561-236-8260');
+    expect(logged).not.toContain('detail');
+    expect(logged).not.toContain('Bearer');
+
+    logs.length = 0;
+    const customerFetch = vi.fn(async () => new Response(JSON.stringify({
+      errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query.filter', detail: 'parent@example.com' }],
+    }), { status: 400 }));
+    await expect(squarePost(env, '/v2/customers/search', { limit: 1 }, customerFetch)).rejects.toThrow(/400/);
+    expect(JSON.parse(logs[0])).toEqual({
+      step: 'customers-search',
+      status: 400,
+      errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query.filter' }],
+    });
+    expect(logs[0]).not.toContain('parent@example.com');
+  });
+
+  it('logs an orders-search failure and still creates the payment link', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      const target = String(url);
+      if (target.endsWith('/v2/customers/search')) return new Response(JSON.stringify({ customers: [{ id: 'CUST1' }] }), { status: 200 });
+      if (target.endsWith('/v2/orders/search')) {
+        return new Response(JSON.stringify({
+          errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query', detail: 'parent@example.com' }],
+        }), { status: 400 });
+      }
+      return new Response(JSON.stringify({ payment_link: { url: 'https://square.link/u/after-lookup' } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs = captureLogs();
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.42' },
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'parent@example.com' } }),
+    });
+    const response = await onRequestPost({
+      request,
+      env: { ...env, SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token' },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ registrationReason: 'lookup-error', url: 'https://square.link/u/after-lookup' });
+    const orderLog = logs.map((line) => JSON.parse(line)).find((entry) => entry.step === 'orders-search');
+    expect(orderLog).toEqual({
+      step: 'orders-search',
+      status: 400,
+      errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query' }],
+    });
+    expect(logs.join('\n')).not.toContain('parent@example.com');
+    expect(logs.join('\n')).not.toContain('prod-token');
+  });
+
+  it('returns checkout-failed when CreatePaymentLink is rejected and logs the step', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response('not-json', { status: 400 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs = captureLogs();
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.43' },
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com', phone: '' } }),
+    });
+    const response = await onRequestPost({
+      request,
+      env: { ...env, SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token' },
+    });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+    expect(JSON.parse(logs[0])).toEqual({ step: 'payment-link', status: 400, errors: [] });
+    expect(logs.join('\n')).not.toContain('prod-token');
+    expect(logs.join('\n')).not.toContain('pat@example.com');
+    expect(logs.join('\n')).not.toContain('not-json');
   });
 });
 
