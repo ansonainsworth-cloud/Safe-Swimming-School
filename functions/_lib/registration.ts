@@ -66,6 +66,9 @@ export async function decideRegistration(email: string, lookup: SquareLookup, no
   } catch {
     return { add: true, reason: 'lookup-error' };
   }
+  if (!customers || typeof customers !== 'object' || Array.isArray(customers)) {
+    return { add: true, reason: 'lookup-error' };
+  }
   const ids = (customers.customers ?? []).map((customer) => customer.id).filter((id): id is string => Boolean(id));
   if (ids.length === 0) return { add: true, reason: 'no-customer' };
 

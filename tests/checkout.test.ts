@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { onRequestPost } from '../functions/api/checkout';
+import { onRequestGet as onCheckoutHealth } from '../functions/api/checkout-health';
 import { onRequestPost as onWebhookPost } from '../functions/api/square-webhook';
 import { buildCreatePaymentLinkBody, httpsRedirectUrl } from '../functions/_lib/payment-link';
 import { CATALOG, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
@@ -125,6 +126,13 @@ describe('registration decision', () => {
     expect(decision).toEqual({ add: true, reason: 'lookup-error' });
   });
 
+  it('flags a lookup error when the customer search body is null', async () => {
+    const decision = await decideRegistration('parent@example.com', lookup({
+      searchCustomers: async () => null as unknown as { customers?: { id?: string }[] },
+    }), now);
+    expect(decision).toEqual({ add: true, reason: 'lookup-error' });
+  });
+
   it('searches Square by exact email, location, completed state, and closed date', () => {
     expect(customerSearchBody('parent@example.com')).toEqual({
       limit: 10,
@@ -230,6 +238,9 @@ describe('Square host', () => {
     const [url, init] = fetchImpl.mock.calls[0];
     expect(url).toBe(`${SQUARE_SANDBOX_ORIGIN}/v2/online-checkout/payment-links`);
     expect(new Headers(init?.headers).get('Square-Version')).toBe('2026-09-16');
+    expect(new Headers(init?.headers).get('Accept-Encoding')).toBe('identity');
+    expect(init?.redirect).toBe('manual');
+    expect(init?.cache).toBe('no-store');
     expect(String(url)).not.toContain('connect.squareup.com');
   });
 
@@ -498,6 +509,141 @@ describe('Square error logs', () => {
     expect(logs.join('\n')).not.toContain('prod-token');
     expect(logs.join('\n')).not.toContain('pat@example.com');
     expect(logs.join('\n')).not.toContain('not-json');
+    expect(response.headers.get('content-type')).toContain('application/json');
+  });
+
+  it('returns checkout JSON when the Workers proxy body is plain text error code 502', async () => {
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      expect(new Headers(init?.headers).get('Accept-Encoding')).toBe('identity');
+      expect(init?.redirect).toBe('manual');
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response('error code: 502', { status: 502, headers: { 'content-type': 'text/plain' } });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs = captureLogs();
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.44' },
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+    });
+    const response = await onRequestPost({
+      request,
+      env: { ...env, SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token', SQUARE_LOCATION_ID: 'LBP6350HER5HN' },
+    });
+    expect(response.status).toBe(502);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+    expect(JSON.parse(logs[0])).toEqual({ step: 'payment-link', status: 502, errors: [] });
+    const logged = logs.join('\n');
+    expect(logged).not.toContain('error code');
+    expect(logged).not.toContain('prod-token');
+    expect(logged).not.toContain('pat@example.com');
+    expect(logged).not.toContain('LBP6350HER5HN');
+  });
+
+  it('returns checkout JSON when the Square fetch throws', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      throw new TypeError('Network connection lost');
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs = captureLogs();
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.45' },
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+    });
+    const response = await onRequestPost({
+      request,
+      env: { ...env, SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token' },
+    });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+    expect(JSON.parse(logs.at(-1) || '')).toEqual({ step: 'payment-link', status: 0, errors: [] });
+    expect(logs.join('\n')).not.toContain('Network connection lost');
+    expect(logs.join('\n')).not.toContain('prod-token');
+  });
+
+  it('returns checkout JSON when the redirect URL cannot be built', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({}), { status: 200 }));
+    vi.stubGlobal('fetch', fetchImpl);
+    const request = new Request('ftp://files.example/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.46' },
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+    });
+    const response = await onRequestPost({ request, env });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+  });
+});
+
+describe('checkout health', () => {
+  it('reports booleans and the location GET status without secrets', async () => {
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      expect(String(url)).toBe('https://connect.squareup.com/v2/locations/LBP6350HER5HN');
+      expect(init?.method).toBe('GET');
+      expect(init?.body).toBeUndefined();
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer prod-token');
+      expect(new Headers(init?.headers).get('Accept-Encoding')).toBe('identity');
+      expect(init?.redirect).toBe('manual');
+      return new Response(JSON.stringify({ location: { id: 'LBP6350HER5HN', name: 'Safe Swimming School' } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    const request = new Request('https://safeswimmingschool.com/api/checkout-health', {
+      headers: { 'cf-connecting-ip': '203.0.113.50' },
+    });
+    const response = await onCheckoutHealth({
+      request,
+      env: { SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token', SQUARE_LOCATION_ID: 'LBP6350HER5HN' },
+    });
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(JSON.parse(text)).toEqual({ envSet: true, originChosen: true, locationStatus: 200 });
+    expect(text).not.toContain('prod-token');
+    expect(text).not.toContain('LBP6350HER5HN');
+    expect(text).not.toContain('production');
+    expect(text).not.toContain('connect.squareup.com');
+    expect(text).not.toContain('Safe Swimming School');
+    expect(logs.join('\n')).not.toContain('prod-token');
+    expect(logs.join('\n')).not.toContain('LBP6350HER5HN');
+  });
+
+  it('reports the Square status when the location GET fails and does not call Square without a chosen origin', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+      errors: [{ code: 'UNAUTHORIZED', category: 'AUTHENTICATION_ERROR', field: 'authorization', detail: 'bad token parent@example.com' }],
+    }), { status: 401 }));
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    const denied = await onCheckoutHealth({
+      request: new Request('https://safeswimmingschool.com/api/checkout-health', { headers: { 'cf-connecting-ip': '203.0.113.51' } }),
+      env: { SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token', SQUARE_LOCATION_ID: 'LBP6350HER5HN' },
+    });
+    expect(denied.status).toBe(200);
+    expect(await denied.json()).toEqual({ envSet: true, originChosen: true, locationStatus: 401 });
+    expect(JSON.parse(logs[0])).toEqual({
+      step: 'location',
+      status: 401,
+      errors: [{ code: 'UNAUTHORIZED', category: 'AUTHENTICATION_ERROR', field: 'authorization' }],
+    });
+    expect(logs.join('\n')).not.toContain('parent@example.com');
+    expect(logs.join('\n')).not.toContain('prod-token');
+
+    fetchImpl.mockClear();
+    const unconfigured = await onCheckoutHealth({
+      request: new Request('https://safeswimmingschool.com/api/checkout-health', { headers: { 'cf-connecting-ip': '203.0.113.52' } }),
+      env: { SQUARE_ENV: 'live', SQUARE_ACCESS_TOKEN: 'prod-token', SQUARE_LOCATION_ID: 'LBP6350HER5HN' },
+    });
+    expect(await unconfigured.json()).toEqual({ envSet: true, originChosen: false, locationStatus: 0 });
+    const missing = await onCheckoutHealth({
+      request: new Request('https://safeswimmingschool.com/api/checkout-health', { headers: { 'cf-connecting-ip': '203.0.113.53' } }),
+      env: { SQUARE_LOCATION_ID: '../v2/customers' },
+    });
+    expect(await missing.json()).toEqual({ envSet: false, originChosen: false, locationStatus: 0 });
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
 
@@ -563,6 +709,7 @@ describe('routes', () => {
   it('includes the checkout routes without an overlap', () => {
     const routes = JSON.parse(readFileSync(new URL('../public/_routes.json', import.meta.url), 'utf8')) as { include: string[] };
     expect(routes.include).toContain('/api/checkout');
+    expect(routes.include).toContain('/api/checkout-health');
     expect(routes.include).toContain('/api/square-webhook');
     expect(routesOverlap(routes.include)).toBe(false);
   });

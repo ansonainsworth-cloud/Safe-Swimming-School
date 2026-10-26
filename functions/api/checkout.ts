@@ -16,7 +16,15 @@ function json(data: unknown, status: number): Response {
   });
 }
 
-export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
+export async function onRequestPost(context: PagesContext): Promise<Response> {
+  try {
+    return await handleCheckoutPost(context);
+  } catch {
+    return json({ error: 'checkout-failed' }, 502);
+  }
+}
+
+async function handleCheckoutPost({ request, env }: PagesContext): Promise<Response> {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   if (!allowCheckout(ip)) return json({ error: 'too-many-requests' }, 429);
   if (!checkoutConfigured(env)) return json({ error: 'checkout-unavailable' }, 503);

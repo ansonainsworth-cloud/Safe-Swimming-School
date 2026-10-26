@@ -8,6 +8,7 @@
     "/footer",
     "/footer/*",
     "/api/checkout",
+    "/api/checkout-health",
     "/api/square-webhook"
   ],
   "exclude": []

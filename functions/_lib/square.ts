@@ -37,6 +37,7 @@ export function stepForSquarePath(path: string): string {
   if (path.endsWith('/customers/search')) return 'customers-search';
   if (path.endsWith('/orders/search')) return 'orders-search';
   if (path.endsWith('/payment-links')) return 'payment-link';
+  if (/^\/v2\/locations\/[^/]+$/.test(path)) return 'location';
   return 'square';
 }
 
@@ -62,33 +63,90 @@ export function squareFailureLog(step: string, status: number, body: unknown): {
   return { step, status, errors };
 }
 
+/** Square JSON is small. Refuse anything large enough to exhaust the isolate. */
+const MAX_SQUARE_BODY = 262144;
+
+function logSquareFailure(step: string, status: number, body: unknown): void {
+  const payload = squareFailureLog(step, status, body);
+  try {
+    console.log(JSON.stringify(payload));
+  } catch {
+    try {
+      console.log(JSON.stringify({ step, status, errors: [] }));
+    } catch {
+      // A log failure must not become the Pages "error code: 502" page.
+    }
+  }
+}
+
+/**
+ * Read the body as text. response.json() throws on the plain-text proxy body
+ * "error code: 502", and a compressed body that the Workers runtime cannot
+ * decode can fail the invocation even inside catch. Callers send
+ * Accept-Encoding: identity so the body is uncompressed JSON.
+ */
+async function readSquareBody(response: Response): Promise<unknown> {
+  try {
+    const text = await response.text();
+    if (!text || text.length > MAX_SQUARE_BODY) return null;
+    return JSON.parse(text) as unknown;
+  } catch {
+    try {
+      await response.body?.cancel();
+    } catch {
+      // The stream already failed.
+    }
+    return null;
+  }
+}
+
 /** Host is one of two constants chosen by SQUARE_ENV. Callers cannot supply a URL. */
-export async function squarePost(env: SquareEnv, path: string, body: unknown, fetchImpl: typeof fetch = fetch): Promise<unknown> {
+export async function squareRequest(
+  env: SquareEnv,
+  method: 'GET' | 'POST',
+  path: string,
+  body: unknown,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
   const origin = squareApiOrigin(env.SQUARE_ENV);
   if (!origin) throw new SquareRequestError(503);
-  if (!path.startsWith('/v2/') || path.includes('://')) throw new SquareRequestError(400);
+  if (!path.startsWith('/v2/') || path.includes('://') || path.includes('..')) throw new SquareRequestError(400);
   const token = env.SQUARE_ACCESS_TOKEN;
   if (!token) throw new SquareRequestError(503);
-  const response = await fetchImpl(origin + path, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Square-Version': SQUARE_VERSION,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) {
-    let parsed: unknown = null;
-    try {
-      parsed = await response.json();
-    } catch {
-      parsed = null;
-    }
-    console.log(JSON.stringify(squareFailureLog(stepForSquarePath(path), response.status, parsed)));
+  const step = stepForSquarePath(path);
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json',
+    'Accept-Encoding': 'identity',
+    'Square-Version': SQUARE_VERSION,
+  };
+  if (method === 'POST') headers['Content-Type'] = 'application/json';
+  const payload = method === 'POST' ? JSON.stringify(body) : undefined;
+
+  let response: Response;
+  try {
+    response = await fetchImpl(origin + path, {
+      method,
+      headers,
+      redirect: 'manual',
+      cache: 'no-store',
+      ...(payload !== undefined ? { body: payload } : {}),
+    });
+  } catch {
+    logSquareFailure(step, 0, null);
+    throw new SquareRequestError(0);
+  }
+
+  const parsed = await readSquareBody(response);
+  if (!response.ok || parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    logSquareFailure(step, response.status, parsed);
     throw new SquareRequestError(response.status);
   }
-  return response.json();
+  return parsed;
+}
+
+export async function squarePost(env: SquareEnv, path: string, body: unknown, fetchImpl: typeof fetch = fetch): Promise<unknown> {
+  return squareRequest(env, 'POST', path, body, fetchImpl);
 }
 
 export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fetch): SquareLookup {
