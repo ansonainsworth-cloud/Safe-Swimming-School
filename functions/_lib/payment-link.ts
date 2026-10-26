@@ -1,4 +1,14 @@
-import type { PricedLine } from './prices';
+import { toE164Phone, type PricedLine } from './prices';
+
+/** CreatePaymentLink only accepts https redirect URLs. Drop credentials and fragments. */
+export function httpsRedirectUrl(url: string): string {
+  const parsed = new URL(url);
+  if (parsed.protocol === 'http:') parsed.protocol = 'https:';
+  parsed.username = '';
+  parsed.password = '';
+  parsed.hash = '';
+  return parsed.toString();
+}
 
 export function buildCreatePaymentLinkBody(input: {
   locationId: string;
@@ -10,6 +20,7 @@ export function buildCreatePaymentLinkBody(input: {
   customerId?: string;
   lines: PricedLine[];
 }) {
+  const buyerPhone = input.buyerPhone ? toE164Phone(input.buyerPhone) : undefined;
   return {
     idempotency_key: input.idempotencyKey,
     ...(input.buyerName ? { payment_note: input.buyerName } : {}),
@@ -24,14 +35,13 @@ export function buildCreatePaymentLinkBody(input: {
           currency: 'USD',
         },
       })),
-      metadata: { source: 'website-cart' },
     },
     checkout_options: {
-      redirect_url: input.redirectUrl,
+      redirect_url: httpsRedirectUrl(input.redirectUrl),
     },
     pre_populated_data: {
       buyer_email: input.buyerEmail,
-      ...(input.buyerPhone ? { buyer_phone_number: input.buyerPhone } : {}),
+      ...(buyerPhone ? { buyer_phone_number: buyerPhone } : {}),
     },
   };
 }

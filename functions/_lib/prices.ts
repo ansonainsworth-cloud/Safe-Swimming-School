@@ -1,5 +1,6 @@
 /** Server-side prices. The browser may send ids and quantities only. */
 
+/** Documented Square-Version on the CreatePaymentLink reference. */
 export const SQUARE_VERSION = '2026-09-16';
 export const SQUARE_SANDBOX_ORIGIN = 'https://connect.squareupsandbox.com';
 export const REGISTRATION_ID = 'registration-annual';
@@ -120,13 +121,28 @@ export function normalizeName(value: unknown): string | null {
   return name;
 }
 
-/** Optional. Empty becomes absent. A present value must look like a phone number. */
+/**
+ * Optional buyer phone for CreatePaymentLink.
+ * Production validates pre_populated_data.buyer_phone_number as E.164 (max 17).
+ * A blank value is absent. A value that cannot be made E.164 is absent too,
+ * so checkout does not send a number Square would reject.
+ * A non-string is invalid.
+ */
 export function normalizePhone(value: unknown): string | null | undefined {
   if (value == null) return undefined;
   if (typeof value !== 'string') return null;
+  return toE164Phone(value);
+}
+
+/** US 10-digit and 11-digit numbers become +1…; an existing +E.164 number is kept. */
+export function toE164Phone(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   const digits = trimmed.replace(/\D/g, '');
-  if (digits.length < 10 || digits.length > 15) return null;
-  return trimmed.slice(0, 40);
+  let e164: string | undefined;
+  if (digits.length === 10) e164 = `+1${digits}`;
+  else if (digits.length === 11 && digits.startsWith('1')) e164 = `+${digits}`;
+  else if (trimmed.startsWith('+') && digits.length >= 10 && digits.length <= 15) e164 = `+${digits}`;
+  if (!e164 || e164.length > 17) return undefined;
+  return e164;
 }

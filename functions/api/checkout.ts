@@ -57,7 +57,6 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   try {
     created = await squarePost(env, '/v2/online-checkout/payment-links', paymentBody);
   } catch {
-    console.log(JSON.stringify({ checkout: 'payment-link-failed' }));
     return json({ error: 'checkout-failed' }, 502);
   }
   const url = (created as { payment_link?: { url?: unknown } })?.payment_link?.url;

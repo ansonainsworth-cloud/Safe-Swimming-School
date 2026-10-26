@@ -33,6 +33,35 @@ export function checkoutConfigured(env: SquareEnv): boolean {
     && Boolean(env.SQUARE_WEBHOOK_SIGNATURE_KEY);
 }
 
+export function stepForSquarePath(path: string): string {
+  if (path.endsWith('/customers/search')) return 'customers-search';
+  if (path.endsWith('/orders/search')) return 'orders-search';
+  if (path.endsWith('/payment-links')) return 'payment-link';
+  return 'square';
+}
+
+/** Square error fields only. detail can contain buyer email or phone, so it is dropped. */
+export function squareFailureLog(step: string, status: number, body: unknown): {
+  step: string;
+  status: number;
+  errors: Array<{ code?: string; category?: string; field?: string }>;
+} {
+  const raw = body && typeof body === 'object' && Array.isArray((body as { errors?: unknown }).errors)
+    ? (body as { errors: unknown[] }).errors
+    : [];
+  const errors: Array<{ code?: string; category?: string; field?: string }> = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as { code?: unknown; category?: unknown; field?: unknown };
+    const entry: { code?: string; category?: string; field?: string } = {};
+    if (typeof record.code === 'string') entry.code = record.code;
+    if (typeof record.category === 'string') entry.category = record.category;
+    if (typeof record.field === 'string') entry.field = record.field;
+    if (entry.code || entry.category || entry.field) errors.push(entry);
+  }
+  return { step, status, errors };
+}
+
 /** Host is one of two constants chosen by SQUARE_ENV. Callers cannot supply a URL. */
 export async function squarePost(env: SquareEnv, path: string, body: unknown, fetchImpl: typeof fetch = fetch): Promise<unknown> {
   const origin = squareApiOrigin(env.SQUARE_ENV);
@@ -49,7 +78,16 @@ export async function squarePost(env: SquareEnv, path: string, body: unknown, fe
     },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new SquareRequestError(response.status);
+  if (!response.ok) {
+    let parsed: unknown = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      parsed = null;
+    }
+    console.log(JSON.stringify(squareFailureLog(stepForSquarePath(path), response.status, parsed)));
+    throw new SquareRequestError(response.status);
+  }
   return response.json();
 }
 
