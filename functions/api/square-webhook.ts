@@ -1,10 +1,10 @@
-import type { SquareEnv } from '../_lib/square';
+import { squareApiOrigin, type SquareEnv } from '../_lib/square';
 import { eventSummary, verifySquareSignature, webhookNotificationUrl } from '../_lib/webhook';
 
 type PagesContext = { request: Request; env: SquareEnv };
 
 export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
-  if (env.SQUARE_ENV !== 'sandbox' || !env.SQUARE_WEBHOOK_SIGNATURE_KEY) {
+  if (!squareApiOrigin(env.SQUARE_ENV) || !env.SQUARE_WEBHOOK_SIGNATURE_KEY) {
     return new Response('Unauthorized', { status: 401 });
   }
   const rawBody = await request.text();
