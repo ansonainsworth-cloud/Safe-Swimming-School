@@ -4,7 +4,7 @@ import { onRequestPost } from '../functions/api/checkout';
 import { onRequestGet as onCheckoutHealth } from '../functions/api/checkout-health';
 import { onRequestPost as onWebhookPost } from '../functions/api/square-webhook';
 import { buildCreatePaymentLinkBody, httpsRedirectUrl } from '../functions/_lib/payment-link';
-import { CATALOG, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
+import { CATALOG, checkoutPaymentNote, normalizeChildren, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
 import { SQUARE_SANDBOX_ORIGIN } from '../functions/_lib/prices';
@@ -105,6 +105,47 @@ describe('price validation', () => {
       { name: '8 Private Lessons (30 min)', quantity: 1, priceCents: 52000 },
       { name: 'Annual Registration', quantity: 1, priceCents: 5000 },
     ]);
+  });
+
+  it('derives the registration tier from the children, not from package quantity', () => {
+    expect(normalizeChildren(undefined)).toEqual({ ok: true, children: null });
+    expect(normalizeChildren([])).toMatchObject({ ok: false });
+    expect(normalizeChildren([{ name: ' ', age: '4' }])).toMatchObject({ ok: false });
+    expect(normalizeChildren([{ name: 'Ada', age: '' }])).toMatchObject({ ok: false });
+    expect(normalizeChildren([{ name: 'Ada', age: '4', notes: 12 }])).toMatchObject({ ok: false });
+    expect(normalizeChildren(Array.from({ length: 21 }, () => ({ name: 'Ada', age: '4' })))).toMatchObject({ ok: false });
+    const three = normalizeChildren([
+      { name: 'Ada Lee', age: '6', notes: 'nervous in deep water' },
+      { name: 'Ben Lee', age: '4', notes: '   ' },
+      { name: 'Cam Lee', age: '8 months' },
+    ]);
+    expect(three).toEqual({
+      ok: true,
+      children: [
+        { name: 'Ada Lee', age: '6', notes: 'nervous in deep water' },
+        { name: 'Ben Lee', age: '4' },
+        { name: 'Cam Lee', age: '8 months' },
+      ],
+    });
+    if (!three.ok || !three.children) return;
+    expect(registrationPriceCents(three.children.length)).toBe(6000);
+    expect(priceClientLines([{ id: 'pkg-8', quantity: 1 }], true, three.children.length)).toEqual([
+      { name: '8 Private Lessons (30 min)', quantity: 1, priceCents: 52000 },
+      { name: 'Annual Registration', quantity: 1, priceCents: 6000 },
+    ]);
+    expect(checkoutPaymentNote('Pat Lee', null)).toBe('Pat Lee');
+    expect(checkoutPaymentNote('Pat Lee', three.children)).toBe(
+      'Pat Lee. Children: 1. Ada Lee, age 6. Notes: nervous in deep water 2. Ben Lee, age 4 3. Cam Lee, age 8 months',
+    );
+    const notes = 'n'.repeat(200);
+    const long = checkoutPaymentNote('Pat Lee', [
+      { name: 'Ada Lee', age: '6', notes },
+      { name: 'Ben Lee', age: '4', notes },
+      { name: 'Cam Lee', age: '8 months', notes },
+    ]);
+    expect(long.length).toBeLessThanOrEqual(500);
+    expect(long).toContain('Ada Lee, age 6');
+    expect(long).not.toContain(notes);
   });
 });
 
@@ -366,6 +407,56 @@ describe('checkout endpoint', () => {
       expect((await response.json()).registrationCents).toBe(swimmers === 2 ? 5000 : 6000);
     }
     expect(amounts).toEqual([5000, 6000, 6000]);
+  });
+
+  it('keeps one package for three children and puts their details in the payment note', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response(JSON.stringify({ payment_link: { url: 'https://sandbox.square.link/u/kids' } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const request = new Request('https://preview.example/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.80' },
+      body: JSON.stringify({
+        items: [{ id: 'pkg-8', quantity: 1 }],
+        swimmers: 1,
+        children: [
+          { name: 'Ada Lee', age: '6', notes: 'nervous in deep water' },
+          { name: 'Ben Lee', age: '4' },
+          { name: 'Cam Lee', age: '8 months', notes: '' },
+        ],
+        buyer: { name: 'Pat Lee', email: 'pat@example.com' },
+      }),
+    });
+    const response = await onRequestPost({ request, env });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ registrationAdded: true, registrationCents: 6000, registrationReason: 'no-customer' });
+    const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
+    const sent = JSON.parse(String(paymentCall?.[1]?.body));
+    expect(sent.order.line_items).toEqual([
+      { name: '8 Private Lessons (30 min)', quantity: '1', base_price_money: { amount: 52000, currency: 'USD' } },
+      { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 6000, currency: 'USD' } },
+    ]);
+    expect(sent.order).not.toHaveProperty('metadata');
+    expect(JSON.stringify(sent)).not.toContain('"metadata"');
+    expect(sent.payment_note).toBe('Pat Lee. Children: 1. Ada Lee, age 6. Notes: nervous in deep water 2. Ben Lee, age 4 3. Cam Lee, age 8 months');
+    expect(sent.payment_note.length).toBeLessThanOrEqual(500);
+  });
+
+  it('rejects a child with no name', async () => {
+    const request = new Request('https://preview.example/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.81' },
+      body: JSON.stringify({
+        items: [{ id: 'pkg-8', quantity: 1 }],
+        children: [{ name: '', age: '4' }],
+        buyer: { name: 'Pat Lee', email: 'pat@example.com' },
+      }),
+    });
+    const response = await onRequestPost({ request, env });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'invalid-children' });
   });
 
   it('posts a production checkout to connect.squareup.com', async () => {

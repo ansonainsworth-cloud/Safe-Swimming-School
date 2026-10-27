@@ -14,13 +14,12 @@ const description = 'Review private lesson packages and water aerobics classes b
 <label>Name<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
 <label>Email<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
 <label>Phone <span class="sss-optional">(optional)</span><input name="phone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel"></label>
-<label>Swimmers <span class="sss-optional">(siblings share one package)</span>
-  <select name="swimmers" id="sss-swimmer-count">
-    <option value="1">1 swimmer</option>
-    <option value="2">2 siblings</option>
-    <option value="3">3 or more swimmers</option>
-  </select>
-</label>
+<fieldset class="sss-children" aria-describedby="sss-children-help">
+  <legend>Children</legend>
+  <p id="sss-children-help">Siblings share one package. Add each child who will use the lessons.</p>
+  <div id="sss-children"></div>
+  <button type="button" class="sss-btn" id="sss-add-child">Add a child</button>
+</fieldset>
 <p class="sss-cart-note">Siblings share one package. Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. It is added at checkout if we don't have a registration from you in the last 12 months.</p>
 <button id="sss-checkout-button" class="sss-btn" type="submit" disabled>Checkout</button>
 <p id="sss-checkout-message" class="sss-cart-message" hidden></p>

@@ -16,7 +16,12 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-cart-subtotal{font-size:1.15em;margin-top:16px}
 .sss-remove{background:none;border:0;padding:0;color:#033761;font-weight:700;text-decoration:underline;cursor:pointer}
 .sss-cart-form label{display:block;margin:14px 0;font-weight:500;color:#033761}
-.sss-cart-form input,.sss-cart-form select{display:block;width:100%;max-width:420px;margin-top:4px;padding:8px}
+.sss-cart-form input,.sss-cart-form select,.sss-cart-form textarea{display:block;width:100%;max-width:420px;margin-top:4px;padding:8px;font:inherit}
+.sss-children{border:0;margin:18px 0;padding:0}
+.sss-children legend{font-weight:700;color:#033761}
+.sss-child{border:1px solid #d7e3ee;border-radius:4px;padding:4px 12px 12px;margin:0 0 12px;max-width:444px}
+.sss-child h3{margin:8px 0 0;font-size:1em;color:#033761}
+#sss-add-child{margin-top:4px}
 .sss-optional{font-weight:400}
 .sss-cart-note{background:#f4f8fb;padding:12px 14px;border-radius:4px}
 .sss-cart-message{margin-top:14px}

@@ -1,4 +1,4 @@
-import { toE164Phone, type PricedLine } from './prices';
+import { checkoutPaymentNote, toE164Phone, type PricedLine, type SwimmerChild } from './prices';
 
 /** CreatePaymentLink only accepts https redirect URLs. Drop credentials and fragments. */
 export function httpsRedirectUrl(url: string): string {
@@ -17,12 +17,14 @@ export function buildCreatePaymentLinkBody(input: {
   buyerName?: string;
   buyerPhone?: string;
   customerId?: string;
+  children?: SwimmerChild[] | null;
   lines: PricedLine[];
 }) {
   const buyerPhone = input.buyerPhone ? toE164Phone(input.buyerPhone) : undefined;
+  const paymentNote = input.buyerName ? checkoutPaymentNote(input.buyerName, input.children ?? null) : undefined;
   return {
     idempotency_key: input.idempotencyKey,
-    ...(input.buyerName ? { payment_note: input.buyerName } : {}),
+    ...(paymentNote ? { payment_note: paymentNote } : {}),
     order: {
       location_id: input.locationId,
       ...(input.customerId ? { customer_id: input.customerId } : {}),

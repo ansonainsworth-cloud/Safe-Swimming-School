@@ -72,12 +72,102 @@
     return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
 
+  function childRows() {
+    var root = document.getElementById('sss-children');
+    if (!root) return [];
+    return Array.prototype.slice.call(root.querySelectorAll('.sss-child'));
+  }
+
   function swimmerCount() {
-    var el = document.getElementById('sss-swimmer-count');
-    var n = el ? parseInt(el.value, 10) : 1;
-    if (!Number.isInteger(n) || n < 1) return 1;
-    if (n > 20) return 20;
-    return n;
+    var rows = childRows();
+    if (!rows.length) return 1;
+    return rows.length > 20 ? 20 : rows.length;
+  }
+
+  function readChildren() {
+    return childRows().map(function (row) {
+      var notes = row.querySelector('[data-child-notes]').value.trim();
+      var child = {
+        name: row.querySelector('[data-child-name]').value.trim(),
+        age: row.querySelector('[data-child-age]').value.trim()
+      };
+      if (notes) child.notes = notes;
+      return child;
+    });
+  }
+
+  function renumberChildren() {
+    childRows().forEach(function (row, index) {
+      var number = index + 1;
+      row.querySelector('[data-child-heading]').textContent = 'Child ' + number;
+      var remove = row.querySelector('[data-remove-child]');
+      remove.textContent = 'Remove child ' + number;
+      remove.setAttribute('aria-label', 'Remove child ' + number);
+      row.querySelectorAll('[data-child-field]').forEach(function (field) {
+        var kind = field.getAttribute('data-child-field');
+        var id = 'sss-child-' + kind + '-' + number;
+        field.id = id;
+        var label = row.querySelector('label[data-child-label="' + kind + '"]');
+        if (label) label.htmlFor = id;
+      });
+    });
+  }
+
+  function updateRemoveButtons() {
+    var rows = childRows();
+    var only = rows.length < 2;
+    rows.forEach(function (row) {
+      var button = row.querySelector('[data-remove-child]');
+      button.disabled = only;
+      button.setAttribute('aria-disabled', only ? 'true' : 'false');
+    });
+    var add = document.getElementById('sss-add-child');
+    if (add) add.disabled = rows.length >= 20;
+  }
+
+  function addChild(shouldFocus) {
+    var root = document.getElementById('sss-children');
+    if (!root || childRows().length >= 20) return;
+    var row = document.createElement('div');
+    row.className = 'sss-child';
+    row.innerHTML = ''
+      + '<h3 data-child-heading>Child</h3>'
+      + '<label data-child-label="name">Name<input data-child-field="name" data-child-name type="text" required maxlength="100" autocomplete="off"></label>'
+      + '<label data-child-label="age">Age<input data-child-field="age" data-child-age type="text" required maxlength="40" autocomplete="off"></label>'
+      + '<label data-child-label="notes">Notes <span class="sss-optional">(optional)</span><textarea data-child-field="notes" data-child-notes maxlength="200"></textarea></label>'
+      + '<button type="button" class="sss-remove" data-remove-child>Remove child</button>';
+    root.appendChild(row);
+    renumberChildren();
+    updateRemoveButtons();
+    if (shouldFocus) {
+      var name = row.querySelector('[data-child-name]');
+      if (name) name.focus();
+    }
+  }
+
+  function bindChildren() {
+    var root = document.getElementById('sss-children');
+    var add = document.getElementById('sss-add-child');
+    if (!root || !add) return;
+    add.addEventListener('click', function () {
+      addChild(true);
+      renderCart(read());
+    });
+    root.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-remove-child]');
+      if (!button || button.disabled) return;
+      var row = button.closest('.sss-child');
+      if (!row || childRows().length < 2) return;
+      row.remove();
+      renumberChildren();
+      updateRemoveButtons();
+      renderCart(read());
+      add.focus();
+    });
+    root.addEventListener('input', function () {
+      renderCart(read());
+    });
+    if (!childRows().length) addChild(false);
   }
 
   function registrationCents(swimmers) {
@@ -122,11 +212,7 @@
     }
   });
 
-  document.addEventListener('change', function (event) {
-    if (event.target && event.target.id === 'sss-swimmer-count') {
-      renderCart(read());
-      return;
-    }
+    document.addEventListener('change', function (event) {
     var input = event.target.closest('#sss-cart-root [data-cart-qty]');
     if (!input) return;
     var line = input.closest('[data-cart-id]');
@@ -173,8 +259,15 @@
       var phone = form.phone.value.trim();
       var buyer = { name: form.name.value.trim(), email: form.email.value.trim() };
       if (phone) buyer.phone = phone;
+      var children = readChildren();
+      var missingChild = children.some(function (child) { return !child.name || !child.age; });
       message.hidden = true;
       message.innerHTML = '';
+      if (!children.length || missingChild) {
+        message.hidden = false;
+        message.textContent = 'Add a name and age for each child, then try again.';
+        return;
+      }
       var button = document.getElementById('sss-checkout-button');
       button.disabled = true;
       fetch('/api/checkout', {
@@ -182,7 +275,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           items: items.map(function (line) { return { id: line.id, quantity: line.quantity }; }),
-          swimmers: swimmerCount(),
+          children: children,
           buyer: buyer
         })
       }).then(function (response) {
@@ -197,7 +290,9 @@
         if (!result) return;
         if (!result.ok || !result.data || typeof result.data.url !== 'string' || result.data.url.indexOf('https://') !== 0) {
           message.hidden = false;
-          message.textContent = 'We couldn’t start checkout. Check your name and email, and try again.';
+          message.textContent = result.data && result.data.error === 'invalid-children'
+            ? 'Add a name and age for each child, then try again.'
+            : 'We couldn’t start checkout. Check your name and email, and try again.';
           return;
         }
         if (result.data.registrationReason === 'lookup-error') {
@@ -224,6 +319,7 @@
     });
   }
 
+  bindChildren();
   renderCount(read());
   renderCart(read());
 })();

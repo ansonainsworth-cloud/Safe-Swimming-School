@@ -1,4 +1,4 @@
-import { normalizeEmail, normalizeName, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../_lib/prices';
+import { normalizeChildren, normalizeEmail, normalizeName, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../_lib/prices';
 import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { allowCheckout } from '../_lib/rate-limit';
 import { decideRegistration } from '../_lib/registration';
@@ -36,10 +36,12 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
     return json({ error: 'invalid-json' }, 400);
   }
   if (!payload || typeof payload !== 'object') return json({ error: 'invalid-json' }, 400);
-  const body = payload as { items?: unknown; swimmers?: unknown; buyer?: { name?: unknown; email?: unknown; phone?: unknown } };
+  const body = payload as { items?: unknown; swimmers?: unknown; children?: unknown; buyer?: { name?: unknown; email?: unknown; phone?: unknown } };
   const items = validateClientItems(body.items);
   if (!items.ok) return json({ error: 'invalid-cart' }, 400);
-  const swimmers = normalizeSwimmerCount(body.swimmers);
+  const parsedChildren = normalizeChildren(body.children);
+  if (!parsedChildren.ok) return json({ error: 'invalid-children' }, 400);
+  const swimmers = parsedChildren.children ? parsedChildren.children.length : normalizeSwimmerCount(body.swimmers);
   if (swimmers == null) return json({ error: 'invalid-cart' }, 400);
   const name = normalizeName(body.buyer?.name);
   const email = normalizeEmail(body.buyer?.email);
@@ -58,6 +60,7 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
     buyerName: name,
     buyerPhone: phone,
     customerId: decision.customerId,
+    children: parsedChildren.children,
     lines,
   });
 
