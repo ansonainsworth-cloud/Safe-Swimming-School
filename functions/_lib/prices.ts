@@ -29,7 +29,8 @@ export type ItemId =
   | 'pkg-12'
   | 'pkg-20'
   | 'trial'
-  | 'water-aerobics';
+  | 'water-aerobics'
+  | 'wellington-winter';
 
 export type CatalogItem = {
   id: ItemId;
@@ -48,6 +49,7 @@ export const CATALOG: readonly CatalogItem[] = [
   { id: 'pkg-20', name: '20 Private Lessons (30 min)', priceCents: 110000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'trial', name: 'Trial Lesson (30 min)', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'water-aerobics', name: 'Water Aerobics Class (30 min)', priceCents: 4500, minQty: 1, maxQty: 20, clientOrderable: true },
+  { id: 'wellington-winter', name: 'Wellington winter package, January to March', priceCents: 168000, minQty: 1, maxQty: 1, clientOrderable: true },
 ];
 
 export type ClientLine = { id: ItemId; quantity: number };
