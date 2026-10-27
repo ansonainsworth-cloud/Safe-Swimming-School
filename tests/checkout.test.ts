@@ -36,6 +36,8 @@ describe('price validation', () => {
     });
     expect(CATALOG.find((item) => item.id === 'pkg-8')?.name).toBe('8 Private Lessons (30 min)');
     expect(CATALOG.find((item) => item.id === 'water-aerobics')?.maxQty).toBe(20);
+    expect(CATALOG.find((item) => item.id === 'trial')?.name).toBe('Single lesson (30 min)');
+    expect(CATALOG.find((item) => item.id === 'trial')?.priceCents).toBe(7500);
     expect(CATALOG.find((item) => item.id === 'trial')?.maxQty).toBe(3);
   });
 
@@ -107,7 +109,7 @@ describe('registration decision', () => {
   it('adds the fee when the customer has no registration line', async () => {
     const decision = await decideRegistration('parent@example.com', lookup({
       searchCustomers: async () => ({ customers: [{ id: 'CUST1' }] }),
-      searchOrders: async () => ({ orders: [{ line_items: [{ name: 'Trial Lesson (30 min)' }] }] }),
+      searchOrders: async () => ({ orders: [{ line_items: [{ name: 'Single lesson (30 min)' }] }] }),
     }), now);
     expect(decision).toEqual({ add: true, reason: 'no-recent-registration', customerId: 'CUST1' });
   });
@@ -188,7 +190,7 @@ describe('CreatePaymentLink body', () => {
       idempotencyKey: 'idem-2',
       redirectUrl: 'https://preview.example/checkout/thanks/',
       buyerEmail: 'parent@example.com',
-      lines: [{ name: 'Trial Lesson (30 min)', quantity: 1, priceCents: 7500 }],
+      lines: [{ name: 'Single lesson (30 min)', quantity: 1, priceCents: 7500 }],
     });
     expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
     expect(body.order).not.toHaveProperty('customer_id');
@@ -204,7 +206,7 @@ describe('CreatePaymentLink body', () => {
         buyerEmail: 'parent@example.com',
         buyerPhone,
         lines: [
-          { name: 'Trial Lesson (30 min)', quantity: 1, priceCents: 7500 },
+          { name: 'Single lesson (30 min)', quantity: 1, priceCents: 7500 },
           { name: 'Annual Registration', quantity: 1, priceCents: 3500 },
         ],
       });
@@ -213,7 +215,7 @@ describe('CreatePaymentLink body', () => {
       expect(body.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
       expect(body.order).not.toHaveProperty('metadata');
       expect(body.order.line_items).toEqual([
-        { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+        { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
         { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
       ]);
     }
@@ -305,7 +307,7 @@ describe('checkout endpoint', () => {
     expect(paymentCall?.[0]).toBe('https://connect.squareupsandbox.com/v2/online-checkout/payment-links');
     const sent = JSON.parse(String(paymentCall?.[1]?.body));
     expect(sent.order.line_items).toEqual([
-      { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+      { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
     expect(sent.order).not.toHaveProperty('metadata');
@@ -387,7 +389,7 @@ describe('checkout endpoint', () => {
     const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
     const sent = JSON.parse(String(paymentCall?.[1]?.body));
     expect(sent.order.line_items).toEqual([
-      { name: 'Trial Lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+      { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
     expect(sent.pre_populated_data).toEqual({ buyer_email: 'pat@example.com' });
