@@ -14,6 +14,7 @@ export const FOOTER_LINKS = [
   { href: '/adaptive-swim-lessons/', label: 'Adaptive Swim Lessons' },
   { href: '/water-aerobics/', label: 'Water Aerobics' },
   { href: '/baby-bath-time-water-comfort/', label: 'Baby Bath Time' },
+  { href: '/gift-certificates/', label: 'Gift certificates' },
   { href: '/pricing/', label: 'Pricing' },
   { href: '/locations/', label: 'Locations' },
   { href: '/blog/', label: 'Blog' },
