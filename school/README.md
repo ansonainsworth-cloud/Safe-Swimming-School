@@ -2,14 +2,14 @@
 
 Installable lesson app for private 30 minute lessons at each family's pool in Palm Beach County. It is a separate app from the marketing site in the repo root. The Astro site does not build or publish this folder.
 
-This pull request does not deploy anything.
+The published app is https://app.safeswimmingschool.com. The marketing site stays on safeswimmingschool.com.
 
 ## What is running
 
-- **Front end:** static files in `public/`, ready for a separate Cloudflare Pages project. The app is a PWA (web manifest, service worker, home screen name).
-- **API:** Cloudflare Worker in `src/`.
-- **Database:** Cloudflare D1. Local development uses a local database only.
-- **Local preview:** Wrangler serves `public/` and the Worker together on one origin, with `/api/*` handled by the Worker. That matches a later production setup where Pages serves the site and a Worker route serves `/api/*` on the same hostname.
+- **Front end:** static files in `public/`, published by the Cloudflare Pages project `safe-swimming-school-app`. The app is a PWA (web manifest, service worker, home screen name).
+- **API:** Cloudflare Worker in `src/`, routed at `/api/*` on the same hostname.
+- **Database:** Cloudflare D1 database `safe-swimming-school-app`. Local development uses a local database only.
+- **Local preview:** Wrangler serves `public/` and the Worker together on one origin, with `/api/*` handled by the Worker. Production matches that: Pages serves the site and a Worker route serves `/api/*`.
 
 ## Beta accounts
 
@@ -22,7 +22,7 @@ Practice data, not live customer data.
 
 The second family is not in this build. Henry is stored by first name only. The family shares one lesson count.
 
-While email delivery is still a stub, the sign in screen shows preview accounts and a preview link. Turn `EXPOSE_DEV_MAGIC_LINK` off before any public URL.
+Email delivery is still a stub, so the published app keeps the preview sign in link. The sign in screen lists the practice accounts, and the email link is returned in the response. Connect an email provider and turn `EXPOSE_DEV_MAGIC_LINK` off when a real mailbox should send the link instead.
 
 ## Run it locally
 
@@ -103,16 +103,17 @@ The next phase adds:
 
 Tables `en_route_sessions` and `location_points` are already in D1. A scheduled job and each API request delete location points older than 24 hours. Clock in and clock out already update a share session if one exists.
 
-## Production later (do not run for this PR)
+## Production
 
-1. Create a D1 database: `npx wrangler d1 create safe-swimming-school-app`.
-2. Replace `database_id` in `wrangler.jsonc` with the id it prints. The placeholder id is only for local dev.
-3. Apply migrations remotely when you are ready: `npx wrangler d1 migrations apply safe-swimming-school-app --remote`.
-4. Deploy the Worker from `school/` when you mean to. Do not point it at the marketing site.
-5. Create a **new** Pages project for `school/public` (build command can be empty, output directory `school/public` if the root is the repo). Do not change the existing marketing Pages project.
-6. Put Pages and the Worker on one hostname so the session cookie stays same origin. A Worker route for `/api/*` on that hostname leaves the rest of the paths to Pages.
+Published on the Cloudflare account that owns safeswimmingschool.com. The marketing Pages project `safe-swimming-school` is unchanged.
 
-Preview location and the preview sign in link must be off on any public hostname.
+- App: https://app.safeswimmingschool.com
+- Pages project: `safe-swimming-school-app` (root `school`, output `public`, no build command)
+- Worker: `safe-swimming-school-app`, route `app.safeswimmingschool.com/api/*`
+- D1: `safe-swimming-school-app` (`fba323f1-138a-4f5f-b12a-28ecc984c368`)
+- Practice data stays on (`DATA_SOURCE=mock`). Clock in can use preview location until a phone is at the pool.
+
+Do not point this Worker at safeswimmingschool.com or www. Those host the marketing site.
 
 ## Privacy
 

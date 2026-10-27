@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "safe-swimming-school-app",
+  "account_id": "14ab4bda10102f5322383b8cf612b1b9",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-27",
   "compatibility_flags": ["nodejs_compat"],
@@ -16,8 +17,9 @@
       "head_sampling_rate": 1
     }
   },
-  // Pages publishes ./public. This Worker serves the same files locally
-  // and handles /api. Do not deploy from this repo until credentials exist.
+  // Pages project safe-swimming-school-app publishes ./public at
+  // app.safeswimmingschool.com. This Worker serves those files locally and
+  // handles /api on that hostname. Do not attach it to the marketing site.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -48,8 +50,14 @@
     {
       "binding": "DB",
       "database_name": "safe-swimming-school-app",
-      "database_id": "00000000-0000-0000-0000-000000000001",
+      "database_id": "fba323f1-138a-4f5f-b12a-28ecc984c368",
       "migrations_dir": "migrations"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "app.safeswimmingschool.com/api/*",
+      "zone_name": "safeswimmingschool.com"
     }
   ],
   "triggers": {
