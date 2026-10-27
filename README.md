@@ -10,3 +10,4 @@ Static rebuild of the former GoDaddy WordPress site, for Cloudflare Pages.
 - Redirects: `public/_redirects`. Noindex headers: `public/_headers`. `robots.txt` in `public/`; `sitemap.xml` is generated.
 - Theme CSS/JS and images are mirrored from WordPress under `public/wp-content/` and `public/wp-includes/`, at the same paths, so old image URLs keep working.
 - The Tally registration form (yPed66) is embedded on `/enroll/`.
+- The installable lesson app is a separate project in `school/` (its own Pages site and Worker). It is not part of this marketing build. See `school/README.md`.

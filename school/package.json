@@ -1,0 +1,19 @@
+{
+  "name": "safe-swimming-school-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply safe-swimming-school-app --local && wrangler dev --ip 127.0.0.1 --port 8787",
+    "test": "vitest run",
+    "types": "wrangler types",
+    "check": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.45.0"
+  }
+}

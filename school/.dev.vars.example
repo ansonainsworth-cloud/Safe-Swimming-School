@@ -1,0 +1,11 @@
+# Copy to school/.dev.vars when credentials exist. Never commit .dev.vars.
+# Wrangler loads .dev.vars for local dev only. It is not uploaded by itself.
+# Set the same names on the Worker with: npx wrangler secret put NAME
+# Do not put these values in wrangler.jsonc.
+
+# Google service account JSON private key, used later for Calendar and Sheets.
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
+
+# Twilio-style SMS account. Unused while SMS_PROVIDER=stub.
+SMS_ACCOUNT_SID=
+SMS_AUTH_TOKEN=
