@@ -1,0 +1,35 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PageShell from '../../../components/PageShell.astro';
+import CartAdd from '../../../components/CartAdd.astro';
+import { pageChrome, webPage, faqSchema } from '../../../data/newpage.js';
+
+const path = '/locations/wellington/winter-package/';
+const title = 'Wellington winter package | Safe Swimming School';
+const description = '24 thirty minute lessons, January to March, for $1,680. Private lessons in your family\'s own pool in Wellington. Siblings share one package.';
+const bookingLine = 'Families pick their days and times when they book.';
+const faqs = [
+  ['How much is the Wellington winter package?', 'The package is 24 thirty minute lessons, January to March, for $1,680. Annual registration is added at checkout: $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Siblings share one package.'],
+  ['Where do the lessons happen?', 'Lessons are 30 minute private lessons in your family\'s own pool in Wellington.'],
+  ['Is it the same instructor every lesson?', 'Yes. You have the same instructor every lesson.'],
+  ['How many lessons are in the package?', '24 thirty minute lessons, January to March, for $1,680.'],
+  ['What days and times are the lessons?', bookingLine],
+];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Wellington winter package', description), faqSchema(faqs)]}>
+<PageShell h1="Wellington winter package">
+<p>Safe Swimming School offers 24 thirty minute lessons, January to March, for $1,680. Survival swim lessons are private lessons in your family's own pool. You have the same instructor every lesson. Siblings can share the package. There is instructor capacity in Wellington for January to March.</p>
+<p>Lessons start with safety skills, then strokes: roll to back, float and rest, and swim to the wall.</p>
+<p>These skills are one layer of protection. Nothing replaces adult supervision and pool barriers.</p>
+<figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family's pool" /></figure>
+<p><strong>24 thirty minute lessons, January to March, $1,680.</strong> Add this package to the cart once. At checkout, choose 1 swimmer, 2 siblings, or 3 or more swimmers. Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. It is added at checkout when we do not already have a registration from you in the last 12 months.</p>
+<p><CartAdd id="wellington-winter" /></p>
+<p>{bookingLine}</p>
+<h2 class="wp-block-heading">Neighborhoods in Wellington</h2>
+<p>Lessons are at home pools in Wellington, including Palm Beach Polo, Equestrian Club Estates, Olympia, Versailles, Mizner Estates, and every neighborhood in between. Safe Swimming School also teaches across Palm Beach County, including West Palm Beach and surrounding areas.</p>
+<p>See <a href="/locations/wellington/">swim lessons in Wellington</a> and <a href="/pricing/">all package prices</a>.</p>
+<h2 class="wp-block-heading">Questions</h2>
+{faqs.map(([q, a]) => (<Fragment><p><strong>{q}</strong></p><p>{a}</p></Fragment>))}
+<p>Text <a href="sms:+15612368260">561-236-8260</a> or email <a href="mailto:info@safeswimmingschool.com">info@safeswimmingschool.com</a>.</p>
+</PageShell>
+</Base>
