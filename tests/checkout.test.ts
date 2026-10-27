@@ -35,7 +35,7 @@ describe('price validation', () => {
       'water-aerobics': 4500,
       'wellington-winter': 168000,
     });
-    expect(CATALOG.find((item) => item.id === 'wellington-winter')?.name).toBe('Wellington winter package, January to March');
+    expect(CATALOG.find((item) => item.id === 'wellington-winter')?.name).toBe('Wellington winter package, 24 thirty minute lessons, January to March, $1,680');
     expect(CATALOG.find((item) => item.id === 'wellington-winter')?.maxQty).toBe(1);
     expect(CATALOG.find((item) => item.id === 'pkg-8')?.name).toBe('8 Private Lessons (30 min)');
     expect(CATALOG.find((item) => item.id === 'water-aerobics')?.maxQty).toBe(20);
@@ -56,7 +56,7 @@ describe('price validation', () => {
     expect(winter.ok).toBe(true);
     if (!winter.ok) return;
     expect(priceClientLines(winter.lines, true, 1)).toEqual([
-      { name: 'Wellington winter package, January to March', quantity: 1, priceCents: 168000 },
+      { name: 'Wellington winter package, 24 thirty minute lessons, January to March, $1,680', quantity: 1, priceCents: 168000 },
       { name: 'Annual Registration', quantity: 1, priceCents: 3500 },
     ]);
     expect(priceClientLines(winter.lines, true, 2)[1].priceCents).toBe(5000);
@@ -69,7 +69,7 @@ describe('price validation', () => {
       lines: priceClientLines(winter.lines, true, 2),
     });
     expect(winterLink.order.line_items).toEqual([
-      { name: 'Wellington winter package, January to March', quantity: '1', base_price_money: { amount: 168000, currency: 'USD' } },
+      { name: 'Wellington winter package, 24 thirty minute lessons, January to March, $1,680', quantity: '1', base_price_money: { amount: 168000, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 5000, currency: 'USD' } },
     ]);
     expect(JSON.stringify(winterLink)).not.toContain('catalog_object_id');
