@@ -46,7 +46,7 @@ export const CATALOG: readonly CatalogItem[] = [
   { id: 'pkg-8', name: '8 Private Lessons (30 min)', priceCents: 52000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'pkg-12', name: '12 Private Lessons (30 min)', priceCents: 72000, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'pkg-20', name: '20 Private Lessons (30 min)', priceCents: 110000, minQty: 1, maxQty: 3, clientOrderable: true },
-  { id: 'trial', name: 'Trial Lesson (30 min)', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
+  { id: 'trial', name: 'Single lesson (30 min)', priceCents: 7500, minQty: 1, maxQty: 3, clientOrderable: true },
   { id: 'water-aerobics', name: 'Water Aerobics Class (30 min)', priceCents: 4500, minQty: 1, maxQty: 20, clientOrderable: true },
 ];
 
