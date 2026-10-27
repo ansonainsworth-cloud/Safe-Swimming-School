@@ -186,9 +186,10 @@ button, .btn {
 .pill-late { background: var(--late-bg); color: var(--late); }
 .pill-wait { background: var(--wait-bg); color: var(--wait); }
 
-.times { display: grid; grid-template-columns: 72px 1fr 1fr auto; gap: 6px 8px; align-items: center; margin-top: 10px; font-size: 0.95rem; }
-.times strong { font-size: 0.75rem; color: var(--wait); font-weight: 700; }
-.detail { grid-column: 2 / -1; color: var(--late); font-weight: 700; margin: 0; }
+.times { margin-top: 10px; font-size: 0.95rem; }
+.time-line { display: grid; grid-template-columns: 72px 1fr 1fr auto; gap: 6px 8px; align-items: center; margin-top: 6px; }
+.time-line strong { font-size: 0.75rem; color: var(--wait); font-weight: 700; }
+.detail { color: var(--late); font-weight: 700; margin: 0 0 4px 72px; }
 
 .flash, .error {
   border-radius: 14px;
@@ -205,9 +206,10 @@ button, .btn {
 
 :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
-@media (max-width: 560px) {
-  .times { grid-template-columns: 64px 1fr; }
-  .times .pill { grid-column: 2; justify-self: start; }
+@media (max-width: 420px) {
+  .time-line { grid-template-columns: 56px 1fr 1fr; }
+  .time-line .pill { grid-column: 2 / -1; justify-self: start; }
+  .detail { margin-left: 56px; }
   .balance-number { font-size: 3.4rem; }
 }
 

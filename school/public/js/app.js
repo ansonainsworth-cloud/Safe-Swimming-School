@@ -164,10 +164,12 @@ function renderInstructor(data) {
 
 function timeRow(label, scheduled, actual, status, detail) {
   return `
-    <strong>${esc(label)}</strong>
-    <span>${esc(scheduled)}</span>
-    <span>${esc(actual)}</span>
-    ${pill(status)}
+    <div class="time-line">
+      <strong>${esc(label)}</strong>
+      <span>${esc(scheduled)}</span>
+      <span>${esc(actual)}</span>
+      ${pill(status)}
+    </div>
     ${detail ? `<p class="detail">${esc(detail)}</p>` : ""}`;
 }
 
@@ -181,7 +183,9 @@ function renderAdmin(data) {
       <p class="child">${esc(row.childFirstName)}</p>
       <p class="meta">${esc(row.familyName)}</p>
       <div class="times">
-        <strong></strong><strong>${esc(copy.scheduled)}</strong><strong>${esc(copy.actual)}</strong><strong></strong>
+        <div class="time-line">
+          <strong></strong><strong>${esc(copy.scheduled)}</strong><strong>${esc(copy.actual)}</strong><strong></strong>
+        </div>
         ${timeRow(copy.start, row.scheduledStartLabel, row.actualStartLabel, row.startStatus, row.startDetail)}
         ${timeRow(copy.end, row.scheduledEndLabel, row.actualEndLabel, row.endStatus, row.endDetail)}
       </div>
