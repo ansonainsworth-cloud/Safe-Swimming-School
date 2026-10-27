@@ -23,6 +23,59 @@ export function registrationPriceCents(swimmers: number): number {
   return REGISTRATION_TIER_CENTS[1];
 }
 
+export type SwimmerChild = { name: string; age: string; notes?: string };
+
+const CHILD_NOTE_MAX = 200;
+const PAYMENT_NOTE_MAX = 500;
+
+/** Absent children keep the numeric swimmer count. A present list is 1 to 20 children. */
+export function normalizeChildren(value: unknown): { ok: true; children: SwimmerChild[] | null } | { ok: false; error: string } {
+  if (value == null) return { ok: true, children: null };
+  if (!Array.isArray(value) || value.length < 1 || value.length > 20) return { ok: false, error: 'Invalid children.' };
+  const children: SwimmerChild[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== 'object') return { ok: false, error: 'Invalid children.' };
+    const record = raw as { name?: unknown; age?: unknown; notes?: unknown };
+    const name = normalizeName(record.name);
+    const age = normalizeChildAge(record.age);
+    const notes = normalizeChildNotes(record.notes);
+    if (!name || !age || notes === null) return { ok: false, error: 'Invalid children.' };
+    children.push(notes ? { name, age, notes } : { name, age });
+  }
+  return { ok: true, children };
+}
+
+function normalizeChildAge(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const age = value.trim().replace(/\s+/g, ' ');
+  if (age.length < 1 || age.length > 40) return null;
+  if (/[\u0000-\u001f]/.test(age)) return null;
+  return age;
+}
+
+function normalizeChildNotes(value: unknown): string | null | undefined {
+  if (value == null || value === '') return undefined;
+  if (typeof value !== 'string') return null;
+  const notes = value.trim().replace(/\s+/g, ' ');
+  if (!notes) return undefined;
+  if (notes.length > CHILD_NOTE_MAX || /[\u0000-\u001f]/.test(notes)) return null;
+  return notes;
+}
+
+/** Buyer name, plus each child, in the payment note Square already accepts. Capped at 500 characters. */
+export function checkoutPaymentNote(buyerName: string, children: SwimmerChild[] | null): string {
+  if (!children || children.length === 0) return buyerName.slice(0, PAYMENT_NOTE_MAX);
+  const parts = children.map((child, index) => {
+    const notes = child.notes ? `. Notes: ${child.notes}` : '';
+    return `${index + 1}. ${child.name}, age ${child.age}${notes}`;
+  });
+  let note = `${buyerName}. Children: ${parts.join(' ')}`;
+  if (note.length <= PAYMENT_NOTE_MAX) return note;
+  const withoutNotes = children.map((child, index) => `${index + 1}. ${child.name}, age ${child.age}`);
+  note = `${buyerName}. Children: ${withoutNotes.join(' ')}`;
+  return note.length <= PAYMENT_NOTE_MAX ? note : note.slice(0, PAYMENT_NOTE_MAX);
+}
+
 export type ItemId =
   | 'registration-annual'
   | 'pkg-8'
