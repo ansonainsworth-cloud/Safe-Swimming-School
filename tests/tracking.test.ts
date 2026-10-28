@@ -97,10 +97,42 @@ describe('GA4 events', () => {
   });
 });
 
+describe('GA4 snippet', () => {
+  function runSnippet(checkoutOnly: boolean) {
+    const layout = readFileSync(new URL('../src/layouts/Base.astro', import.meta.url), 'utf8');
+    const match = layout.match(/define:vars=\{\{ GA_ID, checkoutOnly \}\}>([^<]+)<\/script>/);
+    expect(match?.[1]).toContain('window.gtag=function(){window.dataLayer.push(arguments);}');
+    const sandbox: { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void } = {};
+    new Function('window', 'GA_ID', 'checkoutOnly', match![1])(sandbox, 'G-TEST', checkoutOnly);
+    return sandbox;
+  }
+
+  it('leaves window.gtag in place after the snippet function returns', () => {
+    const sandbox = runSnippet(false);
+    expect(typeof sandbox.gtag).toBe('function');
+    const commands = (sandbox.dataLayer ?? []).map((entry) => Array.from(entry as ArrayLike<unknown>));
+    expect(commands.filter((entry) => entry[0] === 'config')).toEqual([['config', 'G-TEST']]);
+    sandbox.gtag!('event', 'phone_click', { link_url: 'tel:+15612368260' });
+    expect((sandbox.dataLayer ?? []).map((entry) => Array.from(entry as ArrayLike<unknown>))).toContainEqual([
+      'event',
+      'phone_click',
+      { link_url: 'tel:+15612368260' },
+    ]);
+  });
+
+  it('sends one checkout config and still exposes window.gtag', () => {
+    const sandbox = runSnippet(true);
+    expect(typeof sandbox.gtag).toBe('function');
+    const commands = (sandbox.dataLayer ?? []).map((entry) => Array.from(entry as ArrayLike<unknown>));
+    expect(commands.filter((entry) => entry[0] === 'config')).toEqual([['config', 'G-TEST', { send_page_view: false }]]);
+  });
+});
+
 describe('begin_checkout stays off the buyer fields', () => {
   it('fires currency and value from the cart script', () => {
     const cart = readFileSync(new URL('../public/js/cart.js', import.meta.url), 'utf8');
     const fn = cart.slice(cart.indexOf('function trackBeginCheckout'), cart.indexOf('function money'));
+    expect(fn).toContain('typeof window.gtag !== \'function\'');
     expect(fn).toContain("gtag('event', 'begin_checkout'");
     expect(fn).toContain("currency: 'USD'");
     expect(fn).toContain('value: cents / 100');
@@ -116,6 +148,7 @@ describe('begin_checkout stays off the buyer fields', () => {
     const thanks = readFileSync(new URL('../src/pages/checkout/thanks.astro', import.meta.url), 'utf8');
     expect(thanks).toContain('trackAnalytics={false}');
     expect(thanks).not.toContain('checkoutAnalytics');
+    expect(thanks).not.toContain('gtag');
     const events = readFileSync(new URL('../public/js/ga-events.js', import.meta.url), 'utf8');
     expect(events).not.toContain('contact_submit');
     const enroll = readFileSync(new URL('../src/content/pages/enroll.html', import.meta.url), 'utf8');

@@ -33,7 +33,7 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="icon" href="/wp-content/uploads/2026/05/favicon-512-300x300.png" sizes="192x192" />
 <link rel="apple-touch-icon" href="/wp-content/uploads/2026/05/favicon-512-300x300.png" />
 {loadGtag && <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>}
-{loadGtag && <script is:inline define:vars={{ GA_ID, checkoutOnly }}>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());if(checkoutOnly){gtag('config',GA_ID,{send_page_view:false});}else{gtag('config',GA_ID);}</script>}
+{loadGtag && <script is:inline define:vars={{ GA_ID, checkoutOnly }}>window.dataLayer=window.dataLayer||[];window.gtag=function(){window.dataLayer.push(arguments);};window.gtag('js',new Date());if(checkoutOnly){window.gtag('config',GA_ID,{send_page_view:false});}else{window.gtag('config',GA_ID);}</script>}
 <link rel="stylesheet" href="/wp-content/plugins/js_composer/assets/css/js_composer.min.css" />
 <link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css" />
 <link rel="stylesheet" href="/wp-content/themes/Total/style.css" />
