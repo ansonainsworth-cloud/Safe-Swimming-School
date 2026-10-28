@@ -5,21 +5,23 @@ import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
 
 const path = '/gift-certificates/';
 const title = 'Holiday gift certificate | Safe Swimming School';
-const description = 'A Safe Swimming School holiday gift certificate is $555, paid in full. That is 8 private 30 minute lessons plus the $35 annual registration for one swimmer.';
-const redeemLine = 'The recipient books days and times when they redeem the certificate.';
 const included = '8 private 30 minute lessons plus the $35 annual registration for one swimmer.';
+const expires = 'Expires December 31, 2027.';
+const description = `A Safe Swimming School holiday gift certificate is $555. That is ${included} ${expires}`;
+const redeemLine = 'The recipient books days and times when they redeem the certificate.';
 const faqs = [
-  ['How much is the holiday gift certificate?', `It is $555, paid in full. That is ${included}`],
+  ['How much is the holiday gift certificate?', `It is $555. That is ${included} ${expires}`],
+  ['When does the certificate expire?', expires],
   ['When does the recipient choose days and times?', redeemLine],
   ['Where are the lessons?', 'Lessons are private 30 minute lessons in the family\'s own pool. Safe Swimming School teaches across Palm Beach County, including West Palm Beach and surrounding areas.'],
 ];
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Holiday gift certificate', description), faqSchema(faqs)]}>
 <PageShell h1="Holiday gift certificate">
-<p>A Safe Swimming School holiday gift certificate is $555, paid in full. That is {included}</p>
+<p>A Safe Swimming School holiday gift certificate is $555. That is {included} {expires}</p>
 <p>Lessons are private 30 minute lessons in the family's own pool. Safe Swimming School teaches across Palm Beach County, including West Palm Beach and surrounding areas.</p>
 <figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family pool" /></figure>
-<p><strong>$555, paid in full.</strong> {included}</p>
+<p><strong>$555.</strong> {included} {expires}</p>
 <p><a class="sss-btn" href="https://square.link/u/QVOAEK4P">Buy with card</a></p>
 <h2 class="wp-block-heading">Pay with Zelle or Venmo</h2>
 <p>Send $555 to <strong>[ZELLE_VENMO_HANDLE_PENDING]</strong>.</p>
