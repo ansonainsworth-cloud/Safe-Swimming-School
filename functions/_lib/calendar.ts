@@ -4,6 +4,8 @@ import { datesFrom, mockBusyStarts, SLOT_MINUTES, zonedTimeToUtc } from './sched
 
 export const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
 export const FREEBUSY_SCOPE = 'https://www.googleapis.com/auth/calendar.freebusy';
+/** Google free/busy rejects ranges around 90 days. Stay under that. */
+const FREEBUSY_MAX_MS = 60 * 24 * 60 * 60 * 1000;
 
 export type BusyInterval = { start: string; end: string; location?: string };
 
@@ -71,14 +73,31 @@ export class GoogleCalendar implements CalendarAdapter {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  private async token(): Promise<string> {
-    const scope = this.mode === 'notice' ? FREEBUSY_SCOPE : CALENDAR_SCOPE;
-    return fetchGoogleAccessToken(this.account, scope, this.fetchImpl);
+private tokenPromise: Promise<string> | null = null;
+
+  private token(): Promise<string> {
+    if (!this.tokenPromise) {
+      const scope = this.mode === 'notice' ? FREEBUSY_SCOPE : CALENDAR_SCOPE;
+      this.tokenPromise = fetchGoogleAccessToken(this.account, scope, this.fetchImpl);
+    }
+    return this.tokenPromise;
   }
 
   async busyIntervals(fromIso: string, toIso: string): Promise<BusyInterval[]> {
-    if (this.mode === 'notice') return this.freeBusy(fromIso, toIso);
+    if (this.mode === 'notice') return this.freeBusySpan(fromIso, toIso);
     return this.listedEvents(fromIso, toIso);
+  }
+
+  private async freeBusySpan(fromIso: string, toIso: string): Promise<BusyInterval[]> {
+    const from = Date.parse(fromIso);
+    const to = Date.parse(toIso);
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) return this.freeBusy(fromIso, toIso);
+    const intervals: BusyInterval[] = [];
+    for (let start = from; start < to; start += FREEBUSY_MAX_MS) {
+      const end = Math.min(to, start + FREEBUSY_MAX_MS);
+      intervals.push(...await this.freeBusy(new Date(start).toISOString(), new Date(end).toISOString()));
+    }
+    return intervals;
   }
 
   private async freeBusy(fromIso: string, toIso: string): Promise<BusyInterval[]> {
@@ -88,9 +107,11 @@ export class GoogleCalendar implements CalendarAdapter {
       headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: JSON.stringify({ timeMin: fromIso, timeMax: toIso, items: [{ id: this.calendarId }] }),
     });
-    if (!response.ok) throw new Error('Calendar free/busy failed');
-    const body = await response.json() as { calendars?: Record<string, { busy?: BusyInterval[] }> };
-    return body.calendars?.[this.calendarId]?.busy ?? [];
+    if (!response.ok) throw new Error(`Calendar free/busy failed (${response.status})`);
+    const body = await response.json() as { calendars?: Record<string, { busy?: BusyInterval[]; errors?: unknown[] }> };
+    const calendar = body.calendars?.[this.calendarId];
+    if (!calendar || (calendar.errors && calendar.errors.length > 0)) throw new Error('Calendar free/busy failed');
+    return calendar.busy ?? [];
   }
 
   private async listedEvents(fromIso: string, toIso: string): Promise<BusyInterval[]> {
@@ -163,4 +184,15 @@ export function getCalendar(env: CalendarEnv = {}, fetchImpl: typeof fetch = fet
   const g = globalThis as CalendarGlobal;
   if (!g.__sssCalendar) g.__sssCalendar = new MockCalendar();
   return g.__sssCalendar;
+}
+
+/** Real calendar when it answers. Otherwise the mock busy times, so a failed Google read does not 500. */
+export async function readBusyIntervals(env: CalendarEnv, fromIso: string, toIso: string): Promise<BusyInterval[]> {
+  try {
+    return await getCalendar(env).busyIntervals(fromIso, toIso);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'calendar-failed';
+    console.log(JSON.stringify({ calendar: 'mock-fallback', message }));
+    return new MockCalendar().busyIntervals(fromIso, toIso);
+  }
 }

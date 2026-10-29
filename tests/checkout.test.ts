@@ -239,7 +239,7 @@ describe('checkout endpoint', () => {
       child: 'Alex',
       itemId: 'trial',
       quantity: 1,
-      slots: [slotStartsOnDate(2026, 10, 27)[4]],
+      slots: [slotStartsOnDate(2026, 11, 3)[4]],
       now: new Date(),
     });
     if ('error' in issued) throw new Error(issued.error);

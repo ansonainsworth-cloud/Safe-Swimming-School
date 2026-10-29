@@ -36,7 +36,7 @@ const env = {
   CF_PAGES_BRANCH: 'booking-payments-live',
 } as BookingEnv;
 
-const now = new Date();
+const now = new Date('2026-10-25T11:00:00.000Z');
 
 const family = {
   phone: '561-555-0134',
@@ -99,7 +99,23 @@ describe('lesson times', () => {
 
 describe('holds and preview checkout', () => {
   it('holds the chosen slots and releases them when payment fails', async () => {
-    const slots = eightMondaySlots();
+    const liveNow = new Date();
+    const slots: string[] = [];
+    let year = 2026;
+    let month = 11;
+    let day = 2;
+    for (let week = 0; week < 8; week += 1) {
+      const start = slotStartsOnDate(year, month, day).find((iso) => {
+        const parts = etParts(new Date(iso));
+        return parts.hour === 8 && parts.minute === 0;
+      });
+      if (!start) throw new Error('missing Monday 8:00');
+      slots.push(start);
+      const next = etParts(new Date(zonedTimeToUtc(year, month, day, 12, 0).getTime() + 7 * 24 * 60 * 60 * 1000));
+      year = next.year;
+      month = next.month;
+      day = next.day;
+    }
     const issued = await issueHold({
       env,
       requestUrl: 'https://preview.example/api/hold',
@@ -110,11 +126,11 @@ describe('holds and preview checkout', () => {
       itemId: 'pkg-8',
       quantity: 1,
       slots,
-      now,
+      now: liveNow,
     });
     if ('error' in issued) throw new Error(issued.error);
-    expect(await verifyHold(issued.token, 'preview-mock-booking-key', now)).not.toBeNull();
-    expect(await verifyHold(issued.token, 'preview-mock-booking-key', new Date(now.getTime() + 16 * 60 * 1000))).toBeNull();
+    expect(await verifyHold(issued.token, 'preview-mock-booking-key', liveNow)).not.toBeNull();
+    expect(await verifyHold(issued.token, 'preview-mock-booking-key', new Date(liveNow.getTime() + 16 * 60 * 1000))).toBeNull();
     const again = await issueHold({
       env,
       requestUrl: 'https://preview.example/api/hold',
@@ -125,7 +141,7 @@ describe('holds and preview checkout', () => {
       itemId: 'pkg-8',
       quantity: 1,
       slots,
-      now,
+      now: liveNow,
     });
     expect(again).toEqual({ error: 'invalid-slot' });
 
@@ -149,7 +165,8 @@ describe('holds and preview checkout', () => {
   });
 
   it('saves a mock booking on the preview when Square is not configured, and does not do that on the live host', async () => {
-    const slot = slotStartsOnDate(2026, 10, 27)[4];
+    const liveNow = new Date();
+    const slot = slotStartsOnDate(2026, 11, 3)[4];
     const issued = await issueHold({
       env,
       requestUrl: 'https://preview.example/api/hold',
@@ -160,7 +177,7 @@ describe('holds and preview checkout', () => {
       itemId: 'trial',
       quantity: 1,
       slots: [slot],
-      now,
+      now: liveNow,
     });
     if ('error' in issued) throw new Error(issued.error);
     const preview = await onRequestPost({
@@ -192,8 +209,8 @@ describe('holds and preview checkout', () => {
       ...family,
       itemId: 'trial',
       quantity: 1,
-      slots: [slotStartsOnDate(2026, 10, 28)[1]],
-      now,
+      slots: [slotStartsOnDate(2026, 11, 4)[1]],
+      now: liveNow,
     });
     if ('error' in liveHold) throw new Error(liveHold.error);
     const live = await onRequestPost({

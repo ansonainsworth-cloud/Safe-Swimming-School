@@ -13,18 +13,37 @@ export function usesBlockedName(value: string): boolean {
   return BLOCKED_NAMES.some((name) => haystack.includes(name));
 }
 
+const ET_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: TIME_ZONE,
+  hourCycle: 'h23',
+  weekday: 'short',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
+function zonedParts(instant: Date, timeZone: string): Record<string, string> {
+  const fmt = timeZone === TIME_ZONE
+    ? ET_FORMATTER
+    : new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  return Object.fromEntries(fmt.formatToParts(instant).map((part) => [part.type, part.value]));
+}
+
 export function timeZoneOffsetMs(instant: Date, timeZone = TIME_ZONE): number {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-  const parts = Object.fromEntries(fmt.formatToParts(instant).map((part) => [part.type, part.value]));
+  const parts = zonedParts(instant, timeZone);
   let hour = Number(parts.hour);
   let day = Number(parts.day);
   if (hour === 24) hour = 0;
@@ -48,17 +67,7 @@ export type EtParts = {
 };
 
 export function etParts(instant: Date, timeZone = TIME_ZONE): EtParts {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hourCycle: 'h23',
-    weekday: 'short',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const parts = Object.fromEntries(fmt.formatToParts(instant).map((part) => [part.type, part.value]));
+  const parts = zonedParts(instant, timeZone);
   let hour = Number(parts.hour);
   if (hour === 24) hour = 0;
   return {

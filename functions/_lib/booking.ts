@@ -1,4 +1,4 @@
-import { getCalendar, type CalendarAdapter } from './calendar';
+import { getCalendar, readBusyIntervals, type CalendarAdapter } from './calendar';
 import { createDriveTime, type DriveTimeAdapter } from './drive-time';
 import {
   bookingEventMode,
@@ -213,7 +213,7 @@ export async function listSlots(env: BookingEnv, now = new Date(), days = 14, po
   });
   const from = dated[0]?.start ?? now.toISOString();
   const to = dated.length ? slotEnd(dated[dated.length - 1].start) : now.toISOString();
-  const busy = await calendarOf(env).busyIntervals(from, to);
+  const busy = await readBusyIntervals(env, from, to);
   const held = new Set(await getStore().activeHoldStarts(now));
   const drive = rememberDrive(createDriveTime(env));
   const indexed = indexBusyIntervals(busy);
@@ -236,7 +236,7 @@ async function openStarts(env: BookingEnv, starts: string[], poolAddress: string
   const last = etParts(new Date(latest));
   const from = zonedTimeToUtc(first.year, first.month, first.day, 0, 0).toISOString();
   const to = zonedTimeToUtc(last.year, last.month, last.day + 1, 0, 0).toISOString();
-  const busy = await calendarOf(env).busyIntervals(from, to);
+  const busy = await readBusyIntervals(env, from, to);
   const held = new Set(await getStore().activeHoldStarts(now));
   const drive = rememberDrive(createDriveTime(env));
   const indexed = indexBusyIntervals(busy);
@@ -475,7 +475,7 @@ export async function moveLessonToEnd(input: {
   const last = input.booking.lessons.filter((item) => item.status === 'scheduled').map((item) => item.start).sort().at(-1);
   if (!last) return { error: 'invalid-lesson' };
   const taken = occupiedStarts(input.booking, lesson.id);
-  const busy = await calendarOf(input.env).busyIntervals(last, new Date(Date.parse(last) + 370 * 24 * 60 * 60 * 1000).toISOString());
+  const busy = await readBusyIntervals(input.env, last, new Date(Date.parse(last) + 370 * 24 * 60 * 60 * 1000).toISOString());
   for (const interval of busy) taken.add(interval.start);
   const drive = createDriveTime(input.env);
   const indexed = indexBusyIntervals(busy);
