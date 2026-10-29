@@ -23,6 +23,16 @@ export function registrationPriceCents(swimmers: number): number {
   return REGISTRATION_TIER_CENTS[1];
 }
 
+const PACKAGE_REGISTRATION_IDS = new Set(['pkg-8', 'pkg-12', 'pkg-20']);
+/** Jan 1, 2027 00:00:00 in America/New_York. That date is Eastern Standard Time, UTC-5. */
+const PACKAGE_REGISTRATION_WAIVER_ENDS_MS = Date.parse('2027-01-01T05:00:00.000Z');
+
+/** 8, 12, and 20 lesson packages skip registration through Dec 31, 2026 23:59:59 America/New_York. */
+export function packageRegistrationWaived(itemIds: readonly string[], now: Date): boolean {
+  if (!itemIds.some((id) => PACKAGE_REGISTRATION_IDS.has(id))) return false;
+  return now.getTime() < PACKAGE_REGISTRATION_WAIVER_ENDS_MS;
+}
+
 export type SwimmerChild = { name: string; age: string; notes?: string };
 
 const CHILD_NOTE_MAX = 200;

@@ -1,4 +1,4 @@
-import { normalizeChildren, normalizeEmail, normalizeName, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../_lib/prices';
+import { normalizeChildren, normalizeEmail, normalizeName, normalizePhone, normalizeSwimmerCount, packageRegistrationWaived, priceClientLines, registrationPriceCents, validateClientItems } from '../_lib/prices';
 import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { allowCheckout } from '../_lib/rate-limit';
 import { decideRegistration } from '../_lib/registration';
@@ -49,8 +49,10 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
   if (!name || !email || phone === null) return json({ error: 'invalid-buyer' }, 400);
 
   const decision = await decideRegistration(email, createSquareLookup(env));
-  const lines = priceClientLines(items.lines, decision.add, swimmers);
-  const registrationCents = decision.add ? registrationPriceCents(swimmers) : undefined;
+  const waiveRegistration = packageRegistrationWaived(items.lines.map((line) => line.id), new Date());
+  const addRegistration = decision.add && !waiveRegistration;
+  const lines = priceClientLines(items.lines, addRegistration, swimmers);
+  const registrationCents = addRegistration ? registrationPriceCents(swimmers) : undefined;
   const origin = new URL(request.url).origin;
   const paymentBody = buildCreatePaymentLinkBody({
     locationId: env.SQUARE_LOCATION_ID || '',
@@ -77,7 +79,7 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
   }
   return json({
     url,
-    registrationAdded: decision.add,
+    registrationAdded: addRegistration,
     registrationReason: decision.reason,
     ...(registrationCents != null ? { registrationCents } : {}),
   }, 200);

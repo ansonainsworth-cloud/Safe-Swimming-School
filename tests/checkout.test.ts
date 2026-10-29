@@ -4,7 +4,7 @@ import { onRequestPost } from '../functions/api/checkout';
 import { onRequestGet as onCheckoutHealth } from '../functions/api/checkout-health';
 import { onRequestPost as onWebhookPost } from '../functions/api/square-webhook';
 import { buildCreatePaymentLinkBody, httpsRedirectUrl } from '../functions/_lib/payment-link';
-import { CATALOG, checkoutPaymentNote, normalizeChildren, normalizePhone, normalizeSwimmerCount, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
+import { CATALOG, checkoutPaymentNote, normalizeChildren, normalizePhone, normalizeSwimmerCount, packageRegistrationWaived, priceClientLines, registrationPriceCents, validateClientItems } from '../functions/_lib/prices';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { customerSearchBody, decideRegistration, orderSearchBody, type SquareLookup } from '../functions/_lib/registration';
 import { SQUARE_SANDBOX_ORIGIN } from '../functions/_lib/prices';
@@ -123,6 +123,20 @@ describe('price validation', () => {
     expect(long.length).toBeLessThanOrEqual(500);
     expect(long).toContain('Ada Lee, age 6');
     expect(long).not.toContain(notes);
+  });
+});
+
+describe('package registration waiver', () => {
+  const beforeCutoff = new Date('2026-12-31T23:59:59-05:00');
+  const afterCutoff = new Date('2027-01-01T00:00:00-05:00');
+
+  it('waives 8, 12, and 20 lesson packages through Dec 31 and resumes on Jan 1', () => {
+    expect(packageRegistrationWaived(['pkg-12'], beforeCutoff)).toBe(true);
+    expect(packageRegistrationWaived(['pkg-8'], beforeCutoff)).toBe(true);
+    expect(packageRegistrationWaived(['pkg-20'], beforeCutoff)).toBe(true);
+    expect(packageRegistrationWaived(['pkg-12'], afterCutoff)).toBe(false);
+    expect(packageRegistrationWaived(['trial'], beforeCutoff)).toBe(false);
+    expect(packageRegistrationWaived(['water-aerobics'], beforeCutoff)).toBe(false);
   });
 });
 
@@ -364,6 +378,8 @@ describe('checkout endpoint', () => {
   });
 
   it('charges the registration tier for 2 and 3 swimmers on the server payment link', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2027-01-02T15:00:00.000Z'));
     const amounts: number[] = [];
     const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
       if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
@@ -384,9 +400,12 @@ describe('checkout endpoint', () => {
       expect((await response.json()).registrationCents).toBe(swimmers === 2 ? 5000 : 6000);
     }
     expect(amounts).toEqual([5000, 6000, 6000]);
+    vi.useRealTimers();
   });
 
   it('keeps one package for three children and puts their details in the payment note', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2027-01-02T15:00:00.000Z'));
     const fetchImpl = vi.fn(async (url: string) => {
       if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
       return new Response(JSON.stringify({ payment_link: { url: 'https://sandbox.square.link/u/kids' } }), { status: 200 });
@@ -419,6 +438,7 @@ describe('checkout endpoint', () => {
     expect(JSON.stringify(sent)).not.toContain('"metadata"');
     expect(sent.payment_note).toBe('Pat Lee. Children: 1. Ada Lee, age 6. Notes: nervous in deep water 2. Ben Lee, age 4 3. Cam Lee, age 8 months');
     expect(sent.payment_note.length).toBeLessThanOrEqual(500);
+    vi.useRealTimers();
   });
 
   it('rejects a child with no name', async () => {
