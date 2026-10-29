@@ -24,6 +24,10 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 #sss-add-child{margin-top:4px}
 .sss-optional{font-weight:400}
 .sss-cart-note{background:#f4f8fb;padding:12px 14px;border-radius:4px}
+.sss-price-banner{background:#f4f8fb;border:1px solid #d7e3ee;border-radius:4px;padding:10px 14px;margin:8px 0 16px}
+.sss-price-banner h2{margin:0 0 4px;font-size:1.05em;line-height:1.3;color:#033761}
+.sss-price-banner p{margin:0;font-size:15px;line-height:1.45}
+#sss-pkg-8,#sss-pkg-12,#sss-pkg-20{scroll-margin-top:96px}
 .sss-cart-message{margin-top:14px}
 #sss-pay-fallback{margin-top:24px}
 .footer-quick-links a{white-space:nowrap}
