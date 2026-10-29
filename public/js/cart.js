@@ -170,6 +170,16 @@
     if (!childRows().length) addChild(false);
   }
 
+  function packageRegistrationWaived(items) {
+    var hasPackage = false;
+    for (var i = 0; i < items.length; i++) {
+      var id = items[i].id;
+      if (id === 'pkg-8' || id === 'pkg-12' || id === 'pkg-20') hasPackage = true;
+    }
+    if (!hasPackage) return false;
+    return Date.now() < Date.parse('2027-01-01T05:00:00.000Z');
+  }
+
   function registrationCents(swimmers) {
     var tiers = window.SSS_REGISTRATION_TIERS || { 1: 3500, 2: 5000, 3: 6000 };
     var key = swimmers >= 3 ? 3 : swimmers;
@@ -239,9 +249,13 @@
         subtotal += lineCents;
         return '<div class="sss-cart-line" data-cart-id="' + item.id + '"><p><strong>' + item.name + '</strong><br>' + money(item.priceCents) + '</p><label class="sss-qty">Qty <input type="number" min="' + item.minQty + '" max="' + item.maxQty + '" value="' + line.quantity + '" inputmode="numeric" data-cart-qty aria-label="Quantity for ' + item.name + '"></label><button type="button" class="sss-remove" data-cart-remove="' + item.id + '">Remove</button><p class="sss-line-total">' + money(lineCents) + '</p></div>';
       }).join('');
-      var fee = registrationCents(swimmerCount());
-      subtotal += fee;
-      html += '<div class="sss-cart-line"><p><strong>' + registrationLabel(swimmerCount()) + '</strong><br>' + money(fee) + ', added at checkout if registration is not already paid this year</p><p class="sss-line-total">' + money(fee) + '</p></div>';
+      if (packageRegistrationWaived(items)) {
+        html += '<div class="sss-cart-line"><p><strong>Annual registration: waived on packages through December 31, 2026</strong></p><p class="sss-line-total">$0</p></div>';
+      } else {
+        var fee = registrationCents(swimmerCount());
+        subtotal += fee;
+        html += '<div class="sss-cart-line"><p><strong>' + registrationLabel(swimmerCount()) + '</strong><br>' + money(fee) + ', added at checkout if registration is not already paid this year</p><p class="sss-line-total">' + money(fee) + '</p></div>';
+      }
       root.innerHTML = html + '<p class="sss-cart-subtotal"><strong>Subtotal:</strong> ' + money(subtotal) + '</p>';
     }
     var button = document.getElementById('sss-checkout-button');
@@ -295,7 +309,7 @@
             : 'We couldn’t start checkout. Check your name and email, and try again.';
           return;
         }
-        if (result.data.registrationReason === 'lookup-error') {
+        if (result.data.registrationAdded && result.data.registrationReason === 'lookup-error') {
           trackBeginCheckout(items);
           message.hidden = false;
           var added = Number(result.data.registrationCents);
