@@ -15,6 +15,11 @@ const money = (cents: number) => (cents / 100).toLocaleString('en-US', { style: 
 <p>Lessons are 30 minutes. A package uses the same day and time each week. Two lessons in a row count as two lessons.</p>
 <p id="sss-policy">{CANCELLATION_POLICY}</p>
 <form id="sss-book-form" class="sss-cart-form">
+<fieldset class="sss-areas">
+<legend>Service area</legend>
+<label><input type="radio" name="area" value="palm-beach-county" checked required /> Palm Beach County</label>
+<label><input type="radio" name="area" value="coral-springs-parkland" required /> Coral Springs and Parkland</label>
+</fieldset>
 <fieldset class="sss-packages">
 <legend>Package</legend>
 {lessons.map((item) => (

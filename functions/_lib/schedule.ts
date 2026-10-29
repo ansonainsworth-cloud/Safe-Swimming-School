@@ -2,6 +2,17 @@ export const TIME_ZONE = 'America/New_York';
 export const SLOT_MINUTES = 30;
 export const DAY_START_MINUTES = 8 * 60;
 export const DAY_END_MINUTES = 19 * 60;
+export const DEFAULT_AREA = 'palm-beach-county';
+export const CORAL_AREA = 'coral-springs-parkland';
+
+/** Dates with no lessons, YYYY-MM-DD in America/New_York. */
+export const BLACKOUT_DATES = ['2026-11-07'];
+
+const CORAL_WINDOWS: Array<{ weekday: string; start: number; end: number }> = [
+  { weekday: 'Tue', start: 14 * 60 + 30, end: 18 * 60 + 30 },
+  { weekday: 'Thu', start: 8 * 60, end: 10 * 60 },
+  { weekday: 'Fri', start: 14 * 60 + 30, end: 18 * 60 + 30 },
+];
 export const HOLD_MS = 15 * 60 * 1000;
 export const CANCELLATION_POLICY = "Cancel at least 24 hours ahead to reschedule online. Cancellations within 24 hours count as a lesson taught. If you don't pick a new time, we'll add the lesson to the end of your package.";
 export const WEATHER_CANCELLATION_POLICY = "When the school cancels a lesson for cold weather, it does not count as a lesson taught. We'll offer the next agreeable time. If you don't choose one, or none is open, we'll add the lesson to the end of your package.";
@@ -80,9 +91,21 @@ export function etParts(instant: Date, timeZone = TIME_ZONE): EtParts {
   };
 }
 
-export function slotStartsOnDate(year: number, month: number, day: number): string[] {
+export function serviceArea(value: unknown): string {
+  return value === CORAL_AREA ? CORAL_AREA : DEFAULT_AREA;
+}
+
+export function blackoutKey(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function isBlackout(year: number, month: number, day: number): boolean {
+  return BLACKOUT_DATES.includes(blackoutKey(year, month, day));
+}
+
+function startsBetween(year: number, month: number, day: number, from: number, to: number): string[] {
   const starts: string[] = [];
-  for (let minutes = DAY_START_MINUTES; minutes < DAY_END_MINUTES; minutes += SLOT_MINUTES) {
+  for (let minutes = from; minutes < to; minutes += SLOT_MINUTES) {
     const hour = Math.floor(minutes / 60);
     const minute = minutes % 60;
     starts.push(zonedTimeToUtc(year, month, day, hour, minute).toISOString());
@@ -90,15 +113,30 @@ export function slotStartsOnDate(year: number, month: number, day: number): stri
   return starts;
 }
 
+export function slotStartsOnDate(year: number, month: number, day: number, area?: string): string[] {
+  if (isBlackout(year, month, day)) return [];
+  if (serviceArea(area) !== CORAL_AREA) return startsBetween(year, month, day, DAY_START_MINUTES, DAY_END_MINUTES);
+  const weekday = etParts(zonedTimeToUtc(year, month, day, 12, 0)).weekday;
+  return CORAL_WINDOWS.filter((window) => window.weekday === weekday).flatMap((window) => startsBetween(year, month, day, window.start, window.end));
+}
+
 export function isCanonicalSlot(startIso: string): boolean {
   const start = new Date(startIso);
   if (Number.isNaN(start.getTime())) return false;
   const parts = etParts(start);
+  if (isBlackout(parts.year, parts.month, parts.day)) return false;
   if (parts.minute % SLOT_MINUTES !== 0) return false;
   const minutes = parts.hour * 60 + parts.minute;
   if (minutes < DAY_START_MINUTES || minutes >= DAY_END_MINUTES) return false;
   const canonical = zonedTimeToUtc(parts.year, parts.month, parts.day, parts.hour, parts.minute).toISOString();
   return canonical === start.toISOString();
+}
+
+/** A start the chosen service area actually offers. The default area keeps the full day. */
+export function isOfferedSlot(startIso: string, area?: string): boolean {
+  if (!isCanonicalSlot(startIso)) return false;
+  const parts = etParts(new Date(startIso));
+  return slotStartsOnDate(parts.year, parts.month, parts.day, area).includes(startIso);
 }
 
 export function slotEnd(startIso: string): string {

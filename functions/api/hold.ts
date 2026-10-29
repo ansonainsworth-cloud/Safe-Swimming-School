@@ -19,6 +19,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     itemId?: unknown;
     quantity?: unknown;
     slots?: unknown;
+    area?: unknown;
   };
   try {
     body = await request.json();
@@ -40,6 +41,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     itemId: typeof body.itemId === 'string' ? body.itemId : '',
     quantity: typeof body.quantity === 'number' ? body.quantity : 1,
     slots,
+    area: typeof body.area === 'string' ? body.area : '',
   });
   if ('error' in result) return json({ error: result.error }, result.error === 'unavailable' ? 503 : 400);
   return json({ holdToken: result.token, expiresAt: result.hold.expiresAt, slots: result.hold.slots });

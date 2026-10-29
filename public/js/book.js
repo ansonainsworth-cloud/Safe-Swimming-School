@@ -21,7 +21,22 @@
     selected = [];
   }
 
-  var preset = new URLSearchParams(location.search).get('package');
+  function areaValue() {
+    var input = document.querySelector('input[name="area"]:checked');
+    return input ? input.value : 'palm-beach-county';
+  }
+
+  var params = new URLSearchParams(location.search);
+  var areaPreset = params.get('area');
+  document.querySelectorAll('input[name="area"]').forEach(function (input) {
+    if (input.value === areaPreset) input.checked = true;
+    input.addEventListener('change', function () {
+      selected = [];
+      loadSlots();
+    });
+  });
+
+  var preset = params.get('package');
   document.querySelectorAll('input[name="package"]').forEach(function (input) {
     if (input.value === preset) input.checked = true;
     input.addEventListener('change', function () {
@@ -167,7 +182,7 @@
 
   function loadSlots() {
     var address = document.getElementById('sss-address').value.trim();
-    var query = '/api/availability?days=154';
+    var query = '/api/availability?days=154&area=' + encodeURIComponent(areaValue());
     if (address) query += '&address=' + encodeURIComponent(address);
     fetch(query).then(function (response) {
       return response.json();
@@ -207,7 +222,8 @@
       child: document.getElementById('sss-child').value,
       childDob: document.getElementById('sss-dob').value,
       poolAddress: document.getElementById('sss-address').value,
-      slots: selected.slice()
+      slots: selected.slice(),
+      area: areaValue()
     };
     if (sibling) {
       body.sibling = sibling;

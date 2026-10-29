@@ -22,6 +22,8 @@ import {
   datesFrom,
   etParts,
   isCanonicalSlot,
+  isOfferedSlot,
+  serviceArea,
   nextUsualSlot,
   slotEnd,
   slotStartsOnDate,
@@ -205,11 +207,11 @@ function rememberDrive(drive: DriveTimeAdapter): DriveTimeAdapter {
   };
 }
 
-export async function listSlots(env: BookingEnv, now = new Date(), days = 14, poolAddress?: string): Promise<Array<{ start: string; end: string; state: 'open' | 'busy' }>> {
+export async function listSlots(env: BookingEnv, now = new Date(), days = 14, poolAddress?: string, area?: string): Promise<Array<{ start: string; end: string; state: 'open' | 'busy' }>> {
   const dates = datesFrom(now, days);
   const dated = dates.flatMap((date) => {
     const day = `${date.year}-${date.month}-${date.day}`;
-    return slotStartsOnDate(date.year, date.month, date.day).map((start) => ({ start, day }));
+    return slotStartsOnDate(date.year, date.month, date.day, area).map((start) => ({ start, day }));
   });
   const from = dated[0]?.start ?? now.toISOString();
   const to = dated.length ? slotEnd(dated[dated.length - 1].start) : now.toISOString();
@@ -263,6 +265,7 @@ export async function issueHold(input: {
   itemId: string;
   quantity: number;
   slots: string[];
+  area?: string;
   now?: Date;
 }): Promise<{ token: string; hold: Hold } | { error: string }> {
   const secret = bookingSecret(input.env, input.requestUrl);
@@ -288,8 +291,9 @@ export async function issueHold(input: {
   if (perItem > 1 && !isPackageSchedule(input.slots, Boolean(sibling))) return { error: 'invalid-slot' };
   const now = input.now ?? new Date();
   const open = await openStarts(input.env, input.slots, poolAddress, now);
+  const area = serviceArea(input.area);
   for (const start of input.slots) {
-    if (!isCanonicalSlot(start) || !open.has(start)) return { error: 'invalid-slot' };
+    if (!isOfferedSlot(start, area) || !open.has(start)) return { error: 'invalid-slot' };
   }
   const hold: Hold = {
     id: crypto.randomUUID(),
