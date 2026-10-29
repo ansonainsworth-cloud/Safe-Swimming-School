@@ -5,7 +5,7 @@ import { SITE, pageChrome, webPage, faqSchema } from '../data/newpage.js';
 
 const path = '/swim-lessons-coral-springs-parkland/';
 const title = 'Private Swim Lessons in Coral Springs and Parkland | Safe Swimming School';
-const description = 'Private swim lessons in Coral Springs and Parkland at your home pool or community pool. Limited availability. Text 561 236 8260 to check openings.';
+const description = 'Private swim lessons in Coral Springs and Parkland at your home pool or community pool. Select days: Tuesday and Friday afternoons and Thursday mornings. Text 561 236 8260 to check openings.';
 const city = (name: string) => ({ '@type': 'City', name, containedInPlace: { '@type': 'State', name: 'Florida' } });
 const areaServed = [
   { '@type': 'AdministrativeArea', name: 'Palm Beach County', description: 'Palm Beach County, including West Palm Beach and surrounding areas. Listed towns are examples, not a limit.', containedInPlace: { '@type': 'State', name: 'Florida' } },
@@ -42,18 +42,18 @@ const service = {
 };
 const faqs: [string, string][] = [
   ['Do you come to my pool in Coral Springs or Parkland?', 'Yes. Safe Swimming School teaches at home pools and community pools in Coral Springs and Parkland. Tell us your pool when you text.'],
-  ['Are lesson days limited in Coral Springs and Parkland?', 'Yes. Lesson days are limited in this area. Families should reach out to check openings.'],
+  ['Are lesson days limited in Coral Springs and Parkland?', 'Yes. Lessons are available on select days: Tuesday and Friday afternoons and Thursday mornings. Families should reach out to check openings.'],
   ['Will we have the same instructor each lesson?', 'Yes. You have the same instructor every lesson.'],
   ['Do you offer group swim lessons?', 'No. Lessons are private, with one swimmer and one instructor.'],
   ['What ages do you teach?', 'Lessons can start at 3 months. Infants begin with a parent in the water. Older children, teens, and adults take private lessons at their own pool.'],
   ['How much do lessons cost?', 'A single lesson is $75 and can be credited toward a package. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100. Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Annual registration is waived on packages through December 31.'],
-  ['How do I check openings?', 'Call or text 561 236 8260, or use the enroll form. Lesson days are limited, so reach out to check openings.'],
+  ['How do I check openings?', 'Call or text 561 236 8260, or use the enroll form. Lessons are available on select days: Tuesday and Friday afternoons and Thursday mornings.'],
 ];
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Private swim lessons in Coral Springs and Parkland', description, [localBusiness, service]), faqSchema(faqs)]}>
 <PageShell h1="Private Swim Lessons in Coral Springs and Parkland">
 <p class="sss-limited">Limited availability</p>
-<p>Private swim lessons for Coral Springs and Parkland. Your instructor comes to your home pool or community pool. Lesson days are limited in this area. Families should reach out to check openings. Call or text <a href="tel:+15612368260"><strong>561 236 8260</strong></a> to ask, or <a href="/enroll/">enroll online</a>.</p>
+<p>Private swim lessons for Coral Springs and Parkland. Your instructor comes to your home pool or community pool. Lessons are available on select days: Tuesday and Friday afternoons and Thursday mornings. Families should reach out to check openings. Call or text <a href="tel:+15612368260"><strong>561 236 8260</strong></a> to ask, or <a href="/enroll/">enroll online</a>.</p>
 <p>Lessons start with safety skills, then strokes. Swimmers practice how to roll to back, float and rest, and swim to the wall. These skills are one layer of protection. Nothing replaces adult supervision and pool barriers.</p>
 <figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family pool" /></figure>
 <h2 class="wp-block-heading">An instructor comes to your pool</h2>
@@ -65,7 +65,7 @@ const faqs: [string, string][] = [
 <li><strong>Private lessons.</strong> One swimmer with one instructor.</li>
 <li><strong>The same instructor every lesson.</strong></li>
 <li><strong>At your pool.</strong> Home pools and community pools in Coral Springs and Parkland.</li>
-<li><strong>Limited availability.</strong> Lesson days are limited. Families should reach out to check openings.</li>
+<li><strong>Limited availability.</strong> Lessons are available on select days: Tuesday and Friday afternoons and Thursday mornings. Families should reach out to check openings.</li>
 <li><strong>Led by our founders.</strong> Founder Cortney Berry has 20 years of experience, and cofounder Anson Ainsworth has 18 years of experience.</li>
 </ul>
 <p>More about how we teach: <a href="/service/">Private swim lessons</a>.</p>
