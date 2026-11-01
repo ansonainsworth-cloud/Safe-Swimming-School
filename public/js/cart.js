@@ -250,7 +250,7 @@
         return '<div class="sss-cart-line" data-cart-id="' + item.id + '"><p><strong>' + item.name + '</strong><br>' + money(item.priceCents) + '</p><label class="sss-qty">Qty <input type="number" min="' + item.minQty + '" max="' + item.maxQty + '" value="' + line.quantity + '" inputmode="numeric" data-cart-qty aria-label="Quantity for ' + item.name + '"></label><button type="button" class="sss-remove" data-cart-remove="' + item.id + '">Remove</button><p class="sss-line-total">' + money(lineCents) + '</p></div>';
       }).join('');
       if (packageRegistrationWaived(items)) {
-        html += '<div class="sss-cart-line"><p><strong>Annual registration: waived on packages through December 31, 2026</strong></p><p class="sss-line-total">$0</p></div>';
+        html += '<div class="sss-cart-line"><p><strong>Annual registration ($35/$50/$60) is waived on lock in packages bought by December 31, 2026</strong></p><p class="sss-line-total">$0</p></div>';
       } else {
         var fee = registrationCents(swimmerCount());
         subtotal += fee;
