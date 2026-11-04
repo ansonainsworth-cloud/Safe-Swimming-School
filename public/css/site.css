@@ -35,6 +35,16 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-gift-pay{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:flex-start;margin:8px 0 16px}
 .sss-gift-pay p{margin:0 0 8px}
 .sss-limited{display:inline-block;background:#033761;color:#fff;font-weight:700;letter-spacing:.04em;font-size:13px;line-height:1;padding:8px 12px;border-radius:4px;margin:0 0 14px;text-transform:uppercase}
+.sss-google-reviews{display:grid;gap:12px;margin:12px 0 16px}
+.sss-google-review{background:#f4f8fb;border:1px solid #d7e3ee;border-radius:4px;padding:14px 16px;margin:0}
+.sss-google-review blockquote{margin:8px 0}
+.sss-google-review blockquote p{margin:0}
+.sss-stars{margin:0;color:#033761;letter-spacing:2px;font-size:18px;line-height:1}
+.sss-google-review figcaption{margin-top:10px;font-weight:700;color:#033761}
+.sss-google-review figcaption span{font-weight:400}
+@media (min-width:700px){
+.sss-google-reviews{grid-template-columns:1fr 1fr}
+}
 .sss-price-banner{background:#f4f8fb;border:1px solid #d7e3ee;border-radius:4px;padding:10px 14px;margin:8px 0 16px}
 .sss-price-banner h2{margin:0 0 4px;font-size:1.05em;line-height:1.3;color:#033761}
 .sss-price-banner p{margin:0;font-size:15px;line-height:1.45}
