@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import PayButton from '../components/PayButton.astro';
+import CartAdd from '../components/CartAdd.astro';
+import { pageChrome, webPage } from '../data/newpage.js';
+import { paymentLink } from '../data/payment-links';
+
+const path = '/lock-in/';
+const title = 'Lock In Your Swim Lessons by December 31';
+const description = 'Private survival swim lessons at your home or community pool in Palm Beach County. 8 lessons for $520, 12 lessons for $720. Call 561-236-8260.';
+const pkg8 = paymentLink('8 lessons');
+const pkg12 = paymentLink('12 lessons');
+const single = paymentLink('Single lesson');
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, title, description)]}>
+<PageShell h1={title}>
+<p>We teach survival swim lessons for infants from 3 months old through adults. Every lesson is private and 30 minutes long, and it practices skills like floating and rolling to the back. An adult should always watch swimmers near water.</p>
+<p>Lessons happen at your home pool or your community pool. Lessons are available across Palm Beach County, including West Palm Beach and surrounding areas. Your instructor comes to you, daily from 8 AM to 7 PM.</p>
+<h2 class="wp-block-heading">Packages</h2>
+<ul class="wp-block-list">
+<li><strong>8 lessons for $520</strong><br /><PayButton link={pkg8} /> <CartAdd id="pkg-8" /></li>
+<li><strong>12 lessons for $720</strong><br /><PayButton link={pkg12} /> <CartAdd id="pkg-12" /></li>
+<li><strong>Single lesson:</strong> $75 (can be credited toward a package)<br /><PayButton link={single} /> <CartAdd id="trial" /></li>
+</ul>
+<p>Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026, and those lessons never expire.</p>
+<p>Call or text <a href="tel:+15612368260">561-236-8260</a>.</p>
+<p>See <a href="/pricing/">pricing</a>.</p>
+</PageShell>
+</Base>
