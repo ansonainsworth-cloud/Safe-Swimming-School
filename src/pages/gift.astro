@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import PayButton from '../components/PayButton.astro';
+import { pageChrome, webPage } from '../data/newpage.js';
+import { paymentLink } from '../data/payment-links';
+
+const path = '/gift/';
+const title = 'Give swim lessons as a gift';
+const description = 'Private swim lessons at your home or community pool in Palm Beach County. 8 lessons for $520 or 12 lessons for $720. Call 561-236-8260.';
+const pkg8 = paymentLink('8 lessons');
+const pkg12 = paymentLink('12 lessons');
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, title, description)]}>
+<PageShell h1={title}>
+<p>Give swim lessons as a holiday gift. Lessons are private and 30 minutes, at your home pool or community pool in Palm Beach County, including West Palm Beach and surrounding areas.</p>
+<figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family pool" /></figure>
+<h2 class="wp-block-heading">Packages</h2>
+<ul class="wp-block-list">
+<li><strong>8 lessons for $520</strong><br /><PayButton link={pkg8} /></li>
+<li><strong>12 lessons for $720</strong><br /><PayButton link={pkg12} /></li>
+</ul>
+<p>Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026, and those lessons never expire.</p>
+<p><a href="sms:+15612368260">or text 561-236-8260</a></p>
+<p>See the <a href="/gift-certificates/">swim lesson gift certificate</a>.</p>
+</PageShell>
+</Base>
