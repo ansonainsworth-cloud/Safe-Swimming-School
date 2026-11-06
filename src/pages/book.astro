@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { pageChrome, webPage } from '../data/newpage.js';
+import { BOOK_DAYS, BOOK_DAY_LABELS, BLOCKED_SLOTS, bookStartTimes, formatBookTime, isBookSlotBlocked } from '../data/blocked-slots';
+import { BOOK_TOWNS } from '../data/book-towns';
+
+const path = '/book/';
+const title = 'Book a private lesson';
+const description = 'Private 30 minute lessons at your home or community pool in Palm Beach County. Call 561-236-8260.';
+const times = bookStartTimes();
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome} ldjson={[webPage(path, title, description)]}>
+<PageShell h1={title}>
+<p>Private 30 minute lessons at your home or community pool in Palm Beach County.</p>
+<p>Your time is confirmed by text from cofounder Anson Ainsworth after checkout.</p>
+<form id="book-form" class="sss-cart-form" method="post" action="/api/book">
+<fieldset class="sss-children">
+  <legend>Lesson</legend>
+  <label><input type="radio" name="option" value="single" required> Single lesson $75</label>
+  <label><input type="radio" name="option" value="pkg-8"> 8 lessons $520</label>
+  <label><input type="radio" name="option" value="pkg-12"> 12 lessons $720</label>
+</fieldset>
+<label>Town
+  <select id="book-town" name="town" required>
+    <option value="">Choose a town</option>
+    {BOOK_TOWNS.map((town) => (
+      <option value={town.id} data-limited={town.limited ? 'true' : 'false'}>{town.name}</option>
+    ))}
+  </select>
+</label>
+<p id="book-limited" hidden>Limited availability, text <a href="tel:+15612368260">561-236-8260</a>.</p>
+<div id="book-times">
+  <label>Weekday
+    <select id="book-day" name="day">
+      {BOOK_DAYS.map((day) => (
+        <option value={day} selected={day === 'Mon'}>{BOOK_DAY_LABELS[day]}</option>
+      ))}
+    </select>
+  </label>
+  <p>Start time</p>
+  <div id="book-grid" class="sss-book-grid">
+    {BOOK_DAYS.map((day) => times.map((start) => {
+      const taken = isBookSlotBlocked(day, start);
+      const label = formatBookTime(start);
+      return (
+        <button type="button" class:list={['sss-book-slot', { 'is-blocked': taken }]} data-day={day} data-start={start} disabled={taken} hidden={day !== 'Mon'} aria-label={taken ? `${label}, not open` : label}>{label}</button>
+      );
+    }))}
+  </div>
+  <input id="book-time" name="time" type="hidden" value="">
+</div>
+<label>Parent name<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
+<label>Email<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
+<label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel" inputmode="tel"></label>
+<label>Child age<input name="childAge" type="text" required maxlength="20"></label>
+<label>Pool address<input name="poolAddress" type="text" required maxlength="200" autocomplete="street-address"></label>
+<button id="book-submit" class="sss-btn" type="submit">Continue to checkout</button>
+<p id="book-message" class="sss-cart-message" role="alert" hidden></p>
+</form>
+<script id="book-blocks" type="application/json" set:html={JSON.stringify(BLOCKED_SLOTS)}></script>
+<script is:inline src="/js/book.js"></script>
+</PageShell>
+</Base>
