@@ -30,8 +30,9 @@ if (page.slug === 'pricing') {
   for (const [markup, label] of pricingPayButtons) {
     if (!body.includes(markup)) throw new Error(`Pricing page is missing the ${label} line`);
     const cart = pricingCartIds[label] ? ` ${cartAddHtml(pricingCartIds[label])}` : '';
+    const book = pricingCartIds[label] ? ' <a class="sss-btn" href="/book/">Book online</a> <a href="sms:+15612368260">or text 561-236-8260</a>' : '';
     const open = pricingCartIds[label] ? `<li id="sss-${pricingCartIds[label]}">` : '<li>';
-    body = body.replace(markup, markup.replace('<li>', open).replace('</li>', `<br>${payButtonHtml(paymentLink(label))}${cart}</li>`));
+    body = body.replace(markup, markup.replace('<li>', open).replace('</li>', `<br>${payButtonHtml(paymentLink(label))}${cart}${book}</li>`));
   }
   if (!body.includes(winterPackageMarkup)) throw new Error('Pricing page is missing the Wellington winter package line');
 }
