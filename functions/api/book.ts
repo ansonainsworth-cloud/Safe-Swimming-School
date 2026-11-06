@@ -10,6 +10,7 @@ const OPTIONS = {
   single: { name: 'Single lesson', amount: 7500 },
   'pkg-8': { name: '8 lessons', amount: 52000 },
   'pkg-12': { name: '12 lessons', amount: 72000 },
+  'pkg-20': { name: '20 lessons', amount: 110000 },
 } as const;
 
 type BookOption = keyof typeof OPTIONS;
@@ -62,7 +63,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   };
 
   const option = typeof body.option === 'string' ? OPTIONS[body.option as BookOption] : undefined;
-  if (!option || !(body.option === 'single' || body.option === 'pkg-8' || body.option === 'pkg-12')) {
+  if (!option || !(body.option === 'single' || body.option === 'pkg-8' || body.option === 'pkg-12' || body.option === 'pkg-20')) {
     return json({ message: 'Choose a lesson.' }, 400);
   }
   const town = typeof body.town === 'string' ? bookTown(body.town) : undefined;

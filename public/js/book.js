@@ -84,6 +84,11 @@
       showMessage(limited.textContent.trim());
       return;
     }
+    var lessonOptions = { single: 1, 'pkg-8': 1, 'pkg-12': 1, 'pkg-20': 1 };
+    if (!lessonOptions[form.option.value]) {
+      showMessage('Choose a lesson.');
+      return;
+    }
     if (!time.value) {
       showMessage('Choose an open time.');
       return;
