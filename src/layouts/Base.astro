@@ -56,6 +56,8 @@ a{color:#024e80}
 .sss-btn:hover,button.sss-btn:hover{background-color:#024e80 !important;opacity:1}
 #site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:#033761 !important}
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a{color:#fff !important}
+.sss-mobile-bar .sss-mobile-bar-cta{background-color:#f5b11f !important;color:#033761 !important}
+p.copyright-text b{color:#b04a39}
 </style>
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>
@@ -63,9 +65,9 @@ a{color:#024e80}
 <div class="sss-holiday-banner" role="region" aria-label="Holiday gift certificates">
 <p>Give the gift of swim lessons this holiday. <a href="/gift-certificates/">Shop gift certificates</a></p>
 </div>
-<div class="custom-topbar"><div id="text-5" class="sidebar-box widget widget_text clr"><div class="textwidget"><div style="padding:10px 0; line-height:1.4; text-align:right;"><a href="/cart/" id="sss-cart-link">Cart (<span id="sss-cart-count">0</span>)</a><a href="sms:+15612368260" style="display:block; font-weight:700; font-size:15px; color:#033761; text-decoration:none; margin-bottom:4px;">Text 561-236-8260</a><span style="display:block; font-size:11px; color:#033761; opacity:0.8; letter-spacing:0.5px; text-transform:uppercase;">Palm Beach County</span></div></div></div></div>
+<div class="custom-topbar" role="region" aria-label="Cart and phone"><div id="text-5" class="sidebar-box widget widget_text clr"><div class="textwidget"><div style="padding:10px 0; line-height:1.4; text-align:right;"><a href="/cart/" id="sss-cart-link">Cart (<span id="sss-cart-count">0</span>)</a><a href="sms:+15612368260" style="display:block; font-weight:700; font-size:15px; color:#033761; text-decoration:none; margin-bottom:4px;">Text 561-236-8260</a><span style="display:block; font-size:11px; color:#033761; opacity:0.8; letter-spacing:0.5px; text-transform:uppercase;">Palm Beach County</span></div></div></div></div>
 <div class="wpex-site-overlay"></div>
-<a href="#content" class="skip-to-content">skip to Main Content</a>
+<nav class="sss-skip" aria-label="Skip"><a href="#content" class="skip-to-content">skip to Main Content</a></nav>
 <div id="outer-wrap" class="clr"><div id="wrap" class="clr">
 <Header path={path} />
 <main id="main" class="site-main clr"><slot /></main>
