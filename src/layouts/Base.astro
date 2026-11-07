@@ -47,6 +47,9 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <style is:inline>
 body{font-size:var(--sss-font-body);line-height:1.6;color:var(--sss-ink)}
 .container{width:min(var(--sss-measure),calc(100% - 48px)) !important;max-width:var(--sss-measure) !important}
+@media (max-width:768px){
+.container,#site-header-inner,.page-header-inner,.custom-topbar .textwidget>div{width:100% !important;max-width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:20px !important;padding-right:20px !important;box-sizing:border-box !important}
+}
 .single-content p,.entry p{font-size:var(--sss-font-body);line-height:1.65;color:var(--sss-ink);margin:0 0 var(--sss-space-2)}
 .single-content h2,.entry h2{color:var(--sss-blue-deep);font-size:var(--sss-font-h2);line-height:1.25;margin:var(--sss-space-4) 0 12px}
 .single-content h1,.entry h1{color:var(--sss-blue-deep);font-size:var(--sss-font-h1);line-height:1.15;margin:0 0 var(--sss-space-2)}
@@ -63,13 +66,13 @@ a{color:var(--sss-blue)}
 #site-navigation .dropdown-menu a,#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:var(--sss-blue-deep) !important;font-size:18px !important}
 .sss-hero h1{font-size:52px !important;line-height:1.08 !important}
 .sss-hero p{font-size:21px !important}
-.sss-hero img{width:715px !important;max-width:min(715px,100%) !important;height:auto !important;object-fit:contain}
+.sss-hero img{display:block !important;width:min(100%,715px) !important;max-width:715px !important;height:auto !important;margin-left:auto !important;margin-right:auto !important;object-fit:contain}
 .single-content figure img{width:auto !important;max-width:min(715px,100%) !important;height:auto !important}
 @media (max-width:767px){
 #site-logo img{height:64px !important}
 .sss-hero h1{font-size:34px !important}
 .sss-hero p{font-size:18px !important}
-.sss-hero img{width:auto !important;max-height:160px !important}
+.sss-hero img{width:100% !important;max-width:715px !important;height:auto !important;aspect-ratio:2.35 / 1;object-fit:cover !important;object-position:center 35%}
 }
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a,.sss-section-close a{color:#fff !important}
 .sss-mobile-bar .sss-mobile-bar-cta{background-color:var(--sss-red) !important;color:#fff !important}
