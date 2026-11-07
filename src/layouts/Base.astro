@@ -43,6 +43,20 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="stylesheet" href="/css/wp-inline.css" />
 <link rel="stylesheet" href="/css/site.css" />
 {pageStyle && <style is:inline set:html={pageStyle}></style>}
+<style is:inline>
+body{font-size:18px;line-height:1.65;color:#122033}
+.single-content p,.entry p{font-size:1.0625rem;line-height:1.7;color:#122033}
+.single-content h2,.entry h2{color:#033761;line-height:1.25;margin-top:1.6em}
+.page-header.wpex-supports-mods{background-color:#033761 !important;border-color:#033761 !important}
+.page-header .page-header-title{color:#fff !important}
+.vc_custom_1591372672294,.footer-middle{background-color:#033761 !important;background-image:none !important}
+a{color:#024e80}
+.single-content a:not(.sss-btn),.entry a:not(.sss-btn){text-decoration:underline;text-underline-offset:2px}
+.sss-btn,button.sss-btn{background-color:#0367a8 !important;color:#fff !important}
+.sss-btn:hover,button.sss-btn:hover{background-color:#024e80 !important;opacity:1}
+#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:#033761 !important}
+.sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a{color:#fff !important}
+</style>
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>
 <body class={bodyClass}>

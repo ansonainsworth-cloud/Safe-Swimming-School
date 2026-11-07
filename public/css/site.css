@@ -57,6 +57,30 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-book-slot.is-blocked,.sss-book-slot:disabled{background:#d9d9d9;color:#4d4d4d;border-color:#c8c8c8;cursor:not-allowed}
 #book-form label{color:#033761}
 #sss-pay-fallback{margin-top:24px}
+.sss-hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr);gap:36px;align-items:center;width:100vw;margin:8px calc(50% - 50vw) 40px;padding:40px max(24px,calc(50vw - 520px));background:#f4f8fb;box-sizing:border-box}
+.sss-hero img{width:100%;height:440px;object-fit:cover;border-radius:12px}
+.sss-hero h1{margin:0 0 12px;color:#033761;font-size:3rem;line-height:1.12}
+.sss-hero p{max-width:38rem}
+.sss-benefit-grid,.sss-pack-grid{display:grid;gap:16px;list-style:none;padding:0;margin:16px 0 28px}
+.sss-benefit-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.sss-benefit-grid li,.sss-pack-card{background:#fff;border:1px solid #d7e3ee;border-top:4px solid #2ea3f2;border-radius:10px;padding:18px 16px;color:#122033;line-height:1.5;box-shadow:0 1px 2px rgba(3,55,97,.06)}
+.sss-pack-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.sss-pack-card h3{margin:0 0 8px;color:#033761;font-size:1.25rem}
+.sss-pack-price{margin:0 0 12px;color:#033761;font-size:2rem;font-weight:700;line-height:1.1}
+.sss-pack-card p:last-child{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sss-price-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;padding:0;margin:16px 0 28px}
+.sss-price-list>li{background:#fff;border:1px solid #d7e3ee;border-top:4px solid #2ea3f2;border-radius:10px;padding:16px;margin:0;list-style:none;line-height:1.5}
+.sss-book-progress{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0 0 20px;list-style:none}
+.sss-book-progress li{background:#033761;color:#fff;border-radius:999px;padding:8px 14px;font-weight:700}
+.sss-book-step{border:1px solid #d7e3ee;border-radius:12px;padding:8px 16px 16px;margin:0 0 16px;background:#fff}
+.sss-book-step h2{margin-top:8px}
+.sss-quote-card{background:#f4f8fb;border:1px solid #d7e3ee;border-radius:10px;padding:16px;margin:0 0 16px}
+.sss-quote-card blockquote{margin:0}
+@media (max-width:767px){
+.sss-hero{grid-template-columns:1fr;padding:24px 20px;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+.sss-hero img{height:220px}
+.sss-hero h1{font-size:2rem}
+}
 .footer-quick-links a{white-space:nowrap}
 /* Sticky mobile contact bar */
 .sss-mobile-bar{display:none}
