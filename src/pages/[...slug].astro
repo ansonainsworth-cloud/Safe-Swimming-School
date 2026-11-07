@@ -29,10 +29,13 @@ let body = rewriteBookingButtons(bodies[`../content/pages/${page.slug}.html`]);
 if (page.slug === 'pricing') {
   for (const [markup, label] of pricingPayButtons) {
     if (!body.includes(markup)) throw new Error(`Pricing page is missing the ${label} line`);
-    const cart = pricingCartIds[label] ? ` ${cartAddHtml(pricingCartIds[label])}` : '';
-    const book = pricingCartIds[label] ? ' <a class="sss-btn" href="/book/">Book online</a> <a href="sms:+15612368260">or text 561-236-8260</a>' : '';
+    const hasBook = Boolean(pricingCartIds[label]);
+    const pay = payButtonHtml(paymentLink(label));
+    const payHtml = hasBook ? pay.replace('class="sss-btn"', 'class="sss-quiet"') : pay;
+    const cart = hasBook ? cartAddHtml(pricingCartIds[label]).replace('class="sss-btn"', 'class="sss-quiet"') : '';
+    const book = hasBook ? '<a class="sss-btn" href="/book/">Book online</a><a class="sss-quiet" href="sms:+15612368260">or text 561-236-8260</a>' : '';
     const open = pricingCartIds[label] ? `<li id="sss-${pricingCartIds[label]}">` : '<li>';
-    body = body.replace(markup, markup.replace('<li>', open).replace('</li>', `<br>${payButtonHtml(paymentLink(label))}${cart}${book}</li>`));
+    body = body.replace(markup, markup.replace('<li>', open).replace('</li>', `<div class="sss-pack-actions">${book}${payHtml}${cart}</div></li>`));
   }
   if (!body.includes(winterPackageMarkup)) throw new Error('Pricing page is missing the Wellington winter package line');
 }

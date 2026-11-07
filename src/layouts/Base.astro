@@ -44,17 +44,29 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="stylesheet" href="/css/site.css" />
 {pageStyle && <style is:inline set:html={pageStyle}></style>}
 <style is:inline>
-body{font-size:18px;line-height:1.65;color:#122033}
-.single-content p,.entry p{font-size:1.0625rem;line-height:1.7;color:#122033}
-.single-content h2,.entry h2{color:#033761;line-height:1.25;margin-top:1.6em}
-.page-header.wpex-supports-mods{background-color:#033761 !important;border-color:#033761 !important}
-.page-header .page-header-title{color:#fff !important}
+body{font-size:19px;line-height:1.6;color:#122033}
+.container{width:min(1360px,calc(100% - 48px)) !important;max-width:1360px !important}
+.single-content p,.entry p{font-size:19px;line-height:1.65;color:#122033;margin:0 0 16px}
+.single-content h2,.entry h2{color:#033761;font-size:32px;line-height:1.25;margin:40px 0 12px}
+.single-content h1,.entry h1{color:#033761;font-size:40px;line-height:1.15;margin:0 0 16px}
+#site-header-inner{padding-top:6px !important;padding-bottom:6px !important;height:auto !important}
+#site-logo img{max-height:48px !important;width:auto !important}
+.page-header.wpex-supports-mods{background-color:#033761 !important;border-color:#033761 !important;padding:14px 0 !important;margin:0 0 8px !important}
+.page-header .page-header-title{color:#fff !important;font-size:32px !important;line-height:1.2 !important}
 .vc_custom_1591372672294,.footer-middle{background-color:#033761 !important;background-image:none !important}
 a{color:#024e80}
 .single-content a:not(.sss-btn),.entry a:not(.sss-btn){text-decoration:underline;text-underline-offset:2px}
 .sss-btn,button.sss-btn{background-color:#0367a8 !important;color:#fff !important}
 .sss-btn:hover,button.sss-btn:hover{background-color:#024e80 !important;opacity:1}
-#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:#033761 !important}
+#site-navigation .dropdown-menu a,#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:#033761 !important;font-size:18px !important}
+.sss-hero h1{font-size:52px !important;line-height:1.08 !important}
+.sss-hero p{font-size:21px !important}
+.sss-hero img{width:715px !important;max-width:min(715px,100%) !important;height:auto !important;object-fit:contain}
+.single-content figure img{width:auto !important;max-width:min(715px,100%) !important;height:auto !important}
+@media (max-width:767px){
+.sss-hero h1{font-size:34px !important}
+.sss-hero p{font-size:18px !important}
+}
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a{color:#fff !important}
 .sss-mobile-bar .sss-mobile-bar-cta{background-color:#f5b11f !important;color:#033761 !important}
 p.copyright-text b{color:#b04a39}
