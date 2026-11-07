@@ -41,25 +41,26 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,500,500i,700,700i&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Chewy:regular&display=swap" />
 <link rel="stylesheet" href="/css/wp-inline.css" />
+<link rel="stylesheet" href="/css/tokens.css" />
 <link rel="stylesheet" href="/css/site.css" />
 {pageStyle && <style is:inline set:html={pageStyle}></style>}
 <style is:inline>
-body{font-size:19px;line-height:1.6;color:#122033}
-.container{width:min(1360px,calc(100% - 48px)) !important;max-width:1360px !important}
-.single-content p,.entry p{font-size:19px;line-height:1.65;color:#122033;margin:0 0 16px}
-.single-content h2,.entry h2{color:#033761;font-size:32px;line-height:1.25;margin:40px 0 12px}
-.single-content h1,.entry h1{color:#033761;font-size:40px;line-height:1.15;margin:0 0 16px}
+body{font-size:var(--sss-font-body);line-height:1.6;color:var(--sss-ink)}
+.container{width:min(var(--sss-measure),calc(100% - 48px)) !important;max-width:var(--sss-measure) !important}
+.single-content p,.entry p{font-size:var(--sss-font-body);line-height:1.65;color:var(--sss-ink);margin:0 0 var(--sss-space-2)}
+.single-content h2,.entry h2{color:var(--sss-blue-deep);font-size:var(--sss-font-h2);line-height:1.25;margin:var(--sss-space-4) 0 12px}
+.single-content h1,.entry h1{color:var(--sss-blue-deep);font-size:var(--sss-font-h1);line-height:1.15;margin:0 0 var(--sss-space-2)}
 #site-header-inner{padding-top:6px !important;padding-bottom:6px !important;height:auto !important}
 #site-logo,#site-logo-inner,#site-logo a{width:auto !important;height:auto !important;max-width:none !important;overflow:visible !important}
 #site-logo img{height:84px !important;width:auto !important;max-width:none !important;max-height:none !important}
-.page-header.wpex-supports-mods{background-color:#033761 !important;border-color:#033761 !important;padding:14px 0 !important;margin:0 0 8px !important}
-.page-header .page-header-title{color:#fff !important;font-size:32px !important;line-height:1.2 !important}
-.vc_custom_1591372672294,.footer-middle{background-color:#033761 !important;background-image:none !important}
-a{color:#024e80}
+.page-header.wpex-supports-mods{background-color:var(--sss-blue-deep) !important;border-color:var(--sss-blue-deep) !important;padding:14px 0 !important;margin:0 0 8px !important}
+.page-header .page-header-title{color:#fff !important;font-size:var(--sss-font-h2) !important;line-height:1.2 !important}
+.vc_custom_1591372672294,.footer-middle{background-color:var(--sss-blue-deep) !important;background-image:none !important}
+a{color:var(--sss-blue)}
 .single-content a:not(.sss-btn),.entry a:not(.sss-btn){text-decoration:underline;text-underline-offset:2px}
-.sss-btn,button.sss-btn{background-color:#0367a8 !important;color:#fff !important}
-.sss-btn:hover,button.sss-btn:hover{background-color:#024e80 !important;opacity:1}
-#site-navigation .dropdown-menu a,#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:#033761 !important;font-size:18px !important}
+.sss-btn,button.sss-btn{background-color:var(--sss-red) !important;color:#fff !important}
+.sss-btn:hover,button.sss-btn:hover{background-color:var(--sss-red-deep) !important;opacity:1}
+#site-navigation .dropdown-menu a,#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:var(--sss-blue-deep) !important;font-size:18px !important}
 .sss-hero h1{font-size:52px !important;line-height:1.08 !important}
 .sss-hero p{font-size:21px !important}
 .sss-hero img{width:715px !important;max-width:min(715px,100%) !important;height:auto !important;object-fit:contain}
@@ -68,10 +69,12 @@ a{color:#024e80}
 #site-logo img{height:64px !important}
 .sss-hero h1{font-size:34px !important}
 .sss-hero p{font-size:18px !important}
+.sss-hero img{width:auto !important;max-height:160px !important}
 }
-.sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a{color:#fff !important}
-.sss-mobile-bar .sss-mobile-bar-cta{background-color:#f5b11f !important;color:#033761 !important}
-p.copyright-text b{color:#b04a39}
+.sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a,.sss-section-close a{color:#fff !important}
+.sss-mobile-bar .sss-mobile-bar-cta{background-color:var(--sss-red) !important;color:#fff !important}
+.sss-section-close .sss-btn{background-color:var(--sss-red) !important;color:#fff !important}
+p.copyright-text b{color:var(--sss-red)}
 </style>
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>
