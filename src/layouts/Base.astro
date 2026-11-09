@@ -1,4 +1,5 @@
 ---
+import '@fontsource/fraunces/latin-600.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
@@ -43,6 +44,7 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="stylesheet" href="/css/wp-inline.css" />
 <link rel="stylesheet" href="/css/tokens.css" />
 <link rel="stylesheet" href="/css/site.css" />
+{path === '/' && <link rel="preload" as="image" type="image/webp" href="/images/hero/lesson-1280.webp" imagesrcset="/images/hero/lesson-640.webp 640w, /images/hero/lesson-960.webp 960w, /images/hero/lesson-1280.webp 1280w, /images/hero/lesson-1508.webp 1508w" imagesizes="100vw" fetchpriority="high" />}
 {pageStyle && <style is:inline set:html={pageStyle}></style>}
 <style is:inline>
 body{font-size:var(--sss-font-body);line-height:1.7;color:var(--sss-ink)}
@@ -51,6 +53,7 @@ body{font-size:var(--sss-font-body);line-height:1.7;color:var(--sss-ink)}
 .container,#site-header-inner,.page-header-inner,.custom-topbar .textwidget>div{width:100% !important;max-width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:20px !important;padding-right:20px !important;box-sizing:border-box !important}
 }
 .single-content p,.entry p{font-size:var(--sss-font-body);line-height:1.7;color:var(--sss-ink);margin:0 0 var(--sss-space-2)}
+h1,h2,h3,.page-header .page-header-title{font-family:Fraunces,"Iowan Old Style",Georgia,serif;font-weight:600}
 .single-content h2,.entry h2{color:var(--sss-blue-deep);font-size:var(--sss-font-h2);line-height:1.25;margin:var(--sss-space-4) 0 12px}
 .single-content h1,.entry h1{color:var(--sss-blue-deep);font-size:var(--sss-font-h1);line-height:1.15;margin:0 0 var(--sss-space-2)}
 #site-header-inner{padding-top:6px !important;padding-bottom:6px !important;height:auto !important}
@@ -65,13 +68,18 @@ a{color:var(--sss-blue)}
 .sss-btn:hover,button.sss-btn:hover{background-color:var(--sss-blue-deep) !important;opacity:1}
 #site-navigation .dropdown-menu a,#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:var(--sss-blue-deep) !important;font-size:18px !important}
 .sss-hero-banner h1{font-size:52px !important;line-height:1.08 !important;color:#fff !important}
-.sss-hero-banner p{font-size:18px !important;line-height:1.6 !important;color:#fff !important}
-.sss-hero-banner img{position:absolute !important;inset:0 !important;width:100% !important;max-width:none !important;height:100% !important;object-fit:cover !important;object-position:center 30% !important}
+.sss-hero-banner p,.sss-hero-facts li{font-size:18px !important;line-height:1.6 !important;color:#fff !important}
+.sss-hero-facts li{font-size:15px !important;line-height:1.3 !important}
+.sss-hero-banner picture{position:absolute !important;inset:0 !important}
+.sss-hero-banner img{position:absolute !important;inset:0 !important;width:100% !important;max-width:none !important;height:100% !important;object-fit:cover !important;object-position:center 18% !important}
 .single-content figure img{width:100% !important;max-width:100% !important;height:180px !important;object-fit:cover !important}
 @media (max-width:767px){
 #site-logo img{height:64px !important}
-.sss-hero-banner{min-height:460px !important}
+.sss-hero-banner{min-height:560px !important}
+.sss-hero-banner img{object-position:center 42% !important}
 .sss-hero-banner h1{font-size:34px !important}
+.custom-topbar .textwidget>div{display:flex !important;flex-wrap:nowrap !important;justify-content:space-between !important;align-items:center !important;gap:8px !important;padding:4px 12px !important;line-height:1.2 !important}
+.custom-topbar a,.custom-topbar span{display:inline !important;margin:0 !important;font-size:12px !important;letter-spacing:0 !important;text-transform:none !important;white-space:nowrap !important}
 .single-content figure img{height:140px !important}
 }
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a,.sss-section-close a{color:#fff !important}
