@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { onRequest as teamGone } from '../functions/team/[[path]].js';
+import { onRequest as commentsFeed } from '../functions/comments/feed/[[path]].js';
+import { onRequest as pricingFeed } from '../functions/pricing/feed/[[path]].js';
+import { onRequest as houstonGone } from '../functions/houston.html.js';
 import { clickEvent, installGaEvents, leadFromTallyMessage } from '../public/js/ga-events.js';
 
 const redirectLines = readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8')
@@ -20,6 +23,38 @@ describe('redirects', () => {
     expect(redirectLines.some((line) => line.startsWith('/books'))).toBe(false);
     const books = readFileSync(new URL('../src/pages/books.astro', import.meta.url), 'utf8');
     expect(books).toContain("const path = '/books/';");
+  });
+});
+
+describe('removed URLs', () => {
+  it('returns 410 for the old feeds and houston.html, and still for /team/matt/', async () => {
+    const routes = JSON.parse(readFileSync(new URL('../public/_routes.json', import.meta.url), 'utf8')) as { include: string[] };
+    for (const path of ['/comments/feed', '/comments/feed/*', '/pricing/feed', '/pricing/feed/*', '/houston.html', '/team/*']) {
+      expect(routes.include).toContain(path);
+    }
+    expect(redirectLines.some((line) => line.startsWith('/houston.html '))).toBe(false);
+    for (const respond of [commentsFeed, pricingFeed, houstonGone, teamGone]) {
+      const response = respond();
+      expect(response.status).toBe(410);
+      expect(await response.text()).toBe('Gone');
+      expect(response.headers.get('x-robots-tag')).toBe('noindex');
+    }
+  });
+
+  it('keeps the old town paths as 301s and out of the sitemap', () => {
+    const towns = ['jupiter', 'jupiter-farms', 'north-palm-beach', 'palm-beach-gardens', 'tequesta', 'westlake'];
+    for (const town of towns) {
+      expect(redirectLines).toContain(`/${town}/ /locations/${town}/ 301`);
+    }
+    const sitemap = readFileSync(new URL('../src/pages/sitemap.xml.js', import.meta.url), 'utf8');
+    const pages = JSON.parse(readFileSync(new URL('../src/data/migrated-pages.json', import.meta.url), 'utf8')) as { path: string }[];
+    const extra = sitemap.match(/const extra = (\[[\s\S]*?\]);/)?.[1] ?? '[]';
+    const paths = [...pages.map((page) => page.path), ...JSON.parse(extra.replace(/'/g, '"'))];
+    const forbidden = [
+      '/jupiter/', '/jupiter-farms/', '/north-palm-beach/', '/palm-beach-gardens/', '/tequesta/', '/westlake/',
+      '/houston.html', '/comments/feed/', '/pricing/feed/', '/team/matt/',
+    ];
+    for (const path of forbidden) expect(paths).not.toContain(path);
   });
 });
 
