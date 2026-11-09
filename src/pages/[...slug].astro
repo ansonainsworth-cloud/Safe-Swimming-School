@@ -31,10 +31,11 @@ if (page.slug === 'pricing') {
     if (!body.includes(markup)) throw new Error(`Pricing page is missing the ${label} line`);
     const hasBook = Boolean(pricingCartIds[label]);
     const isPackage = hasBook && label !== 'Single lesson';
-    const payHtml = payButtonHtml(paymentLink(label)).replace('class="sss-btn"', 'class="sss-quiet"');
+    const single = label === 'Single lesson';
+    const payHtml = single ? payButtonHtml(paymentLink(label)) : payButtonHtml(paymentLink(label)).replace('class="sss-btn"', 'class="sss-quiet"');
     const cart = hasBook ? cartAddHtml(pricingCartIds[label]).replace('class="sss-btn"', 'class="sss-quiet"') : '';
     const book = hasBook
-      ? `${isPackage ? '<a class="sss-btn" href="/book/">Book online</a>' : '<a class="sss-quiet" href="/book/">Book online</a>'}<a class="sss-quiet" href="sms:+15612368260">or text 561-236-8260</a>`
+      ? `<a class="${isPackage || single ? 'sss-btn' : 'sss-quiet'}" href="/book/">Book online</a><a class="sss-quiet" href="sms:+15612368260">or text 561-236-8260</a>`
       : '';
     const open = hasBook
       ? `<li id="sss-${pricingCartIds[label]}" class="${isPackage ? 'sss-price-feature' : 'sss-price-secondary'}">`

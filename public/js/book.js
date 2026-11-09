@@ -131,5 +131,14 @@
     });
   });
 
+  function paintSummary() {
+    var summary = document.getElementById('book-summary-choice');
+    if (!summary) return;
+    var checked = form.querySelector('input[name="option"]:checked');
+    summary.textContent = checked ? checked.parentNode.textContent.replace(/\s+/g, ' ').trim() : 'Choose a package';
+  }
+  form.addEventListener('change', paintSummary);
+  paintSummary();
+
   paint();
 })();
