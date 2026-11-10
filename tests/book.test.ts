@@ -27,18 +27,25 @@ function request(body: unknown) {
   });
 }
 
+const BEFORE_WAIVER_ENDS = new Date('2026-11-10T15:00:00.000Z');
+const AFTER_WAIVER_ENDS = new Date('2027-01-01T05:00:00.000Z');
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('/api/book swimmer ages', () => {
   it('keeps a one child booking on the package price', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(BEFORE_WAIVER_ENDS);
     const fetchMock = vi.fn(async () => Response.json({ payment_link: { url: 'https://square.test/pay' } }));
     vi.stubGlobal('fetch', fetchMock);
     const response = await onRequestPost({ request: request(booking()), env });
     expect(response.status).toBe(200);
     const sent = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(sent.order.line_items).toHaveLength(1);
     expect(sent.order.line_items[0].base_price_money).toEqual({ amount: 52000, currency: 'USD' });
     expect(sent.payment_note).toContain('Child age: 4');
     expect(sent.payment_note).toContain('Swimmers: 1');
@@ -46,6 +53,8 @@ describe('/api/book swimmer ages', () => {
   });
 
   it('passes two and three child ages without changing the package price', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(BEFORE_WAIVER_ENDS);
     const fetchMock = vi.fn(async () => Response.json({ payment_link: { url: 'https://square.test/pay' } }));
     vi.stubGlobal('fetch', fetchMock);
     const two = await onRequestPost({ request: request(booking({ swimmers: 2, childAge2: '6' })), env });
@@ -62,7 +71,10 @@ describe('/api/book swimmer ages', () => {
     });
     expect(three.status).toBe(200);
     const threeBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
-    expect(threeBody.order.line_items[0].base_price_money.amount).toBe(7500);
+    expect(threeBody.order.line_items.map((line: { name: string; base_price_money: { amount: number } }) => [line.name, line.base_price_money.amount])).toEqual([
+      ['Single lesson', 7500],
+      ['Annual registration (3+ family)', 6000],
+    ]);
     expect(threeBody.payment_note).toContain('Third child age: 2');
     expect(threeBody.payment_note).toContain('Swimmers: 3');
   });
@@ -77,6 +89,41 @@ describe('/api/book swimmer ages', () => {
     expect(ignored.status).toBe(200);
     const sent = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
     expect(sent.payment_note).not.toContain('Second child age');
+  });
+
+  it('charges registration on a single lesson and waives it on lock in packages until the deadline', async () => {
+    const fetchMock = vi.fn(async () => Response.json({ payment_link: { url: 'https://square.test/pay' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.useFakeTimers();
+    const cases: Array<{ when: Date; option: string; swimmers: number; amounts: number[] }> = [];
+    for (const swimmers of [1, 2, 3]) {
+      cases.push({ when: BEFORE_WAIVER_ENDS, option: 'single', swimmers, amounts: [7500, [3500, 5000, 6000][swimmers - 1]] });
+    }
+    for (const option of ['pkg-8', 'pkg-12', 'pkg-20']) {
+      const packageCents = option === 'pkg-8' ? 52000 : option === 'pkg-12' ? 72000 : 110000;
+      for (const swimmers of [1, 2, 3]) {
+        cases.push({ when: BEFORE_WAIVER_ENDS, option, swimmers, amounts: [packageCents] });
+        cases.push({ when: AFTER_WAIVER_ENDS, option, swimmers, amounts: [packageCents, [3500, 5000, 6000][swimmers - 1]] });
+      }
+    }
+    for (const item of cases) {
+      vi.setSystemTime(item.when);
+      const response = await onRequestPost({
+        request: request(booking({
+          option: item.option,
+          swimmers: item.swimmers,
+          childAge2: item.swimmers >= 2 ? '6' : undefined,
+          childAge3: item.swimmers >= 3 ? '2' : undefined,
+        })),
+        env,
+      });
+      expect(response.status, `${item.option} x ${item.swimmers} @ ${item.when.toISOString()}`).toBe(200);
+    }
+    const amounts = fetchMock.mock.calls.map((call) => {
+      const sent = JSON.parse(String(call[1]?.body));
+      return sent.order.line_items.map((line: { base_price_money: { amount: number } }) => line.base_price_money.amount);
+    });
+    expect(amounts).toEqual(cases.map((item) => item.amounts));
   });
 });
 
@@ -107,6 +154,7 @@ describe('booking form swimmer fields', () => {
     const fee = fakeEl('book-summary-fee');
     const note = fakeEl('book-summary-note');
     const option = fakeEl('option');
+    option.value = 'pkg-12';
     option.parentNode = { textContent: '12 lessons $720' };
     form.querySelector = (sel: string) => (sel === 'input[name="option"]:checked' ? option : null);
     const ids: Record<string, FakeEl> = {
@@ -122,6 +170,7 @@ describe('booking form swimmer fields', () => {
       'book-submit': fakeEl('book-submit'),
       'book-summary-choice': summary,
       'book-summary-fee': fee,
+      'book-summary-total': fakeEl('book-summary-total'),
       'book-summary-note': note,
       'book-mobile-summary': fakeEl('book-mobile-summary'),
       'book-mobile-choice': fakeEl('book-mobile-choice'),
@@ -141,6 +190,8 @@ describe('booking form swimmer fields', () => {
       SSS_REGISTRATION_TIERS: { 1: 3500, 2: 5000, 3: 6000 },
       location: { href: '' },
     };
+    vi.useFakeTimers();
+    vi.setSystemTime(BEFORE_WAIVER_ENDS);
     vi.stubGlobal('document', documentMock);
     vi.stubGlobal('window', windowMock);
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init: { body: string }) => {
@@ -153,7 +204,8 @@ describe('booking form swimmer fields', () => {
     expect(wrap3.hidden).toBe(true);
     expect(child2.required).toBe(false);
     expect(child2.disabled).toBe(true);
-    expect(fee.textContent).toBe('Annual registration is $35 for one swimmer.');
+    expect(fee.textContent).toBe('Annual registration is waived on this lock in package.');
+    expect(ids['book-summary-total'].textContent).toBe('Total $720');
 
     swimmers.value = '2';
     swimmers.listeners.change.forEach((fn) => fn());
@@ -162,7 +214,8 @@ describe('booking form swimmer fields', () => {
     expect(child2.disabled).toBe(false);
     expect(wrap3.hidden).toBe(true);
     expect(child3.required).toBe(false);
-    expect(fee.textContent).toBe('Annual registration is $50 for two siblings.');
+    expect(fee.textContent).toBe('Annual registration is waived on this lock in package.');
+    expect(ids['book-summary-total'].textContent).toBe('Total $720');
 
     swimmers.value = '3';
     child2.value = '6';
@@ -171,7 +224,12 @@ describe('booking form swimmer fields', () => {
     expect(wrap3.hidden).toBe(false);
     expect(child3.required).toBe(true);
     expect(child3.disabled).toBe(false);
+    expect(fee.textContent).toBe('Annual registration is waived on this lock in package.');
+    expect(ids['book-summary-total'].textContent).toBe('Total $720');
+    option.value = 'single';
+    form.listeners.change.forEach((fn) => fn());
     expect(fee.textContent).toBe('Annual registration is $60 for a family with three or more swimmers.');
+    expect(ids['book-summary-total'].textContent).toBe('Total $135');
 
     ids['book-time'].value = '08:00';
     form.listeners.submit.forEach((fn) => fn({ preventDefault() {} }));

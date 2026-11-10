@@ -1,4 +1,4 @@
-import { normalizeEmail, normalizeName, normalizePhone, SQUARE_VERSION } from '../_lib/prices';
+import { normalizeEmail, normalizeName, normalizePhone, packageRegistrationWaived, registrationPriceCents, SQUARE_VERSION } from '../_lib/prices';
 import { BOOK_DAYS, bookStartTimes, formatBookTime, isBookSlotBlocked } from '../../src/data/blocked-slots';
 import { bookTown } from '../../src/data/book-towns';
 
@@ -14,6 +14,22 @@ const OPTIONS = {
 } as const;
 
 type BookOption = keyof typeof OPTIONS;
+
+export function registrationLineName(swimmers: number): string {
+  if (swimmers >= 3) return 'Annual registration (3+ family)';
+  if (swimmers === 2) return 'Annual registration (2 siblings)';
+  return 'Annual registration (1 swimmer)';
+}
+
+/** Package price, plus registration unless this lock in package is still inside the Dec 31, 2026 waiver. */
+export function bookChargeLines(optionKey: BookOption, swimmers: number, now: Date): Array<{ name: string; amount: number }> {
+  const option = OPTIONS[optionKey];
+  const lines = [{ name: option.name, amount: option.amount }];
+  if (!packageRegistrationWaived([optionKey], now)) {
+    lines.push({ name: registrationLineName(swimmers), amount: registrationPriceCents(swimmers) });
+  }
+  return lines;
+}
 
 type PagesContext = {
   request: Request;
@@ -72,10 +88,11 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     poolAddress?: unknown;
   };
 
-  const option = typeof body.option === 'string' ? OPTIONS[body.option as BookOption] : undefined;
-  if (!option || !(body.option === 'single' || body.option === 'pkg-8' || body.option === 'pkg-12' || body.option === 'pkg-20')) {
+  const optionKey = body.option;
+  if (optionKey !== 'single' && optionKey !== 'pkg-8' && optionKey !== 'pkg-12' && optionKey !== 'pkg-20') {
     return json({ message: 'Choose a lesson.' }, 400);
   }
+  const option = OPTIONS[optionKey];
   const town = typeof body.town === 'string' ? bookTown(body.town) : undefined;
   if (!town) return json({ message: 'Choose a town.' }, 400);
   if (town.limited) return json({ message: LIMITED }, 400);
@@ -134,14 +151,12 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
         payment_note: note,
         order: {
           location_id: locationId,
-          line_items: [
-            {
-              name: option.name,
-              quantity: '1',
-              base_price_money: { amount: option.amount, currency: 'USD' },
-              note,
-            },
-          ],
+          line_items: bookChargeLines(optionKey, swimmers, new Date()).map((line, index) => ({
+            name: line.name,
+            quantity: '1',
+            base_price_money: { amount: line.amount, currency: 'USD' },
+            ...(index === 0 ? { note } : {}),
+          })),
         },
         checkout_options: { redirect_url: `${redirectHost}/checkout/thanks/` },
         pre_populated_data: { buyer_email: email, buyer_phone_number: phone },
