@@ -1,10 +1,11 @@
-import { normalizeEmail, normalizeName, normalizePhone, packageRegistrationWaived, registrationPriceCents, SQUARE_VERSION } from '../_lib/prices';
+import { normalizeEmail, normalizeName, normalizePhone, packageRegistrationWaived, registrationPriceCents } from '../_lib/prices';
+import { buyerFieldRejection, squarePost, SquareRequestError, type SquareEnv } from '../_lib/square';
 import { BOOK_DAYS, bookStartTimes, formatBookTime, isBookSlotBlocked } from '../../src/data/blocked-slots';
 import { bookTown } from '../../src/data/book-towns';
 
 const BOOKING_SOON = 'Online booking opens soon. Text 561-236-8260 to book.';
 const LIMITED = 'Limited availability, text 561-236-8260.';
-const SQUARE_PAYMENT_LINKS = 'https://connect.squareup.com/v2/online-checkout/payment-links';
+const CHECKOUT_FAILED = 'We could not start checkout. Text 561-236-8260.';
 
 const OPTIONS = {
   single: { name: 'Single lesson', amount: 7500 },
@@ -33,8 +34,14 @@ export function bookChargeLines(optionKey: BookOption, swimmers: number, now: Da
 
 type PagesContext = {
   request: Request;
-  env: { SQUARE_ACCESS_TOKEN?: string; SQUARE_LOCATION_ID?: string };
+  env: SquareEnv;
 };
+
+/** This route called production directly before it shared squarePost. Keep that host when SQUARE_ENV is unset. */
+function bookSquareEnv(env: SquareEnv): SquareEnv {
+  if (env.SQUARE_ENV === 'sandbox' || env.SQUARE_ENV === 'production') return env;
+  return { ...env, SQUARE_ENV: 'production' };
+}
 
 function json(data: unknown, status: number): Response {
   return new Response(JSON.stringify(data), {
@@ -135,42 +142,30 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   const redirectHost = origin.replace(/^http:/, 'https:');
   let created: unknown;
   try {
-    const response = await fetch(SQUARE_PAYMENT_LINKS, {
-      method: 'POST',
-      redirect: 'manual',
-      cache: 'no-store',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-        'Accept-Encoding': 'identity',
-        'Content-Type': 'application/json',
-        'Square-Version': SQUARE_VERSION,
+    created = await squarePost(bookSquareEnv(env), '/v2/online-checkout/payment-links', {
+      idempotency_key: crypto.randomUUID(),
+      payment_note: note,
+      order: {
+        location_id: locationId,
+        line_items: bookChargeLines(optionKey, swimmers, new Date()).map((line, index) => ({
+          name: line.name,
+          quantity: '1',
+          base_price_money: { amount: line.amount, currency: 'USD' },
+          ...(index === 0 ? { note } : {}),
+        })),
       },
-      body: JSON.stringify({
-        idempotency_key: crypto.randomUUID(),
-        payment_note: note,
-        order: {
-          location_id: locationId,
-          line_items: bookChargeLines(optionKey, swimmers, new Date()).map((line, index) => ({
-            name: line.name,
-            quantity: '1',
-            base_price_money: { amount: line.amount, currency: 'USD' },
-            ...(index === 0 ? { note } : {}),
-          })),
-        },
-        checkout_options: { redirect_url: `${redirectHost}/checkout/thanks/` },
-        pre_populated_data: { buyer_email: email, buyer_phone_number: phone },
-      }),
+      checkout_options: { redirect_url: `${redirectHost}/checkout/thanks/` },
+      pre_populated_data: { buyer_email: email, buyer_phone_number: phone },
     });
-    created = await response.json();
-    if (!response.ok) return json({ message: 'We could not start checkout. Text 561-236-8260.' }, 502);
-  } catch {
-    return json({ message: 'We could not start checkout. Text 561-236-8260.' }, 502);
+  } catch (error) {
+    const friendly = error instanceof SquareRequestError ? buyerFieldRejection(error.status, error.errors) : null;
+    if (friendly) return json(friendly, 400);
+    return json({ message: CHECKOUT_FAILED }, 502);
   }
 
   const url = (created as { payment_link?: { url?: unknown } })?.payment_link?.url;
   if (typeof url !== 'string' || !url.startsWith('https://')) {
-    return json({ message: 'We could not start checkout. Text 561-236-8260.' }, 502);
+    return json({ message: CHECKOUT_FAILED }, 502);
   }
   return json({ url }, 200);
 }

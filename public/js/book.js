@@ -123,6 +123,10 @@
         showMessage(result.body && result.body.message ? result.body.message : 'Online booking opens soon. Text 561-236-8260 to book.');
         return;
       }
+      if (result.status === 400) {
+        showMessage(result.body && result.body.message ? result.body.message : 'Please check your email address and phone number, then try again.');
+        return;
+      }
       if (!result.ok || !result.body || typeof result.body.url !== 'string') {
         showMessage(result.body && result.body.message ? result.body.message : 'We could not start checkout. Text 561-236-8260.');
         return;

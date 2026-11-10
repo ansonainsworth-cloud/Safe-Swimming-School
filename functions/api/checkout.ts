@@ -2,7 +2,7 @@ import { normalizeChildren, normalizeEmail, normalizeName, normalizePhone, norma
 import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { allowCheckout } from '../_lib/rate-limit';
 import { decideRegistration } from '../_lib/registration';
-import { checkoutConfigured, createSquareLookup, squarePost, type SquareEnv } from '../_lib/square';
+import { buyerFieldRejection, checkoutConfigured, createSquareLookup, squarePost, SquareRequestError, type SquareEnv } from '../_lib/square';
 
 type PagesContext = { request: Request; env: SquareEnv };
 
@@ -69,7 +69,9 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
   let created: unknown;
   try {
     created = await squarePost(env, '/v2/online-checkout/payment-links', paymentBody);
-  } catch {
+  } catch (error) {
+    const friendly = error instanceof SquareRequestError ? buyerFieldRejection(error.status, error.errors) : null;
+    if (friendly) return json(friendly, 400);
     return json({ error: 'checkout-failed' }, 502);
   }
   const url = (created as { payment_link?: { url?: unknown } })?.payment_link?.url;

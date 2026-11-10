@@ -51,7 +51,7 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 #sss-pkg-8,#sss-pkg-12,#sss-pkg-20{scroll-margin-top:96px}
 .sss-cart-message{margin-top:14px}
 .sss-book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin:8px 0 16px}
-.sss-book-slot[hidden],#book-limited[hidden],#book-message[hidden],#book-child-2[hidden],#book-child-3[hidden]{display:none !important}
+.sss-book-slot[hidden],#book-limited[hidden],#book-message[hidden],#book-child-2[hidden],#book-child-3[hidden],#sss-checkout-message[hidden]{display:none !important}
 .sss-book-slot{border:1px solid #d7e3ee;background:#fff;color:#033761;padding:8px 6px;border-radius:4px;font:inherit;cursor:pointer}
 .sss-book-slot.is-selected{background:var(--sss-blue-deep);color:#fff;border-color:var(--sss-blue-deep)}
 .sss-book-slot.is-blocked,.sss-book-slot:disabled{background:#d9d9d9;color:#4d4d4d;border-color:#c8c8c8;cursor:not-allowed}

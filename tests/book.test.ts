@@ -11,7 +11,7 @@ function booking(extra: Record<string, unknown> = {}) {
     day: 'Mon',
     time: '08:00',
     name: 'Pat Parent',
-    email: 'pat@example.com',
+    email: 'info@safeswimmingschool.com',
     phone: '561-236-8260',
     childAge: '4',
     poolAddress: '10 Lake Road',
@@ -134,7 +134,7 @@ describe('booking form swimmer fields', () => {
     const form = fakeEl('book-form');
     form.option = { value: 'pkg-12' };
     form.name = { value: 'Pat Parent' };
-    form.email = { value: 'pat@example.com' };
+    form.email = { value: 'info@safeswimmingschool.com' };
     form.phone = { value: '561-236-8260' };
     form.childAge = { value: '4' };
     form.poolAddress = { value: '10 Lake Road' };
@@ -275,6 +275,134 @@ type FakeEl = {
   querySelector: (sel: string) => FakeEl | null;
   querySelectorAll: () => FakeEl[];
 };
+
+const FRIENDLY = 'Please check your email address and phone number, then try again.';
+
+describe('/api/book Square buyer errors', () => {
+  function squareError(status: number, errors: unknown) {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ errors }), { status }));
+    vi.stubGlobal('fetch', fetchMock);
+    const logs: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((message) => { logs.push(String(message)); });
+    return logs;
+  }
+
+  it('returns the friendly message when Square rejects the email', async () => {
+    const logs = squareError(400, [{
+      category: 'INVALID_REQUEST_ERROR',
+      code: 'INVALID_EMAIL_ADDRESS',
+      field: 'pre_populated_data.buyer_email',
+      detail: 'rejected info@safeswimmingschool.com',
+    }]);
+    const response = await onRequestPost({ request: request(booking()), env });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ message: FRIENDLY, field: 'email' });
+    expect(JSON.parse(logs[0])).toEqual({
+      step: 'payment-link',
+      status: 400,
+      errors: [{ code: 'INVALID_EMAIL_ADDRESS', category: 'INVALID_REQUEST_ERROR', field: 'pre_populated_data.buyer_email' }],
+    });
+    const logged = logs.join('\n');
+    expect(logged).not.toContain('info@safeswimmingschool.com');
+    expect(logged).not.toContain('Bearer');
+    expect(logged).not.toContain('detail');
+  });
+
+  it('returns a phone hint when Square rejects the phone or another pre_populated_data field', async () => {
+    squareError(400, [{
+      category: 'INVALID_REQUEST_ERROR',
+      code: 'INVALID_PHONE_NUMBER',
+      field: 'pre_populated_data.buyer_phone_number',
+      detail: '561-236-8260',
+    }]);
+    const phone = await onRequestPost({ request: request(booking()), env });
+    expect(phone.status).toBe(400);
+    expect(await phone.json()).toEqual({ message: FRIENDLY, field: 'phone' });
+
+    squareError(400, [{
+      category: 'INVALID_REQUEST_ERROR',
+      code: 'INVALID_VALUE',
+      field: 'pre_populated_data',
+    }]);
+    const field = await onRequestPost({ request: request(booking()), env });
+    expect(field.status).toBe(400);
+    expect(await field.json()).toEqual({ message: FRIENDLY, field: 'email' });
+  });
+
+  it('keeps a Square 500 on the text line', async () => {
+    const logs = squareError(500, [{
+      category: 'API_ERROR',
+      code: 'INTERNAL_SERVER_ERROR',
+      field: 'pre_populated_data.buyer_email',
+      detail: 'info@safeswimmingschool.com',
+    }]);
+    const response = await onRequestPost({ request: request(booking()), env });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ message: 'We could not start checkout. Text 561-236-8260.' });
+    expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
+    expect(JSON.parse(logs[0]).errors[0].code).toBe('INTERNAL_SERVER_ERROR');
+  });
+});
+
+describe('booking form checkout errors', () => {
+  it('shows the 400 message inline and the text line for a 502', async () => {
+    const source = readFileSync(new URL('../public/js/book.js', import.meta.url), 'utf8');
+    const message = fakeEl('book-message');
+    const time = fakeEl('book-time');
+    time.value = '08:00';
+    const form = fakeEl('book-form');
+    form.option = { value: 'single' };
+    form.name = { value: 'Pat Parent' };
+    form.email = { value: 'info@safeswimmingschool.com' };
+    form.phone = { value: '561-236-8260' };
+    form.childAge = { value: '4' };
+    form.poolAddress = { value: '10 Lake Road' };
+    const swimmers = fakeEl('book-swimmers');
+    swimmers.value = '1';
+    const ids: Record<string, FakeEl> = {
+      'book-form': form,
+      'book-town': fakeEl('book-town'),
+      'book-day': fakeEl('book-day'),
+      'book-time': time,
+      'book-grid': fakeEl('book-grid'),
+      'book-times': fakeEl('book-times'),
+      'book-limited': fakeEl('book-limited'),
+      'book-message': message,
+      'book-blocks': fakeEl('book-blocks'),
+      'book-submit': fakeEl('book-submit'),
+      'book-summary-choice': fakeEl('book-summary-choice'),
+      'book-summary-fee': fakeEl('book-summary-fee'),
+      'book-summary-note': fakeEl('book-summary-note'),
+      'book-mobile-summary': fakeEl('book-mobile-summary'),
+      'book-mobile-choice': fakeEl('book-mobile-choice'),
+      'book-mobile-note': fakeEl('book-mobile-note'),
+      'book-swimmers': swimmers,
+      'book-child-2': fakeEl('book-child-2'),
+      'book-child-3': fakeEl('book-child-3'),
+    };
+    ids['book-blocks'].textContent = '[]';
+    ids['book-day'].value = 'Mon';
+    ids['book-town'].value = 'jupiter';
+    const replies = [
+      { status: 400, body: { message: FRIENDLY, field: 'email' } },
+      { status: 502, body: { message: 'We could not start checkout. Text 561-236-8260.' } },
+    ];
+    vi.stubGlobal('document', { getElementById: (id: string) => ids[id] || null });
+    vi.stubGlobal('window', { SSS_REGISTRATION_TIERS: { 1: 3500, 2: 5000, 3: 6000 }, location: { href: '' } });
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      const next = replies.shift();
+      return { ok: false, status: next?.status, json: async () => next?.body };
+    }));
+    new Function(source)();
+    time.value = '08:00';
+    form.listeners.submit.forEach((fn) => fn({ preventDefault() {} }));
+    await vi.waitFor(() => expect(message.textContent).toBe(FRIENDLY));
+    expect(message.hidden).toBe(false);
+    expect(message.textContent).not.toContain('561-236-8260');
+    form.listeners.submit.forEach((fn) => fn({ preventDefault() {} }));
+    await vi.waitFor(() => expect(message.textContent).toContain('Text 561-236-8260'));
+  });
+});
 
 function fakeEl(id: string): FakeEl {
   const el: FakeEl = {
