@@ -1,7 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import PageShell from '../components/PageShell.astro';
+import PayButton from '../components/PayButton.astro';
 import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
+import { paymentLink } from '../data/payment-links';
 
 const path = '/gift-certificates/';
 const title = 'Holiday gift certificate | Safe Swimming School';
@@ -9,6 +11,12 @@ const included = '8 private 30 minute lessons plus the $35 annual registration f
 const expires = 'Expires December 31, 2027.';
 const description = `A Safe Swimming School holiday gift certificate is $475. That is ${included} ${expires}`;
 const redeemLine = 'The recipient books days and times when they redeem the certificate.';
+const holidayPay = {
+  label: 'Holiday gift certificate',
+  price: '$475',
+  url: 'https://square.link/u/IiddEmp0',
+};
+const pkg20 = paymentLink('20 lessons');
 const faqs = [
   ['How much is the holiday gift certificate?', `It is $475. That is ${included} ${expires} The $475 gift offer ends December 24, 2026.`],
   ['When does the certificate expire?', expires],
@@ -23,7 +31,7 @@ const faqs = [
 <figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family pool" /></figure>
 <p><strong>$475.</strong> {included} {expires} The $475 gift offer ends December 24, 2026.</p>
 <div class="sss-gift-pay">
-<p><a class="sss-btn" href="https://square.link/u/IiddEmp0">Buy with card</a></p>
+<p><PayButton link={holidayPay} /></p>
 <div>
 <p><strong>Zelle</strong><br />Send to 561-236-8260. It shows as Scott Ainsworth.</p>
 <p><strong>Venmo</strong><br /><a href="https://venmo.com/u/safe-swim">@safe-swim</a></p>
@@ -31,6 +39,9 @@ const faqs = [
 </div>
 </div>
 <p>{redeemLine}</p>
+<h2 class="wp-block-heading">20 lessons</h2>
+<p><strong>20 lessons for $1,100.</strong></p>
+<p><PayButton link={pkg20} /></p>
 <p>See <a href="/pricing/">lesson prices</a>.</p>
 <h2 class="wp-block-heading">Questions</h2>
 {faqs.map(([q, a]) => (<Fragment><p><strong>{q}</strong></p><p>{a}</p></Fragment>))}
