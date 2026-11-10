@@ -73,7 +73,7 @@ describe('/team/matt/', () => {
 
 describe('GA4 events', () => {
   it('turns a Tally submission into generate_lead without the answers', () => {
-    const secret = 'parent@example.com';
+    const secret = 'info@safeswimmingschool.com';
     const hit = leadFromTallyMessage({
       origin: 'https://tally.so',
       data: JSON.stringify({

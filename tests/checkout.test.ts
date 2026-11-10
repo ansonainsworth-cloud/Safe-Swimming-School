@@ -155,7 +155,7 @@ describe('registration decision', () => {
     const searchOrders = vi.fn(async () => ({
       orders: [{ line_items: [{ name: '8 Private Lessons (30 min)' }, { name: 'Annual Registration' }] }],
     }));
-    const decision = await decideRegistration('parent@example.com', lookup({
+    const decision = await decideRegistration('info@safeswimmingschool.com', lookup({
       searchCustomers: async () => ({ customers: [{ id: 'CUST1' }] }),
       searchOrders,
     }), now);
@@ -164,7 +164,7 @@ describe('registration decision', () => {
   });
 
   it('adds the fee when the customer has no registration line', async () => {
-    const decision = await decideRegistration('parent@example.com', lookup({
+    const decision = await decideRegistration('info@safeswimmingschool.com', lookup({
       searchCustomers: async () => ({ customers: [{ id: 'CUST1' }] }),
       searchOrders: async () => ({ orders: [{ line_items: [{ name: 'Single lesson (30 min)' }] }] }),
     }), now);
@@ -172,30 +172,30 @@ describe('registration decision', () => {
   });
 
   it('adds the fee when no customer exists', async () => {
-    const decision = await decideRegistration('new@example.com', lookup({
+    const decision = await decideRegistration('info@safeswimmingschool.com', lookup({
       searchCustomers: async () => ({}),
     }), now);
     expect(decision).toEqual({ add: true, reason: 'no-customer' });
   });
 
   it('adds the fee and flags a lookup error', async () => {
-    const decision = await decideRegistration('parent@example.com', lookup({
+    const decision = await decideRegistration('info@safeswimmingschool.com', lookup({
       searchCustomers: async () => { throw new Error('square down'); },
     }), now);
     expect(decision).toEqual({ add: true, reason: 'lookup-error' });
   });
 
   it('flags a lookup error when the customer search body is null', async () => {
-    const decision = await decideRegistration('parent@example.com', lookup({
+    const decision = await decideRegistration('info@safeswimmingschool.com', lookup({
       searchCustomers: async () => null as unknown as { customers?: { id?: string }[] },
     }), now);
     expect(decision).toEqual({ add: true, reason: 'lookup-error' });
   });
 
   it('searches Square by exact email, location, completed state, and closed date', () => {
-    expect(customerSearchBody('parent@example.com')).toEqual({
+    expect(customerSearchBody('info@safeswimmingschool.com')).toEqual({
       limit: 10,
-      query: { filter: { email_address: { exact: 'parent@example.com' } } },
+      query: { filter: { email_address: { exact: 'info@safeswimmingschool.com' } } },
     });
     expect(orderSearchBody('LOC123', 'CUST1', '2025-10-23T15:00:00.000Z')).toEqual({
       location_ids: ['LOC123'],
@@ -217,7 +217,7 @@ describe('CreatePaymentLink body', () => {
       locationId: 'LOC123',
       idempotencyKey: 'idem-1',
       redirectUrl: 'https://preview.example/checkout/thanks/',
-      buyerEmail: 'parent@example.com',
+      buyerEmail: 'info@safeswimmingschool.com',
       buyerPhone: '561-236-8260',
       customerId: 'CUST1',
       lines: priceClientLines([{ id: 'pkg-8', quantity: 1 }, { id: 'water-aerobics', quantity: 2 }], true),
@@ -234,7 +234,7 @@ describe('CreatePaymentLink body', () => {
         ],
       },
       checkout_options: { redirect_url: 'https://preview.example/checkout/thanks/' },
-      pre_populated_data: { buyer_email: 'parent@example.com', buyer_phone_number: '+15612368260' },
+      pre_populated_data: { buyer_email: 'info@safeswimmingschool.com', buyer_phone_number: '+15612368260' },
     });
     const serialized = JSON.stringify(body);
     expect(serialized).not.toMatch(/catalog/i);
@@ -246,10 +246,10 @@ describe('CreatePaymentLink body', () => {
       locationId: 'LOC123',
       idempotencyKey: 'idem-2',
       redirectUrl: 'https://preview.example/checkout/thanks/',
-      buyerEmail: 'parent@example.com',
+      buyerEmail: 'info@safeswimmingschool.com',
       lines: [{ name: 'Single lesson (30 min)', quantity: 1, priceCents: 7500 }],
     });
-    expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
+    expect(body.pre_populated_data).toEqual({ buyer_email: 'info@safeswimmingschool.com' });
     expect(body.order).not.toHaveProperty('customer_id');
     expect(body.order).not.toHaveProperty('metadata');
   });
@@ -260,14 +260,14 @@ describe('CreatePaymentLink body', () => {
         locationId: 'LOC123',
         idempotencyKey: 'idem-blank',
         redirectUrl: 'http://user:pass@preview.example/checkout/thanks/#fragment',
-        buyerEmail: 'parent@example.com',
+        buyerEmail: 'info@safeswimmingschool.com',
         buyerPhone,
         lines: [
           { name: 'Single lesson (30 min)', quantity: 1, priceCents: 7500 },
           { name: 'Annual Registration', quantity: 1, priceCents: 3500 },
         ],
       });
-      expect(body.pre_populated_data).toEqual({ buyer_email: 'parent@example.com' });
+      expect(body.pre_populated_data).toEqual({ buyer_email: 'info@safeswimmingschool.com' });
       expect(JSON.stringify(body)).not.toContain('buyer_phone_number');
       expect(body.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
       expect(body.order).not.toHaveProperty('metadata');
@@ -332,7 +332,7 @@ describe('checkout endpoint', () => {
     const request = new Request('https://preview.example/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.5' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({ request, env: { SQUARE_ENV: 'sandbox' } });
     expect(response.status).toBe(503);
@@ -346,11 +346,13 @@ describe('checkout endpoint', () => {
     });
     vi.stubGlobal('fetch', fetchImpl);
     const logs: string[] = [];
-    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    const push = (message?: unknown) => { logs.push(String(message)); };
+    vi.spyOn(console, 'log').mockImplementation(push);
+    vi.spyOn(console, 'error').mockImplementation(push);
     const request = new Request('https://preview.example/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.7' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'Pat@Example.com', phone: '561-236-8260' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'Info@SafeSwimmingSchool.com', phone: '561-236-8260' } }),
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(200);
@@ -370,11 +372,11 @@ describe('checkout endpoint', () => {
     expect(sent.order).not.toHaveProperty('metadata');
     expect(sent.checkout_options.redirect_url).toBe('https://preview.example/checkout/thanks/');
     expect(sent.payment_note).toBe('Pat Lee');
-    expect(sent.pre_populated_data.buyer_email).toBe('pat@example.com');
+    expect(sent.pre_populated_data.buyer_email).toBe('info@safeswimmingschool.com');
     expect(sent.pre_populated_data.buyer_phone_number).toBe('+15612368260');
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain('connect.squareup.com');
     expect(logs.join('\n')).not.toContain('sandbox-token');
-    expect(logs.join('\n')).not.toContain('Pat@Example.com');
+    expect(logs.join('\n')).not.toContain('Info@SafeSwimmingSchool.com');
   });
 
   it('charges the registration tier for 2 and 3 swimmers on the server payment link', async () => {
@@ -393,7 +395,7 @@ describe('checkout endpoint', () => {
       const request = new Request('https://preview.example/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip },
-        body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 1 }], swimmers, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+        body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 1 }], swimmers, buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
       });
       const response = await onRequestPost({ request, env });
       expect(response.status).toBe(200);
@@ -422,7 +424,7 @@ describe('checkout endpoint', () => {
           { name: 'Ben Lee', age: '4' },
           { name: 'Cam Lee', age: '8 months', notes: '' },
         ],
-        buyer: { name: 'Pat Lee', email: 'pat@example.com' },
+        buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' },
       }),
     });
     const response = await onRequestPost({ request, env });
@@ -448,7 +450,7 @@ describe('checkout endpoint', () => {
       body: JSON.stringify({
         items: [{ id: 'pkg-8', quantity: 1 }],
         children: [{ name: '', age: '4' }],
-        buyer: { name: 'Pat Lee', email: 'pat@example.com' },
+        buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' },
       }),
     });
     const response = await onRequestPost({ request, env });
@@ -465,7 +467,7 @@ describe('checkout endpoint', () => {
     const request = new Request('https://safeswimmingschool.com/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.40' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({
       request,
@@ -491,7 +493,7 @@ describe('checkout endpoint', () => {
       body: JSON.stringify({
         items: [{ id: 'trial', quantity: 1 }],
         swimmers: 1,
-        buyer: { name: 'Pat Lee', email: 'pat@example.com', phone: ' ' },
+        buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com', phone: ' ' },
       }),
     });
     const response = await onRequestPost({
@@ -505,7 +507,7 @@ describe('checkout endpoint', () => {
       { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
-    expect(sent.pre_populated_data).toEqual({ buyer_email: 'pat@example.com' });
+    expect(sent.pre_populated_data).toEqual({ buyer_email: 'info@safeswimmingschool.com' });
     expect(sent.order).not.toHaveProperty('metadata');
     expect(sent.checkout_options.redirect_url).toBe('https://safeswimmingschool.com/checkout/thanks/');
     expect(new Headers(paymentCall?.[1]?.headers).get('Square-Version')).toBe('2026-09-16');
@@ -517,7 +519,7 @@ describe('checkout endpoint', () => {
     const request = new Request('https://preview.example/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.6' },
-      body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 9 }], buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'pkg-8', quantity: 9 }], buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(400);
@@ -528,7 +530,7 @@ describe('checkout endpoint', () => {
 describe('Square error logs', () => {
   function captureLogs(): string[] {
     const logs: string[] = [];
-    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    vi.spyOn(console, 'error').mockImplementation((message) => { logs.push(String(message)); });
     return logs;
   }
 
@@ -538,7 +540,7 @@ describe('Square error logs', () => {
         code: 'INVALID_VALUE',
         category: 'INVALID_REQUEST_ERROR',
         field: 'order.metadata',
-        detail: 'parent@example.com 561-236-8260 rejected',
+        detail: 'info@safeswimmingschool.com 561-236-8260 rejected',
       }],
     }), { status: 400 }));
     const logs = captureLogs();
@@ -550,14 +552,14 @@ describe('Square error logs', () => {
     });
     const logged = logs.join('\n');
     expect(logged).not.toContain('sandbox-token');
-    expect(logged).not.toContain('parent@example.com');
+    expect(logged).not.toContain('info@safeswimmingschool.com');
     expect(logged).not.toContain('561-236-8260');
     expect(logged).not.toContain('detail');
     expect(logged).not.toContain('Bearer');
 
     logs.length = 0;
     const customerFetch = vi.fn(async () => new Response(JSON.stringify({
-      errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query.filter', detail: 'parent@example.com' }],
+      errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query.filter', detail: 'info@safeswimmingschool.com' }],
     }), { status: 400 }));
     await expect(squarePost(env, '/v2/customers/search', { limit: 1 }, customerFetch)).rejects.toThrow(/400/);
     expect(JSON.parse(logs[0])).toEqual({
@@ -565,7 +567,7 @@ describe('Square error logs', () => {
       status: 400,
       errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query.filter' }],
     });
-    expect(logs[0]).not.toContain('parent@example.com');
+    expect(logs[0]).not.toContain('info@safeswimmingschool.com');
   });
 
   it('logs an orders-search failure and still creates the payment link', async () => {
@@ -574,7 +576,7 @@ describe('Square error logs', () => {
       if (target.endsWith('/v2/customers/search')) return new Response(JSON.stringify({ customers: [{ id: 'CUST1' }] }), { status: 200 });
       if (target.endsWith('/v2/orders/search')) {
         return new Response(JSON.stringify({
-          errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query', detail: 'parent@example.com' }],
+          errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query', detail: 'info@safeswimmingschool.com' }],
         }), { status: 400 });
       }
       return new Response(JSON.stringify({ payment_link: { url: 'https://square.link/u/after-lookup' } }), { status: 200 });
@@ -584,7 +586,7 @@ describe('Square error logs', () => {
     const request = new Request('https://safeswimmingschool.com/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.42' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'parent@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({
       request,
@@ -598,7 +600,7 @@ describe('Square error logs', () => {
       status: 400,
       errors: [{ code: 'INVALID_REQUEST', category: 'INVALID_REQUEST_ERROR', field: 'query' }],
     });
-    expect(logs.join('\n')).not.toContain('parent@example.com');
+    expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
     expect(logs.join('\n')).not.toContain('prod-token');
   });
 
@@ -612,7 +614,7 @@ describe('Square error logs', () => {
     const request = new Request('https://safeswimmingschool.com/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.43' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'pat@example.com', phone: '' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com', phone: '' } }),
     });
     const response = await onRequestPost({
       request,
@@ -622,7 +624,7 @@ describe('Square error logs', () => {
     expect(await response.json()).toEqual({ error: 'checkout-failed' });
     expect(JSON.parse(logs[0])).toEqual({ step: 'payment-link', status: 400, errors: [] });
     expect(logs.join('\n')).not.toContain('prod-token');
-    expect(logs.join('\n')).not.toContain('pat@example.com');
+    expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
     expect(logs.join('\n')).not.toContain('not-json');
     expect(response.headers.get('content-type')).toContain('application/json');
   });
@@ -639,7 +641,7 @@ describe('Square error logs', () => {
     const request = new Request('https://safeswimmingschool.com/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.44' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({
       request,
@@ -652,7 +654,7 @@ describe('Square error logs', () => {
     const logged = logs.join('\n');
     expect(logged).not.toContain('error code');
     expect(logged).not.toContain('prod-token');
-    expect(logged).not.toContain('pat@example.com');
+    expect(logged).not.toContain('info@safeswimmingschool.com');
     expect(logged).not.toContain('LBP6350HER5HN');
   });
 
@@ -666,7 +668,7 @@ describe('Square error logs', () => {
     const request = new Request('https://safeswimmingschool.com/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.45' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({
       request,
@@ -685,7 +687,7 @@ describe('Square error logs', () => {
     const request = new Request('ftp://files.example/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.46' },
-      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'pat@example.com' } }),
+      body: JSON.stringify({ items: [{ id: 'trial', quantity: 1 }], swimmers: 1, buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com' } }),
     });
     const response = await onRequestPost({ request, env });
     expect(response.status).toBe(502);
@@ -706,7 +708,9 @@ describe('checkout health', () => {
     });
     vi.stubGlobal('fetch', fetchImpl);
     const logs: string[] = [];
-    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    const push = (message?: unknown) => { logs.push(String(message)); };
+    vi.spyOn(console, 'log').mockImplementation(push);
+    vi.spyOn(console, 'error').mockImplementation(push);
     const request = new Request('https://safeswimmingschool.com/api/checkout-health', {
       headers: { 'cf-connecting-ip': '203.0.113.50' },
     });
@@ -728,11 +732,11 @@ describe('checkout health', () => {
 
   it('reports the Square status when the location GET fails and does not call Square without a chosen origin', async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
-      errors: [{ code: 'UNAUTHORIZED', category: 'AUTHENTICATION_ERROR', field: 'authorization', detail: 'bad token parent@example.com' }],
+      errors: [{ code: 'UNAUTHORIZED', category: 'AUTHENTICATION_ERROR', field: 'authorization', detail: 'bad token info@safeswimmingschool.com' }],
     }), { status: 401 }));
     vi.stubGlobal('fetch', fetchImpl);
     const logs: string[] = [];
-    vi.spyOn(console, 'log').mockImplementation((message) => { logs.push(String(message)); });
+    vi.spyOn(console, 'error').mockImplementation((message) => { logs.push(String(message)); });
     const denied = await onCheckoutHealth({
       request: new Request('https://safeswimmingschool.com/api/checkout-health', { headers: { 'cf-connecting-ip': '203.0.113.51' } }),
       env: { SQUARE_ENV: 'production', SQUARE_ACCESS_TOKEN: 'prod-token', SQUARE_LOCATION_ID: 'LBP6350HER5HN' },
@@ -744,7 +748,7 @@ describe('checkout health', () => {
       status: 401,
       errors: [{ code: 'UNAUTHORIZED', category: 'AUTHENTICATION_ERROR', field: 'authorization' }],
     });
-    expect(logs.join('\n')).not.toContain('parent@example.com');
+    expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
     expect(logs.join('\n')).not.toContain('prod-token');
 
     fetchImpl.mockClear();
@@ -807,7 +811,7 @@ describe('webhook signature', () => {
   it('summarizes payment and order events without buyer fields', () => {
     expect(eventSummary({
       type: 'payment.updated',
-      data: { object: { payment: { order_id: 'ORD1', status: 'COMPLETED', buyer_email_address: 'pat@example.com' } } },
+      data: { object: { payment: { order_id: 'ORD1', status: 'COMPLETED', buyer_email_address: 'info@safeswimmingschool.com' } } },
     })).toEqual({ event: 'payment.updated', orderId: 'ORD1', status: 'COMPLETED' });
     expect(eventSummary({
       type: 'order.updated',
@@ -815,8 +819,8 @@ describe('webhook signature', () => {
     })).toEqual({ event: 'order.updated', orderId: 'ORD2', status: 'COMPLETED' });
     expect(JSON.stringify(eventSummary({
       type: 'payment.updated',
-      data: { object: { payment: { order_id: 'ORD1', status: 'COMPLETED', buyer_email_address: 'pat@example.com' } } },
-    }))).not.toContain('pat@example.com');
+      data: { object: { payment: { order_id: 'ORD1', status: 'COMPLETED', buyer_email_address: 'info@safeswimmingschool.com' } } },
+    }))).not.toContain('info@safeswimmingschool.com');
   });
 });
 
@@ -853,6 +857,134 @@ async function signSquare(notificationUrl: string, rawBody: string, signatureKey
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
+
+const FRIENDLY = 'Please check your email address and phone number, then try again.';
+
+describe('/api/checkout Square buyer errors', () => {
+  function paymentError(status: number, errors: unknown, ip: string) {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response(JSON.stringify({ errors }), { status });
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const logs: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((message) => { logs.push(String(message)); });
+    const request = new Request('https://safeswimmingschool.com/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip },
+      body: JSON.stringify({
+        items: [{ id: 'trial', quantity: 1 }],
+        buyer: { name: 'Pat Lee', email: 'info@safeswimmingschool.com', phone: '561-236-8260' },
+      }),
+    });
+    return { logs, request };
+  }
+
+  it('returns the friendly message when Square rejects the email', async () => {
+    const { logs, request } = paymentError(400, [{
+      category: 'INVALID_REQUEST_ERROR',
+      code: 'INVALID_EMAIL_ADDRESS',
+      field: 'pre_populated_data.buyer_email',
+      detail: 'rejected info@safeswimmingschool.com',
+    }], '203.0.113.80');
+    const response = await onRequestPost({ request, env });
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ message: FRIENDLY, field: 'email' });
+    expect(JSON.stringify(body)).not.toContain('info@safeswimmingschool.com');
+    expect(JSON.parse(logs.at(-1) || '')).toMatchObject({
+      step: 'payment-link',
+      status: 400,
+      errors: [{ code: 'INVALID_EMAIL_ADDRESS', category: 'INVALID_REQUEST_ERROR', field: 'pre_populated_data.buyer_email' }],
+    });
+    expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
+    expect(logs.join('\n')).not.toContain('sandbox-token');
+    expect(logs.join('\n')).not.toContain('561-236-8260');
+  });
+
+  it('keeps a Square 500 on checkout-failed', async () => {
+    const { logs, request } = paymentError(500, [{
+      category: 'API_ERROR',
+      code: 'INTERNAL_SERVER_ERROR',
+      detail: 'info@safeswimmingschool.com',
+    }], '203.0.113.81');
+    const response = await onRequestPost({ request, env });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'checkout-failed' });
+    expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
+    expect(JSON.parse(logs.at(-1) || '').status).toBe(500);
+  });
+});
+
+describe('cart checkout message', () => {
+  it('shows the 400 message inline instead of the generic checkout error', async () => {
+    const source = readFileSync(new URL('../public/js/cart.js', import.meta.url), 'utf8');
+    const message = { hidden: true, textContent: '', innerHTML: '' };
+    const button = { disabled: true };
+    const nameInput = { value: 'Sam', trim() { return this.value; } };
+    const ageInput = { value: '4', trim() { return this.value; } };
+    const notesInput = { value: '', trim() { return this.value; } };
+    const row = {
+      querySelector(sel: string) {
+        if (sel === '[data-child-name]') return nameInput;
+        if (sel === '[data-child-age]') return ageInput;
+        if (sel === '[data-child-notes]') return notesInput;
+        if (sel === '[data-child-heading]') return { textContent: '' };
+        if (sel === '[data-remove-child]') return { disabled: false, textContent: '', setAttribute() {} };
+        return { value: '', textContent: '', id: '', htmlFor: '' };
+      },
+      querySelectorAll() { return []; },
+    };
+    const children = {
+      querySelectorAll(sel: string) { return sel === '.sss-child' ? [row] : []; },
+      addEventListener() {},
+      appendChild() {},
+    };
+    const form = {
+      name: { value: 'Pat Lee' },
+      email: { value: 'info@safeswimmingschool.com' },
+      phone: { value: '561-236-8260' },
+      listeners: {} as Record<string, (event: { preventDefault(): void }) => void>,
+      addEventListener(type: string, fn: (event: { preventDefault(): void }) => void) { this.listeners[type] = fn; },
+    };
+    const ids: Record<string, unknown> = {
+      'sss-checkout-form': form,
+      'sss-checkout-message': message,
+      'sss-pay-fallback': { hidden: true },
+      'sss-checkout-button': button,
+      'sss-cart-root': { innerHTML: '' },
+      'sss-cart-count': { textContent: '' },
+      'sss-children': children,
+      'sss-add-child': { disabled: false, addEventListener() {} },
+    };
+    const memory: Record<string, string> = { 'sss-cart': JSON.stringify({ items: [{ id: 'trial', quantity: 1 }] }) };
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => memory[key] ?? null,
+      setItem: (key: string, value: string) => { memory[key] = value; },
+    });
+    vi.stubGlobal('document', {
+      getElementById: (id: string) => ids[id] ?? null,
+      addEventListener() {},
+      createElement() { return { className: '', innerHTML: '', querySelector() { return null; }, querySelectorAll() { return []; }, appendChild() {} }; },
+    });
+    vi.stubGlobal('window', {
+      SSS_CATALOG: CATALOG,
+      SSS_REGISTRATION_TIERS: { 1: 3500, 2: 5000, 3: 6000 },
+      location: { href: '' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 400,
+      json: async () => ({ message: FRIENDLY, field: 'email' }),
+    })));
+    new Function(source)();
+    form.listeners.submit({ preventDefault() {} });
+    await vi.waitFor(() => expect(message.textContent).toBe(FRIENDLY));
+    expect(message.hidden).toBe(false);
+    expect(message.textContent).not.toContain('couldn’t start checkout');
+    expect(window.location.href).toBe('');
+  });
+});
 
 function routesOverlap(rules: string[]): boolean {
   for (const rule of rules) {

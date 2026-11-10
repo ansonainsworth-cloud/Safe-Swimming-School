@@ -11,13 +11,40 @@ export type SquareEnv = {
   SQUARE_WEBHOOK_SIGNATURE_KEY?: string;
 };
 
+export type SquareErrorInfo = { code?: string; category?: string; field?: string };
+
 export class SquareRequestError extends Error {
   status: number;
-  constructor(status: number) {
+  errors: SquareErrorInfo[];
+  constructor(status: number, errors: SquareErrorInfo[] = []) {
     super(`Square request failed (${status})`);
     this.name = 'SquareRequestError';
     this.status = status;
+    this.errors = errors;
   }
+}
+
+export const BUYER_FIELD_MESSAGE = 'Please check your email address and phone number, then try again.';
+
+/** Square 4xx for a buyer email or phone. Other failures stay on the caller's 502 path. */
+export function buyerFieldRejection(status: number, errors: SquareErrorInfo[]): { message: string; field: string } | null {
+  if (status < 400 || status >= 500) return null;
+  for (const error of errors) {
+    const field = buyerFieldHint(error);
+    if (field) return { message: BUYER_FIELD_MESSAGE, field };
+  }
+  return null;
+}
+
+function buyerFieldHint(error: SquareErrorInfo): string | null {
+  const code = error.code || '';
+  const field = error.field || '';
+  const underPrepopulated = field === 'pre_populated_data' || field.startsWith('pre_populated_data.');
+  const emailCode = code === 'INVALID_EMAIL_ADDRESS';
+  const phoneCode = code === 'INVALID_PHONE_NUMBER';
+  if (!underPrepopulated && !emailCode && !phoneCode) return null;
+  if (field.endsWith('buyer_phone_number') || (phoneCode && !field.endsWith('buyer_email'))) return 'phone';
+  return 'email';
 }
 
 export function squareApiOrigin(squareEnv: string | undefined): string | null {
@@ -69,10 +96,10 @@ const MAX_SQUARE_BODY = 262144;
 function logSquareFailure(step: string, status: number, body: unknown): void {
   const payload = squareFailureLog(step, status, body);
   try {
-    console.log(JSON.stringify(payload));
+    console.error(JSON.stringify(payload));
   } catch {
     try {
-      console.log(JSON.stringify({ step, status, errors: [] }));
+      console.error(JSON.stringify({ step, status, errors: [] }));
     } catch {
       // A log failure must not become the Pages "error code: 502" page.
     }
@@ -139,8 +166,9 @@ export async function squareRequest(
 
   const parsed = await readSquareBody(response);
   if (!response.ok || parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    const failure = squareFailureLog(step, response.status, parsed);
     logSquareFailure(step, response.status, parsed);
-    throw new SquareRequestError(response.status);
+    throw new SquareRequestError(response.status, failure.errors);
   }
   return parsed;
 }
