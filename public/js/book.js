@@ -159,27 +159,11 @@
     });
   }
 
-  var LESSON_CENTS = { single: 7500, 'pkg-8': 52000, 'pkg-12': 72000, 'pkg-20': 110000 };
-  var WAIVER_ENDS = Date.parse('2027-01-01T05:00:00.000Z');
-
-  function tierCents(count) {
+  function registrationFee(count) {
     var tiers = window.SSS_REGISTRATION_TIERS || { 1: 3500, 2: 5000, 3: 6000 };
     var cents = Number(tiers[count] != null ? tiers[count] : tiers[String(count)]);
-    return cents || 3500;
-  }
-
-  function money(cents) {
-    return '$' + (cents / 100).toLocaleString('en-US');
-  }
-
-  function registrationCharged(optionValue, now) {
-    var lockIn = optionValue === 'pkg-8' || optionValue === 'pkg-12' || optionValue === 'pkg-20';
-    if (lockIn && (now || Date.now()) < WAIVER_ENDS) return false;
-    return Boolean(LESSON_CENTS[optionValue]);
-  }
-
-  function registrationFee(count) {
-    var dollars = money(tierCents(count));
+    if (!cents) cents = 3500;
+    var dollars = '$' + (cents / 100);
     if (count === 2) return 'Annual registration is ' + dollars + ' for two siblings.';
     if (count === 3) return 'Annual registration is ' + dollars + ' for a family with three or more swimmers.';
     return 'Annual registration is ' + dollars + ' for one swimmer.';
@@ -189,30 +173,15 @@
     var summary = document.getElementById('book-summary-choice');
     var fee = document.getElementById('book-summary-fee');
     var note = document.getElementById('book-summary-note');
-    var total = document.getElementById('book-summary-total');
     var mobile = document.getElementById('book-mobile-summary');
     var mobileChoice = document.getElementById('book-mobile-choice');
     var mobileNote = document.getElementById('book-mobile-note');
     if (!summary) return;
     var checked = form.querySelector('input[name="option"]:checked');
-    var optionValue = checked && checked.value ? checked.value : '';
     var label = checked ? checked.parentNode.textContent.replace(/\s+/g, ' ').trim() : '';
-    var single = optionValue === 'single';
-    var count = swimmerCount();
-    var charged = registrationCharged(optionValue);
+    var single = checked && checked.value === 'single';
     summary.textContent = label || 'Choose a package';
-    if (fee) {
-      fee.textContent = !optionValue
-        ? 'Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers.'
-        : charged
-          ? registrationFee(count)
-          : 'Annual registration is waived on this lock in package.';
-    }
-    if (total) {
-      var lesson = LESSON_CENTS[optionValue] || 0;
-      var registration = charged ? tierCents(count) : 0;
-      total.textContent = optionValue ? 'Total ' + money(lesson + registration) : '';
-    }
+    if (fee) fee.textContent = registrationFee(swimmerCount());
     if (note) {
       note.textContent = single
         ? 'A single lesson is $75 (can be credited toward a package). Annual registration is not waived on a single lesson.'
