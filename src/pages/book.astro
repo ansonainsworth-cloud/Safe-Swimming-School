@@ -12,6 +12,12 @@ const times = bookStartTimes();
 ---
 <Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome} ldjson={[webPage(path, title, description)]}>
 <PageShell h1={title}>
+<div slot="band" class="sss-photo-band sss-photo-band-book">
+<picture>
+<source type="image/webp" srcset="/images/bands/book-240.webp 240w, /images/bands/book-367.webp 367w" sizes="100vw" />
+<img src="/images/bands/book-367.jpg" srcset="/images/bands/book-240.jpg 240w, /images/bands/book-367.jpg 367w" sizes="100vw" width="367" height="245" alt="An instructor teaching a child to float in a pool" decoding="async" />
+</picture>
+</div>
 <p>Private 30 minute lessons at your home or community pool in Palm Beach County.</p>
 <p>Your time is confirmed by text from cofounder Anson Ainsworth after checkout.</p>
 <ol class="sss-book-progress" aria-label="Booking steps">
