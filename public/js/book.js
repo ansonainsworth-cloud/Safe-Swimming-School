@@ -131,5 +131,32 @@
     });
   });
 
+  function paintSummary() {
+    var summary = document.getElementById('book-summary-choice');
+    var note = document.getElementById('book-summary-note');
+    var mobile = document.getElementById('book-mobile-summary');
+    var mobileChoice = document.getElementById('book-mobile-choice');
+    var mobileNote = document.getElementById('book-mobile-note');
+    if (!summary) return;
+    var checked = form.querySelector('input[name="option"]:checked');
+    var label = checked ? checked.parentNode.textContent.replace(/\s+/g, ' ').trim() : '';
+    var single = checked && checked.value === 'single';
+    summary.textContent = label || 'Choose a package';
+    if (note) {
+      note.textContent = single
+        ? 'A single lesson is $75 (can be credited toward a package). Annual registration is not waived on a single lesson.'
+        : 'Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026.';
+    }
+    if (mobile && mobileChoice && mobileNote) {
+      mobile.hidden = !checked;
+      mobileChoice.textContent = label;
+      mobileNote.textContent = single
+        ? 'Annual registration is not waived on a single lesson.'
+        : 'Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026.';
+    }
+  }
+  form.addEventListener('change', paintSummary);
+  paintSummary();
+
   paint();
 })();

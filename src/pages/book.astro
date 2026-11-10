@@ -12,6 +12,12 @@ const times = bookStartTimes();
 ---
 <Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome} ldjson={[webPage(path, title, description)]}>
 <PageShell h1={title}>
+<div slot="band" class="sss-photo-band sss-photo-band-book">
+<picture>
+<source type="image/webp" srcset="/images/hero/lesson-640.webp 640w, /images/hero/lesson-960.webp 960w, /images/hero/lesson-1280.webp 1280w, /images/hero/lesson-1508.webp 1508w" sizes="100vw" />
+<img src="/images/hero/lesson-1280.jpg" srcset="/images/hero/lesson-640.jpg 640w, /images/hero/lesson-960.jpg 960w, /images/hero/lesson-1280.jpg 1280w, /images/hero/lesson-1508.jpg 1508w" sizes="100vw" width="1508" height="1551" alt="An instructor guiding a young swimmer in a pool" decoding="async" />
+</picture>
+</div>
 <p>Private 30 minute lessons at your home or community pool in Palm Beach County.</p>
 <p>Your time is confirmed by text from cofounder Anson Ainsworth after checkout.</p>
 <ol class="sss-book-progress" aria-label="Booking steps">
@@ -19,6 +25,7 @@ const times = bookStartTimes();
   <li>2. Town and time</li>
   <li>3. Your details</li>
 </ol>
+<div class="sss-book-layout">
 <form id="book-form" class="sss-cart-form" method="post" action="/api/book">
 <section class="sss-book-step">
 <h2>1. Package</h2>
@@ -73,6 +80,17 @@ const times = bookStartTimes();
 <p id="book-message" class="sss-cart-message" role="alert" hidden></p>
 </section>
 </form>
+<aside class="sss-book-summary" aria-live="polite">
+  <h2>Your order</h2>
+  <p id="book-summary-choice">Choose a package</p>
+  <p id="book-summary-fee">Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers.</p>
+  <p id="book-summary-note">Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026. A single lesson is $75.</p>
+</aside>
+</div>
+<div id="book-mobile-summary" class="sss-book-mobile-summary" hidden>
+  <p id="book-mobile-choice"></p>
+  <p id="book-mobile-note"></p>
+</div>
 <script id="book-blocks" type="application/json" set:html={JSON.stringify(BLOCKED_SLOTS)}></script>
 <script is:inline src="/js/book.js"></script>
 </PageShell>

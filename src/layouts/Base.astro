@@ -1,4 +1,5 @@
 ---
+import '@fontsource/fraunces/latin-600.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
@@ -43,14 +44,16 @@ const wpexLocalize = `var wpexLocalize = {"isRTL":"","mainLayout":"full-width","
 <link rel="stylesheet" href="/css/wp-inline.css" />
 <link rel="stylesheet" href="/css/tokens.css" />
 <link rel="stylesheet" href="/css/site.css" />
+{path === '/' && <link rel="preload" as="image" type="image/webp" href="/images/hero/lesson-1280.webp" imagesrcset="/images/hero/lesson-640.webp 640w, /images/hero/lesson-960.webp 960w, /images/hero/lesson-1280.webp 1280w, /images/hero/lesson-1508.webp 1508w" imagesizes="100vw" fetchpriority="high" />}
 {pageStyle && <style is:inline set:html={pageStyle}></style>}
 <style is:inline>
-body{font-size:var(--sss-font-body);line-height:1.6;color:var(--sss-ink)}
+body{font-size:var(--sss-font-body);line-height:1.7;color:var(--sss-ink)}
 .container{width:min(var(--sss-measure),calc(100% - 48px)) !important;max-width:var(--sss-measure) !important}
 @media (max-width:768px){
 .container,#site-header-inner,.page-header-inner,.custom-topbar .textwidget>div{width:100% !important;max-width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:20px !important;padding-right:20px !important;box-sizing:border-box !important}
 }
-.single-content p,.entry p{font-size:var(--sss-font-body);line-height:1.65;color:var(--sss-ink);margin:0 0 var(--sss-space-2)}
+.single-content p,.entry p{font-size:var(--sss-font-body);line-height:1.7;color:var(--sss-ink);margin:0 0 var(--sss-space-2)}
+h1,h2,h3,.page-header .page-header-title{font-family:Fraunces,"Iowan Old Style",Georgia,serif;font-weight:600}
 .single-content h2,.entry h2{color:var(--sss-blue-deep);font-size:var(--sss-font-h2);line-height:1.25;margin:var(--sss-space-4) 0 12px}
 .single-content h1,.entry h1{color:var(--sss-blue-deep);font-size:var(--sss-font-h1);line-height:1.15;margin:0 0 var(--sss-space-2)}
 #site-header-inner{padding-top:6px !important;padding-bottom:6px !important;height:auto !important}
@@ -61,23 +64,28 @@ body{font-size:var(--sss-font-body);line-height:1.6;color:var(--sss-ink)}
 .vc_custom_1591372672294,.footer-middle{background-color:var(--sss-blue-deep) !important;background-image:none !important}
 a{color:var(--sss-blue)}
 .single-content a:not(.sss-btn),.entry a:not(.sss-btn){text-decoration:underline;text-underline-offset:2px}
-.sss-btn,button.sss-btn{background-color:var(--sss-red) !important;color:#fff !important}
-.sss-btn:hover,button.sss-btn:hover{background-color:var(--sss-red-deep) !important;opacity:1}
+.sss-btn,button.sss-btn{background-color:var(--sss-blue) !important;color:#fff !important}
+.sss-btn:hover,button.sss-btn:hover{background-color:var(--sss-blue-deep) !important;opacity:1}
 #site-navigation .dropdown-menu a,#site-navigation .dropdown-menu > li > a,#site-navigation .dropdown-menu > li > a .link-inner{color:var(--sss-blue-deep) !important;font-size:18px !important}
-.sss-hero h1{font-size:52px !important;line-height:1.08 !important}
-.sss-hero p{font-size:21px !important}
-.sss-hero img{display:block !important;width:min(100%,715px) !important;max-width:715px !important;height:auto !important;margin-left:auto !important;margin-right:auto !important;object-fit:contain}
-.single-content figure img{width:auto !important;max-width:min(715px,100%) !important;height:auto !important}
+.sss-hero-banner h1{font-size:52px !important;line-height:1.08 !important;color:#fff !important}
+.sss-hero-banner p,.sss-hero-facts li{font-size:18px !important;line-height:1.6 !important;color:#fff !important}
+.sss-hero-facts li{font-size:15px !important;line-height:1.3 !important}
+.sss-hero-banner picture{position:absolute !important;inset:0 !important}
+.sss-hero-banner img{position:absolute !important;inset:0 !important;width:100% !important;max-width:none !important;height:100% !important;object-fit:cover !important;object-position:center 18% !important}
+.single-content figure img{width:100% !important;max-width:100% !important;height:180px !important;object-fit:cover !important}
 @media (max-width:767px){
 #site-logo img{height:64px !important}
-.sss-hero h1{font-size:34px !important}
-.sss-hero p{font-size:18px !important}
-.sss-hero img{width:100% !important;max-width:715px !important;height:auto !important;aspect-ratio:2.35 / 1;object-fit:cover !important;object-position:center 35%}
+.sss-hero-banner{min-height:560px !important}
+.sss-hero-banner img{object-position:center 42% !important}
+.sss-hero-banner h1{font-size:34px !important}
+.custom-topbar .textwidget>div{display:flex !important;flex-wrap:nowrap !important;justify-content:space-between !important;align-items:center !important;gap:8px !important;padding:4px 12px !important;line-height:1.2 !important}
+.custom-topbar a,.custom-topbar span{display:inline !important;margin:0 !important;font-size:12px !important;letter-spacing:0 !important;text-transform:none !important;white-space:nowrap !important}
+.single-content figure img{height:140px !important}
 }
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a,.sss-section-close a{color:#fff !important}
-.sss-mobile-bar .sss-mobile-bar-cta{background-color:var(--sss-red) !important;color:#fff !important}
-.sss-section-close .sss-btn{background-color:var(--sss-red) !important;color:#fff !important}
-p.copyright-text b{color:var(--sss-red)}
+.sss-mobile-bar .sss-mobile-bar-cta{background-color:var(--sss-blue) !important;color:#fff !important}
+.sss-section-close .sss-btn{background-color:var(--sss-blue) !important;color:#fff !important}
+p.copyright-text b{color:#fff}
 </style>
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>
