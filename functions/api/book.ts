@@ -30,6 +30,13 @@ function json(data: unknown, status: number): Response {
   });
 }
 
+function swimmerCount(value: unknown): number | null {
+  if (value == null || value === '') return 1;
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' && /^[123]$/.test(value.trim()) ? Number(value.trim()) : NaN;
+  if (parsed !== 1 && parsed !== 2 && parsed !== 3) return null;
+  return parsed;
+}
+
 function cleanText(value: unknown, min: number, max: number): string | null {
   if (typeof value !== 'string') return null;
   const text = value.trim().replace(/\s+/g, ' ');
@@ -59,6 +66,9 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     email?: unknown;
     phone?: unknown;
     childAge?: unknown;
+    childAge2?: unknown;
+    childAge3?: unknown;
+    swimmers?: unknown;
     poolAddress?: unknown;
   };
 
@@ -79,8 +89,14 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   const phone = normalizePhone(body.phone);
   const childAge = cleanText(body.childAge, 1, 20);
   const poolAddress = cleanText(body.poolAddress, 4, 200);
-  if (!name || !email || !phone || !childAge || !poolAddress) {
+  const swimmers = swimmerCount(body.swimmers);
+  if (!name || !email || !phone || !childAge || !poolAddress || !swimmers) {
     return json({ message: 'Add your name, email, phone, child age, and pool address.' }, 400);
+  }
+  const childAge2 = swimmers >= 2 ? cleanText(body.childAge2, 1, 20) : null;
+  const childAge3 = swimmers >= 3 ? cleanText(body.childAge3, 1, 20) : null;
+  if ((swimmers >= 2 && !childAge2) || (swimmers >= 3 && !childAge3)) {
+    return json({ message: 'Add an age for each swimmer.' }, 400);
   }
 
   const note = [
@@ -88,12 +104,15 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
     `Email: ${email}`,
     `Phone: ${phone}`,
     `Child age: ${childAge}`,
+    childAge2 ? `Second child age: ${childAge2}` : '',
+    childAge3 ? `Third child age: ${childAge3}` : '',
+    `Swimmers: ${swimmers}`,
     `Pool: ${poolAddress}`,
     `Town: ${town.name}`,
     `Day: ${day}`,
     `Time: ${formatBookTime(time)}`,
     `Option: ${option.name} $${(option.amount / 100).toLocaleString('en-US')}`,
-  ].join('. ').slice(0, 500);
+  ].filter(Boolean).join('. ').slice(0, 500);
 
   const origin = new URL(request.url).origin;
   const redirectHost = origin.replace(/^http:/, 'https:');
