@@ -119,6 +119,7 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-book-summary p{margin:0 0 10px;font-size:18px;line-height:1.45;color:var(--sss-ink)}
 .sss-book-summary p:last-child{margin-bottom:0}
 #book-summary-fee,#book-summary-note{font-size:15px;line-height:1.45;color:var(--sss-muted)}
+#book-summary-total{font-weight:700}
 .sss-book-mobile-summary{display:none}
 .sss-book-mobile-summary[hidden]{display:none !important}
 #book-form .sss-children{max-width:none}
