@@ -182,6 +182,8 @@ describe('GA4 click events', () => {
     expect(itemFromText('Pay 20 lessons, $1,100')).toBe('20');
     expect(itemFromText('Pay Water aerobics, $45 per class')).toBe('water aerobics');
     expect(itemFromText('Pay Holiday gift certificate, $475')).toBe('gift certificate');
+    expect(itemFromText('Pay Gift certificate: 20 private lessons, $1,100')).toBe('20 lesson gift certificate');
+    expect(itemFromText('Pay 20 lessons, $1,100')).toBe('20');
     expect(itemFromText('Pay Single lesson, $75')).toBe('trial');
     expect(itemFromText('Pay Registration, $35')).toBe('registration');
     expect(itemFromText('Pay')).toBe('');
