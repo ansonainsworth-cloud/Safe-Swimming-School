@@ -115,5 +115,6 @@ p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep);outline-
 <script is:inline define:vars={{ SSS_CATALOG: catalog, SSS_REGISTRATION_TIERS: REGISTRATION_TIER_CENTS }}>window.SSS_CATALOG = SSS_CATALOG; window.SSS_REGISTRATION_TIERS = SSS_REGISTRATION_TIERS;</script>
 <script is:inline src="/js/cart.js"></script>
 {trackAnalytics && <script is:inline type="module" src="/js/ga-events.js"></script>}
+<script is:inline defer type="module" src="/js/ga-clicks.js"></script>
 </body>
 </html>
