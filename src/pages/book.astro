@@ -12,9 +12,23 @@ const times = bookStartTimes();
 ---
 <Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome} ldjson={[webPage(path, title, description)]}>
 <PageShell h1={title}>
+<div slot="band" class="sss-photo-band sss-photo-band-book">
+<picture>
+<source type="image/webp" srcset="/images/hero/lesson-640.webp 640w, /images/hero/lesson-960.webp 960w, /images/hero/lesson-1280.webp 1280w, /images/hero/lesson-1508.webp 1508w" sizes="100vw" />
+<img src="/images/hero/lesson-1280.jpg" srcset="/images/hero/lesson-640.jpg 640w, /images/hero/lesson-960.jpg 960w, /images/hero/lesson-1280.jpg 1280w, /images/hero/lesson-1508.jpg 1508w" sizes="100vw" width="1508" height="1551" alt="An instructor guiding a young swimmer in a pool" decoding="async" />
+</picture>
+</div>
 <p>Private 30 minute lessons at your home or community pool in Palm Beach County.</p>
 <p>Your time is confirmed by text from cofounder Anson Ainsworth after checkout.</p>
+<ol class="sss-book-progress" aria-label="Booking steps">
+  <li>1. Package</li>
+  <li>2. Town and time</li>
+  <li>3. Your details</li>
+</ol>
+<div class="sss-book-layout">
 <form id="book-form" class="sss-cart-form" method="post" action="/api/book">
+<section class="sss-book-step">
+<h2>1. Package</h2>
 <fieldset class="sss-children">
   <legend>Lesson</legend>
   <label><input type="radio" name="option" value="single" required> Single lesson $75</label>
@@ -22,6 +36,9 @@ const times = bookStartTimes();
   <label><input type="radio" name="option" value="pkg-12"> 12 lessons $720</label>
   <label><input type="radio" name="option" value="pkg-20"> 20 lessons $1,100</label>
 </fieldset>
+</section>
+<section class="sss-book-step">
+<h2>2. Town and time</h2>
 <label>Town
   <select id="book-town" name="town" required>
     <option value="">Choose a town</option>
@@ -51,14 +68,38 @@ const times = bookStartTimes();
   </div>
   <input id="book-time" name="time" type="hidden" value="">
 </div>
+</section>
+<section class="sss-book-step">
+<h2>3. Your details</h2>
 <label>Parent name<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
 <label>Email<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
 <label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel" inputmode="tel"></label>
+<label>How many swimmers?
+  <select id="book-swimmers" name="swimmers">
+    <option value="1" selected>1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+  </select>
+</label>
 <label>Child age<input name="childAge" type="text" required maxlength="20"></label>
+<label id="book-child-2" hidden>Second child's age<input name="childAge2" type="text" maxlength="20" disabled></label>
+<label id="book-child-3" hidden>Third child's age<input name="childAge3" type="text" maxlength="20" disabled></label>
 <label>Pool address<input name="poolAddress" type="text" required maxlength="200" autocomplete="street-address"></label>
 <button id="book-submit" class="sss-btn" type="submit">Continue to checkout</button>
 <p id="book-message" class="sss-cart-message" role="alert" hidden></p>
+</section>
 </form>
+<aside class="sss-book-summary" aria-live="polite">
+  <h2>Your order</h2>
+  <p id="book-summary-choice">Choose a package</p>
+  <p id="book-summary-fee">Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers.</p>
+  <p id="book-summary-note">Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026. A single lesson is $75.</p>
+</aside>
+</div>
+<div id="book-mobile-summary" class="sss-book-mobile-summary" hidden>
+  <p id="book-mobile-choice"></p>
+  <p id="book-mobile-note"></p>
+</div>
 <script id="book-blocks" type="application/json" set:html={JSON.stringify(BLOCKED_SLOTS)}></script>
 <script is:inline src="/js/book.js"></script>
 </PageShell>

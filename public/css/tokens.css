@@ -1,0 +1,37 @@
+/* Design tokens for Safe Swimming School.
+   Sampled from the existing logo file, which is not altered:
+   public/images/brand/safe-swimming-school-logo-800.png
+   Logo blue #0070f0 (about 4.6:1 on white).
+   Logo red #901020 (about 9.2:1 on white, and white text on it).
+   Controls use #004ea8, the logo blue darkened on the same hue, about 7.9:1 with white.
+   Headlines and bands use #00326c, further down that hue, about 12.5:1 with white.
+   Neutrals are a cool paper, a mist, and an ink, so the red stays a measured accent. */
+:root {
+  --sss-logo-blue: #0070f0;
+  --sss-logo-red: #901020;
+  --sss-blue: #004ea8;
+  --sss-blue-deep: #00326c;
+  --sss-red: #901020;
+  --sss-red-deep: #730d1a;
+  --sss-ink: #142033;
+  --sss-muted: #334455;
+  --sss-line: #d5e0ea;
+  --sss-mist: #f3f7fc;
+  --sss-paper: #ffffff;
+  --sss-space-1: 8px;
+  --sss-space-2: 16px;
+  --sss-space-3: 24px;
+  --sss-space-4: 40px;
+  --sss-space-5: 64px;
+  --sss-font-body: 18px;
+  --sss-font-lead: 21px;
+  --sss-font-small: 16px;
+  --sss-font-h3: 22px;
+  --sss-font-h2: 32px;
+  --sss-font-h1: 40px;
+  --sss-font-display: 52px;
+  --sss-font-price: 56px;
+  --sss-radius: 12px;
+  --sss-measure: 1360px;
+  --sss-hero-measure: 1440px;
+}

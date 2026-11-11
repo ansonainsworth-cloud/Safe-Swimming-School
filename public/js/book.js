@@ -95,6 +95,7 @@
     }
     var button = document.getElementById('book-submit');
     button.disabled = true;
+    var count = swimmerCount();
     var data = {
       option: form.option.value,
       town: town.value,
@@ -104,8 +105,11 @@
       email: form.email.value,
       phone: form.phone.value,
       childAge: form.childAge.value,
+      swimmers: count,
       poolAddress: form.poolAddress.value,
     };
+    if (count >= 2) data.childAge2 = form.childAge2.value;
+    if (count >= 3) data.childAge3 = form.childAge3.value;
     fetch('/api/book', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -119,6 +123,10 @@
         showMessage(result.body && result.body.message ? result.body.message : 'Online booking opens soon. Text 561-236-8260 to book.');
         return;
       }
+      if (result.status === 400) {
+        showMessage(result.body && result.body.message ? result.body.message : 'Please check your email address and phone number, then try again.');
+        return;
+      }
       if (!result.ok || !result.body || typeof result.body.url !== 'string') {
         showMessage(result.body && result.body.message ? result.body.message : 'We could not start checkout. Text 561-236-8260.');
         return;
@@ -130,6 +138,71 @@
       button.disabled = false;
     });
   });
+
+  function swimmerCount() {
+    var select = document.getElementById('book-swimmers');
+    var count = select ? Number(select.value) : 1;
+    return count === 2 || count === 3 ? count : 1;
+  }
+
+  function paintSwimmers() {
+    var count = swimmerCount();
+    [2, 3].forEach(function (index) {
+      var wrap = document.getElementById('book-child-' + index);
+      var input = wrap ? wrap.querySelector('input') : null;
+      var show = count >= index;
+      if (wrap) wrap.hidden = !show;
+      if (!input) return;
+      input.required = show;
+      input.disabled = !show;
+      if (!show) input.value = '';
+    });
+  }
+
+  function registrationFee(count) {
+    var tiers = window.SSS_REGISTRATION_TIERS || { 1: 3500, 2: 5000, 3: 6000 };
+    var cents = Number(tiers[count] != null ? tiers[count] : tiers[String(count)]);
+    if (!cents) cents = 3500;
+    var dollars = '$' + (cents / 100);
+    if (count === 2) return 'Annual registration is ' + dollars + ' for two siblings.';
+    if (count === 3) return 'Annual registration is ' + dollars + ' for a family with three or more swimmers.';
+    return 'Annual registration is ' + dollars + ' for one swimmer.';
+  }
+
+  function paintSummary() {
+    var summary = document.getElementById('book-summary-choice');
+    var fee = document.getElementById('book-summary-fee');
+    var note = document.getElementById('book-summary-note');
+    var mobile = document.getElementById('book-mobile-summary');
+    var mobileChoice = document.getElementById('book-mobile-choice');
+    var mobileNote = document.getElementById('book-mobile-note');
+    if (!summary) return;
+    var checked = form.querySelector('input[name="option"]:checked');
+    var label = checked ? checked.parentNode.textContent.replace(/\s+/g, ' ').trim() : '';
+    var single = checked && checked.value === 'single';
+    summary.textContent = label || 'Choose a package';
+    if (fee) fee.textContent = registrationFee(swimmerCount());
+    if (note) {
+      note.textContent = single
+        ? 'A single lesson is $75 (can be credited toward a package). Annual registration is not waived on a single lesson.'
+        : 'Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026.';
+    }
+    if (mobile && mobileChoice && mobileNote) {
+      mobile.hidden = !checked;
+      mobileChoice.textContent = label;
+      mobileNote.textContent = single
+        ? 'Annual registration is not waived on a single lesson.'
+        : 'Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026.';
+    }
+  }
+  var swimmers = document.getElementById('book-swimmers');
+  if (swimmers) swimmers.addEventListener('change', function () {
+    paintSwimmers();
+    paintSummary();
+  });
+  form.addEventListener('change', paintSummary);
+  paintSwimmers();
+  paintSummary();
 
   paint();
 })();

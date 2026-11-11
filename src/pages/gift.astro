@@ -7,9 +7,10 @@ import { paymentLink } from '../data/payment-links';
 
 const path = '/gift/';
 const title = 'Give swim lessons as a gift';
-const description = 'Private swim lessons at your home or community pool in Palm Beach County. 8 lessons for $520 or 12 lessons for $720. Call 561-236-8260.';
+const description = 'Private swim lessons at your home or community pool in Palm Beach County. 8 lessons for $520, 12 lessons for $720, or 20 lessons for $1,100. Call 561-236-8260.';
 const pkg8 = paymentLink('8 lessons');
 const pkg12 = paymentLink('12 lessons');
+const pkg20 = paymentLink('20 lessons');
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, title, description)]}>
 <PageShell h1={title}>
@@ -19,6 +20,7 @@ const pkg12 = paymentLink('12 lessons');
 <ul class="wp-block-list">
 <li><strong>8 lessons for $520</strong><br /><PayButton link={pkg8} /></li>
 <li><strong>12 lessons for $720</strong><br /><PayButton link={pkg12} /></li>
+<li><strong>20 lessons for $1,100</strong><br /><PayButton link={pkg20} /></li>
 </ul>
 <p>Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026, and those lessons never expire.</p>
 <p><a href="sms:+15612368260">or text 561-236-8260</a></p>

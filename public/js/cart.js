@@ -298,10 +298,15 @@
           return null;
         }
         return response.json().then(function (data) {
-          return { ok: response.ok, data: data };
+          return { ok: response.ok, status: response.status, data: data };
         });
       }).then(function (result) {
         if (!result) return;
+        if (result.status === 400 && result.data && typeof result.data.message === 'string' && result.data.message) {
+          message.hidden = false;
+          message.textContent = result.data.message;
+          return;
+        }
         if (!result.ok || !result.data || typeof result.data.url !== 'string' || result.data.url.indexOf('https://') !== 0) {
           message.hidden = false;
           message.textContent = result.data && result.data.error === 'invalid-children'
