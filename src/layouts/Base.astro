@@ -70,6 +70,9 @@ a{color:var(--sss-blue)}
 .sss-hero-banner h1{font-size:52px !important;line-height:1.08 !important;color:#fff !important}
 .sss-hero-banner p,.sss-hero-facts li{font-size:18px !important;line-height:1.6 !important;color:#fff !important}
 .sss-hero-facts li{font-size:15px !important;line-height:1.3 !important}
+@media (min-width:769px){
+.sss-hero-facts li{display:inline-flex !important;align-items:center;padding:8px 16px !important;border-radius:999px !important;background:rgba(255,255,255,.18) !important;border:1px solid rgba(255,255,255,.5);line-height:1.25 !important}
+}
 .sss-hero-banner picture{position:absolute !important;inset:0 !important;display:block !important;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important}
 .sss-hero-banner img{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;object-fit:cover !important;object-position:center 18% !important}
 .single-content figure img{width:100% !important;max-width:100% !important;height:180px !important;object-fit:cover !important}
@@ -85,7 +88,9 @@ a{color:var(--sss-blue)}
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a,.sss-section-close a{color:#fff !important}
 .sss-mobile-bar .sss-mobile-bar-cta{background-color:var(--sss-blue) !important;color:#fff !important}
 .sss-section-close .sss-btn{background-color:var(--sss-blue) !important;color:#fff !important}
-p.copyright-text b{color:#fff}
+p.copyright-text b{color:var(--sss-blue);text-decoration:underline;text-underline-offset:2px}
+p.copyright-text b:hover,p.copyright-text b:focus-visible{color:var(--sss-blue-deep)}
+p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep);outline-offset:2px}
 </style>
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>

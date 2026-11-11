@@ -1,11 +1,11 @@
 /* Additions for the static rebuild (Books & Gear, adaptive, water aerobics) */
-.sss-holiday-banner{background:var(--sss-blue-deep);color:#fff;text-align:center;padding:8px 16px;font-size:var(--sss-font-small);line-height:1.4}
+.sss-holiday-banner{background:var(--sss-blue-deep);color:#fff;text-align:center;padding:3px 16px;font-size:var(--sss-font-small);line-height:1.25}
 .sss-holiday-banner p{margin:0}
 .sss-holiday-banner a{color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:2px}
 .sss-holiday-banner a:hover,.sss-holiday-banner a:focus{color:#fff}
 .sss-holiday-banner a:focus{outline:2px solid #fff;outline-offset:2px}
 @media (max-width:767px){
-.sss-holiday-banner{font-size:14px;padding:8px 12px}
+.sss-holiday-banner{font-size:14px;padding:2px 12px;line-height:1.2}
 }
 .sss-book{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap;margin:10px 0 30px}
 .sss-book img{width:300px;max-width:100%;height:auto;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
@@ -60,11 +60,11 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-section{width:100vw;margin:0 calc(50% - 50vw);padding:var(--sss-space-5) 20px;box-sizing:border-box;background:var(--sss-paper)}
 .sss-section-inner{width:min(var(--sss-measure),100%);margin:0 auto}
 .sss-section-mist{background:var(--sss-mist)}
-.sss-photo-band{position:relative;width:min(1100px,100%);height:240px;margin:16px auto 0;overflow:hidden;border-radius:var(--sss-radius);background:var(--sss-blue-deep)}
+.sss-photo-band{position:relative;width:min(1100px,100%);height:420px;margin:16px auto 0;overflow:hidden;border-radius:var(--sss-radius);background:var(--sss-blue-deep)}
 .page-header.wpex-supports-mods:has(+ .sss-photo-band){margin-bottom:0 !important}
 .sss-photo-band picture{position:absolute;inset:0;display:block}
 .sss-photo-band img{position:absolute !important;inset:0 !important;display:block !important;width:100% !important;max-width:none !important;height:100% !important;object-fit:cover !important;object-position:center 44% !important}
-.sss-photo-band-book img{object-position:center 35% !important}
+.sss-photo-band-book img{object-position:center 12% !important}
 .sss-photo-band::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,50,108,.1) 0%,rgba(0,50,108,0) 18%,rgba(0,50,108,0) 82%,rgba(0,50,108,.12) 100%)}
 .sss-section:has(+ .sss-photo-band){padding-bottom:20px}
 .sss-photo-band + .sss-section{padding-top:28px}
@@ -83,6 +83,10 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .sss-hero-copy .sss-btn{align-self:flex-start;font-size:18px;padding:14px 28px;white-space:nowrap}
 .sss-hero-facts{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:4px 0 0;max-width:34rem}
 .sss-hero-facts li{margin:0;padding:6px 12px;border-radius:999px;background:rgba(3,24,58,.82);color:#fff;font-size:15px;line-height:1.3}
+@media (min-width:769px){
+.sss-hero-facts{gap:10px}
+.sss-hero-facts li{display:inline-flex;align-items:center;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.5);line-height:1.25}
+}
 .sss-review-strip{padding:28px 20px}
 .sss-review-strip .sss-google-review blockquote p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .sss-benefit-grid,.sss-pack-grid{display:grid;gap:16px;list-style:none;padding:0;margin:16px 0 28px}
@@ -136,7 +140,7 @@ button.sss-btn{border:0;cursor:pointer;font:inherit;font-weight:500}
 .container,#site-header-inner,.page-header-inner,.custom-topbar .textwidget>div{width:100% !important;max-width:100% !important;padding-left:20px !important;padding-right:20px !important;box-sizing:border-box !important}
 .sss-section,.sss-section-hero{width:calc(100% + 40px);margin-left:-20px;margin-right:-20px;padding:32px 20px;box-sizing:border-box}
 .sss-section-inner,.sss-section-hero .sss-section-inner{width:100%;max-width:none}
-.sss-photo-band{width:100vw;height:140px;margin:0 calc(50% - 50vw);border-radius:0}
+.sss-photo-band{width:100vw;height:210px;margin:0 calc(50% - 50vw);border-radius:0}
 .sss-hero-banner{height:calc(100vh - 220px);height:calc(100dvh - 220px);min-height:0}
 .sss-hero-banner img{object-position:center 28%}
 .sss-hero-banner::before{background:linear-gradient(180deg,rgba(3,24,58,0) 0%,rgba(3,24,58,.12) 38%,rgba(3,24,58,.78) 72%,rgba(3,24,58,.92) 100%)}

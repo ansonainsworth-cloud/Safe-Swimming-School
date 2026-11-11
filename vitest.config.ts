@@ -4,5 +4,6 @@ export default getViteConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    fileParallelism: false,
   },
 });
