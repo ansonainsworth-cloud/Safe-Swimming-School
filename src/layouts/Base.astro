@@ -88,7 +88,9 @@ a{color:var(--sss-blue)}
 .sss-holiday-banner a,.sss-mobile-bar a,.footer-middle a,.sss-section-close a{color:#fff !important}
 .sss-mobile-bar .sss-mobile-bar-cta{background-color:var(--sss-blue) !important;color:#fff !important}
 .sss-section-close .sss-btn{background-color:var(--sss-blue) !important;color:#fff !important}
-p.copyright-text b{color:#fff}
+p.copyright-text b{color:var(--sss-blue);text-decoration:underline;text-underline-offset:2px}
+p.copyright-text b:hover,p.copyright-text b:focus-visible{color:var(--sss-blue-deep)}
+p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep);outline-offset:2px}
 </style>
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>

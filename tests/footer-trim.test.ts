@@ -26,6 +26,7 @@ describe('footer trim', () => {
   it('drops the duplicate book-column copy, plain-text social links, and the dangling copyright and', () => {
     execSync('npm run build', { cwd: root, stdio: 'pipe' });
     for (const page of ['../dist/index.html', '../dist/pricing/index.html']) {
+      const pageHtml = readFileSync(new URL(page, import.meta.url), 'utf8');
       const html = footer(page);
       const book = bookColumn(html);
       expect(book).not.toContain(founderParagraph);
@@ -43,6 +44,9 @@ describe('footer trim', () => {
       const copyright = html.slice(html.indexOf('copyright-text'), html.indexOf('</p>', html.indexOf('copyright-text')));
       expect(copyright).toContain('All Rights Reserved');
       expect(copyright).not.toMatch(/\band\b/);
+      expect(pageHtml).not.toContain('p.copyright-text b{color:#fff}');
+      expect(pageHtml).toContain('p.copyright-text b{color:var(--sss-blue)');
+      expect(pageHtml).toContain('p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep)');
     }
   });
 });
