@@ -3,7 +3,6 @@ import Base from '../layouts/Base.astro';
 import PageShell from '../components/PageShell.astro';
 import PayButton from '../components/PayButton.astro';
 import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
-import { paymentLink } from '../data/payment-links';
 
 const path = '/gift-certificates/';
 const title = 'Holiday gift certificate | Safe Swimming School';
@@ -22,7 +21,6 @@ const twentyPay = {
   price: '$1,100',
   url: 'https://square.link/u/sLsPsavs',
 };
-const pkg20 = paymentLink('20 lessons');
 const faqs = [
   ['How much is the holiday gift certificate?', `It is $475. That is ${included} ${expires} The $475 gift offer ends December 24, 2026.`],
   ['How much is the 20 lesson gift certificate?', `It is $1,100. That is ${twentyIncluded} ${expires}`],
@@ -48,10 +46,6 @@ const faqs = [
 </div>
 </div>
 <p>{redeemLine}</p>
-<h2 class="wp-block-heading">20 lessons</h2>
-<p><strong>20 lessons for $1,100.</strong> Bought by December 31, 2026, these lessons never expire.</p>
-<p><PayButton link={pkg20} /></p>
-<p>See <a href="/pricing/">lesson prices</a>.</p>
 <h2 class="wp-block-heading">Questions</h2>
 {faqs.map(([q, a]) => (<Fragment><p><strong>{q}</strong></p><p>{a}</p></Fragment>))}
 <p>Text <a href="sms:+15612368260">561-236-8260</a> or email <a href="mailto:info@safeswimmingschool.com">info@safeswimmingschool.com</a>.</p>
