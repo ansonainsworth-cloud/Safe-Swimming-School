@@ -3,7 +3,6 @@ import Base from '../layouts/Base.astro';
 import PageShell from '../components/PageShell.astro';
 import PayButton from '../components/PayButton.astro';
 import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
-import { paymentLink } from '../data/payment-links';
 
 const path = '/gift-certificates/';
 const title = 'Holiday gift certificate | Safe Swimming School';
@@ -16,9 +15,15 @@ const holidayPay = {
   price: '$475',
   url: 'https://square.link/u/IiddEmp0',
 };
-const pkg20 = paymentLink('20 lessons');
+const twentyIncluded = '20 private 30 minute lessons plus the $35 annual registration for one swimmer.';
+const twentyPay = {
+  label: 'Gift certificate: 20 private lessons',
+  price: '$1,100',
+  url: 'https://square.link/u/sLsPsavs',
+};
 const faqs = [
   ['How much is the holiday gift certificate?', `It is $475. That is ${included} ${expires} The $475 gift offer ends December 24, 2026.`],
+  ['How much is the 20 lesson gift certificate?', `It is $1,100. That is ${twentyIncluded} ${expires}`],
   ['When does the certificate expire?', expires],
   ['When does the recipient choose days and times?', redeemLine],
   ['Where are the lessons?', 'Lessons are private 30 minute lessons in the family\'s own pool. Safe Swimming School teaches across Palm Beach County, including West Palm Beach and surrounding areas.'],
@@ -30,8 +35,10 @@ const faqs = [
 <p>Lessons are private 30 minute lessons in the family's own pool. Safe Swimming School teaches across Palm Beach County, including West Palm Beach and surrounding areas.</p>
 <figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family pool" /></figure>
 <p><strong>$475.</strong> {included} {expires} The $475 gift offer ends December 24, 2026.</p>
+<p><strong>Gift certificate: 20 private lessons. $1,100.</strong> {twentyIncluded} {expires}</p>
 <div class="sss-gift-pay">
-<p><PayButton link={holidayPay} /></p>
+<p><PayButton link={holidayPay} text="Pay $475" /></p>
+<p><PayButton link={twentyPay} text="Pay $1,100" /></p>
 <div>
 <p><strong>Zelle</strong><br />Send to 561-236-8260. It shows as Scott Ainsworth.</p>
 <p><strong>Venmo</strong><br /><a href="https://venmo.com/u/safe-swim">@safe-swim</a></p>
@@ -39,10 +46,6 @@ const faqs = [
 </div>
 </div>
 <p>{redeemLine}</p>
-<h2 class="wp-block-heading">20 lessons</h2>
-<p><strong>20 lessons for $1,100.</strong> Bought by December 31, 2026, these lessons never expire.</p>
-<p><PayButton link={pkg20} /></p>
-<p>See <a href="/pricing/">lesson prices</a>.</p>
 <h2 class="wp-block-heading">Questions</h2>
 {faqs.map(([q, a]) => (<Fragment><p><strong>{q}</strong></p><p>{a}</p></Fragment>))}
 <p>Text <a href="sms:+15612368260">561-236-8260</a> or email <a href="mailto:info@safeswimmingschool.com">info@safeswimmingschool.com</a>.</p>

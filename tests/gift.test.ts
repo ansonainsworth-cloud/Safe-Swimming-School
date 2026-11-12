@@ -9,10 +9,15 @@ describe('gift pay links', () => {
     const certificates = await container.renderToString(GiftCertificates);
     const gift = await container.renderToString(Gift);
 
-    expect(certificates).toContain('href="https://square.link/u/IiddEmp0"');
-    expect(certificates).toContain('aria-label="Pay Holiday gift certificate, $475"');
-    expect(certificates).toContain('href="https://square.link/u/RSY4plY8"');
-    expect(certificates).toContain('aria-label="Pay 20 lessons, $1,100"');
+    expect(certificates).toContain('href="https://square.link/u/IiddEmp0" aria-label="Pay Holiday gift certificate, $475">Pay $475</a>');
+    expect(certificates).toContain('href="https://square.link/u/sLsPsavs" aria-label="Pay Gift certificate: 20 private lessons, $1,100">Pay $1,100</a>');
+    expect(certificates).not.toContain('>Pay</a>');
+    expect(certificates).toContain('How much is the 20 lesson gift certificate?');
+    expect(certificates).toContain('It is $1,100. That is 20 private 30 minute lessons plus the $35 annual registration for one swimmer. Expires December 31, 2027.');
+    expect(certificates.match(/December 24, 2026/g)).toHaveLength(3);
+    expect(certificates).not.toContain('RSY4plY8');
+    expect(certificates).not.toContain('never expire');
+    expect(certificates).not.toContain('aria-label="Pay 20 lessons, $1,100"');
     expect(certificates).toContain('$475');
     expect(certificates).not.toContain('https://square.link/u/wTx6tPan');
     expect(certificates).not.toContain('https://square.link/u/ZpLS9ENJ');
@@ -22,8 +27,9 @@ describe('gift pay links', () => {
     expect(gift).toContain('href="https://square.link/u/ZpLS9ENJ"');
     expect(gift).toContain('aria-label="Pay 12 lessons, $720"');
     expect(gift).toContain('href="https://square.link/u/RSY4plY8"');
-    expect(gift).toContain('aria-label="Pay 20 lessons, $1,100"');
+    expect(gift).toContain('aria-label="Pay 20 lessons, $1,100">Pay</a>');
     expect(gift).not.toContain('IiddEmp0');
+    expect(gift).not.toContain('sLsPsavs');
     expect(gift).not.toContain('$475');
   });
 });
