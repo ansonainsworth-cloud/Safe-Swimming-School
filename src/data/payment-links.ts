@@ -35,10 +35,10 @@ function escapeAttr(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-export function payButtonHtml(link: PaymentLink): string {
+export function payButtonHtml(link: PaymentLink, text = 'Pay'): string {
   const href = escapeAttr(payHref(link));
   const name = escapeAttr(`Pay ${link.label}, ${link.price}`);
-  return `<a class="sss-btn" href="${href}" aria-label="${name}">Pay</a>`;
+  return `<a class="sss-btn" href="${href}" aria-label="${name}">${escapeAttr(text)}</a>`;
 }
 
 /** Point anchors labeled Enroll or Book at `bookingUrl` once it is set. */
