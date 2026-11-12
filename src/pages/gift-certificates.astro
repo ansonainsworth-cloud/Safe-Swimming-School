@@ -6,7 +6,7 @@ import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
 
 const path = '/gift-certificates/';
 const title = 'Holiday gift certificate | Safe Swimming School';
-const included = '8 private 30 minute lessons plus the $35 annual registration for one swimmer.';
+const included = '8 private 30 minute lessons. The $35 annual registration is waived.';
 const expires = 'Expires December 31, 2027.';
 const description = `A Safe Swimming School holiday gift certificate is $475. That is ${included} ${expires}`;
 const redeemLine = 'The recipient books days and times when they redeem the certificate.';
@@ -15,7 +15,7 @@ const holidayPay = {
   price: '$475',
   url: 'https://square.link/u/IiddEmp0',
 };
-const twentyIncluded = '20 private 30 minute lessons plus the $35 annual registration for one swimmer.';
+const twentyIncluded = '20 private 30 minute lessons. The $35 annual registration is waived.';
 const twentyPay = {
   label: 'Gift certificate: 20 private lessons',
   price: '$1,100',
@@ -31,7 +31,7 @@ const faqs = [
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Holiday gift certificate', description), faqSchema(faqs)]}>
 <PageShell h1="Holiday gift certificate">
-<p>Give real swim skills this holiday: 8 private lessons at their own pool, at your swimmer's pace. $475 including annual registration.</p>
+<p>Give real swim skills this holiday: 8 private lessons at their own pool, at your swimmer's pace. $475, and the $35 annual registration is waived.</p>
 <p>Lessons are private 30 minute lessons in the family's own pool. Safe Swimming School teaches across Palm Beach County, including West Palm Beach and surrounding areas.</p>
 <figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family pool" /></figure>
 <p><strong>$475.</strong> {included} {expires} The $475 gift offer ends December 24, 2026.</p>
