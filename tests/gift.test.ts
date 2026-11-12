@@ -18,7 +18,12 @@ describe('gift pay links', () => {
     expect(certificates).not.toContain('RSY4plY8');
     expect(certificates).not.toContain('never expire');
     expect(certificates).not.toContain('aria-label="Pay 20 lessons, $1,100"');
-    expect(certificates).toContain('$475');
+    expect(certificates).toContain('</strong> 8 private 30 minute lessons. The $35 annual registration is waived. Expires December 31, 2027. The $475 gift offer ends December 24, 2026.');
+    expect(certificates).toContain('It is $475. That is 8 private 30 minute lessons. The $35 annual registration is waived. Expires December 31, 2027. The $475 gift offer ends December 24, 2026.');
+    expect(certificates).toContain('$475, and the $35 annual registration is waived.');
+    expect(certificates).not.toContain('8 private 30 minute lessons plus the $35 annual registration');
+    expect(certificates).not.toContain('$475 including annual registration');
+    expect(certificates).toContain('20 private 30 minute lessons plus the $35 annual registration for one swimmer');
     expect(certificates).not.toContain('https://square.link/u/wTx6tPan');
     expect(certificates).not.toContain('https://square.link/u/ZpLS9ENJ');
 

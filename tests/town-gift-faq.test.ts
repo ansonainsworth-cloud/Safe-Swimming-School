@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -20,7 +20,7 @@ const pages = [
   '/swim-lessons-coral-springs-parkland/',
 ];
 const offer = 'Do you offer swim lesson gift certificates?';
-const offerAnswer = 'Yes. Our holiday gift certificate is $475 for 8 private 30-minute lessons plus the $35 annual registration for one swimmer. The $475 gift offer ends December 24, 2026, and the certificate is good through December 31, 2027. The recipient books days and times when they redeem it, and lessons happen at their home or community pool.';
+const offerAnswer = 'Yes. Our holiday gift certificate is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026, and the certificate is good through December 31, 2027. The recipient books days and times when they redeem it, and lessons happen at their home or community pool.';
 const buy = 'How do I buy a gift certificate?';
 const buyAnswer = 'Visit our gift certificate page at /gift-certificates/, or text 561-236-8260. We email the gift certificate as soon as we receive payment.';
 
@@ -81,5 +81,23 @@ describe('town gift certificate FAQs', () => {
       if (path === '/locations/north-palm-beach/') expect(buyHtml).toContain('href="tel:+15612368260"');
       else expect(buyHtml).not.toContain('tel:');
     }
+    const banned = [
+      '$475 for 8 private 30-minute lessons plus the $35 annual registration',
+      '$475 including annual registration',
+      '8 private 30 minute lessons plus the $35 annual registration',
+    ];
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const file = join(dir, name);
+        if (statSync(file).isDirectory()) walk(file);
+        else if (name.endsWith('.html')) {
+          const html = readFileSync(file, 'utf8');
+          for (const phrase of banned) if (html.includes(phrase)) hits.push(`${file}: ${phrase}`);
+        }
+      }
+    };
+    walk(join(root, 'dist'));
+    expect(hits).toEqual([]);
   });
 });
