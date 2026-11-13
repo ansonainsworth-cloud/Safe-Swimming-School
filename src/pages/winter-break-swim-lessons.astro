@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
+
+const path = '/winter-break-swim-lessons/';
+const title = 'Winter Break Swim Lessons in Palm Beach County | Safe Swimming School';
+const description = 'Private 30 minute swim lessons at your home or community pool in Palm Beach County, including West Palm Beach. Packages from $520. Text 561-236-8260.';
+const faqs = [
+  ['Where do winter break swim lessons happen?', 'At your home pool or community pool across Palm Beach County, including West Palm Beach and surrounding areas. Town pages are examples, not a limit.'],
+  ['How long is a lesson, and is it one-on-one?', 'Every lesson is private and one-on-one, and each one is 30 minutes. You have the same instructor every lesson.'],
+  ['How young can a child start?', 'We teach children as young as 3 months. Infants begin with a parent in the water.'],
+  ['How much do winter break swim lessons cost?', 'A single lesson is $75. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100. Siblings share one package. Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Annual registration is waived on packages bought by December 31, 2026, and those package lessons never expire.'],
+  ['How do we book days and times?', 'Families book days and times. Book online or text 561-236-8260.'],
+];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, title, description), faqSchema(faqs)]}>
+<PageShell h1="Winter break swim lessons in Palm Beach County">
+<p>Safe Swimming School offers private, one-on-one swim lessons for winter break at your home pool or community pool. Each lesson is 30 minutes. You have the same instructor every lesson.</p>
+<p>We teach children as young as 3 months. Infants begin with a parent in the water.</p>
+<figure class="wp-block-image size-large"><img decoding="async" src="/wp-content/uploads/2020/06/swim1.jpg" alt="Private lesson in a family's pool" /></figure>
+<h2 class="wp-block-heading">Where lessons happen</h2>
+<p>Lessons are available across Palm Beach County, including West Palm Beach and surrounding areas. Town pages are examples, not a limit. If your town is not listed, ask. See <a href="/locations/">all locations</a>.</p>
+<h2 class="wp-block-heading">Packages</h2>
+<ul class="wp-block-list">
+<li>Single lesson: $75</li>
+<li>8 lessons for $520</li>
+<li>12 lessons for $720</li>
+<li>20 lessons for $1,100</li>
+</ul>
+<p>Siblings share one package.</p>
+<p>Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Annual registration is waived on packages bought by December 31, 2026, and those package lessons never expire.</p>
+<h2 class="wp-block-heading">Book days and times</h2>
+<p>Families book days and times.</p>
+<p><a class="sss-btn" href="/book/">Book online</a> <a href="sms:+15612368260">or text 561-236-8260</a></p>
+<p>If you are buying for someone else, see <a href="/gift-certificates/">gift certificates</a>.</p>
+<h2 class="wp-block-heading">Questions</h2>
+{faqs.map(([q, a]) => (<Fragment><p><strong>{q}</strong></p><p>{a}</p></Fragment>))}
+</PageShell>
+</Base>
