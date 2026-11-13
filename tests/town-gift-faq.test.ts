@@ -20,7 +20,7 @@ const pages = [
   '/swim-lessons-coral-springs-parkland/',
 ];
 const offer = 'Do you offer swim lesson gift certificates?';
-const offerAnswer = 'Yes. Our holiday gift certificate is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026, and the certificate is good through December 31, 2027. The recipient books days and times when they redeem it, and lessons happen at their home or community pool.';
+const offerAnswer = 'Yes. The holiday gift certificate is $475 for 8 private 30-minute lessons, the $35 annual registration is waived, the $475 offer ends December 24, 2026, and the certificate is good through December 31, 2027. The gift certificate is $1,100 for 20 private 30-minute lessons, the $35 annual registration is waived, and it is good through December 31, 2027. The recipient books days and times when they redeem it, and lessons happen at their home or community pool. Visit our gift certificate page at /gift-certificates/.';
 const buy = 'How do I buy a gift certificate?';
 const buyAnswer = 'Visit our gift certificate page at /gift-certificates/, or text 561-236-8260. We email the gift certificate as soon as we receive payment.';
 
@@ -75,6 +75,9 @@ describe('town gift certificate FAQs', () => {
         { question: offer, answer: offerAnswer },
         { question: buy, answer: buyAnswer },
       ]);
+      const offerHtml = visible.at(-2)!.answerHtml;
+      expect(offerHtml, path).toContain('<a href="/gift-certificates/">gift certificate page</a>');
+      expect(schema.at(-2)!.answer, path).not.toContain('<');
       const buyHtml = visible.at(-1)!.answerHtml;
       expect(buyHtml, path).toContain('<a href="/gift-certificates/">gift certificate page</a>');
       expect(schema.at(-1)!.answer, path).not.toContain('<');
