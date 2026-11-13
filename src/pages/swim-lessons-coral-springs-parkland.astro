@@ -53,8 +53,11 @@ const faqs: [string, string][] = [
   ['How much do lessons cost?', 'A single lesson is $75 and can be credited toward a package. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100. Annual registration is $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026, and those lessons never expire.'],
   ['How do I check openings?', 'Call or text 561 236 8260, or use the enroll form. Lessons are available on select days: Tuesday and Friday afternoons and Thursday mornings.'],
   ['Is there a registration fee?', "Registration is $35 for one swimmer, $50 for two siblings, or $60 for three or more. It's waived on lock in packages bought by December 31, 2026: 8 lessons for $520, 12 for $720, or 20 for $1,100. Lock in packages never expire, so your family can use lessons whenever it suits you. Lessons happen at your home or community pool. A single lesson is $75."],
-  ['Do you offer swim lesson gift certificates?', 'Yes. Our holiday gift certificate is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026, and the certificate is good through December 31, 2027. The recipient books days and times when they redeem it, and lessons happen at their home or community pool.'],
-  ['How do I buy a gift certificate?', 'Visit our gift certificate page at /gift-certificates/, or text 561-236-8260. We email the gift certificate as soon as we receive payment.'],
+  ['Do you offer swim lesson gift certificates?', 'Yes. Safe Swimming School offers two gift certificates for private swim lessons. The holiday gift certificate is 8 private 30-minute lessons for $475, and the 20-lesson gift certificate is 20 private 30-minute lessons for $1,100. The $35 annual registration is waived on both.'],
+  ['How much is the holiday swim lesson gift certificate?', 'It is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026.'],
+  ['When does a swim lesson gift certificate expire?', 'Gift certificates expire December 31, 2027.'],
+  ['How does the recipient schedule lessons?', "The recipient books days and times when they redeem the certificate. Lessons are private 30-minute lessons at the family's home or community pool."],
+  ['How do I buy a gift certificate?', 'Pay on our gift certificate page at /gift-certificates/ by Zelle to 561-236-8260 or Venmo @safe-swim. We email the gift certificate when we receive payment. Questions? Text 561-236-8260 or email info@safeswimmingschool.com.'],
 ];
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Private swim lessons in Coral Springs and Parkland', description, [localBusiness, service]), faqSchema(faqs)]}>
@@ -91,7 +94,7 @@ const faqs: [string, string][] = [
   <Fragment>
     <p><strong>{q}</strong></p>
     {q === 'How do I buy a gift certificate?' ? (
-      <p>Visit our <a href="/gift-certificates/">gift certificate page</a> at /gift-certificates/, or text 561-236-8260. We email the gift certificate as soon as we receive payment.</p>
+      <p>Pay on our <a href="/gift-certificates/">gift certificate page</a> at /gift-certificates/ by Zelle to 561-236-8260 or Venmo @safe-swim. We email the gift certificate when we receive payment. Questions? Text 561-236-8260 or email info@safeswimmingschool.com.</p>
     ) : (
       <p>{a}</p>
     )}

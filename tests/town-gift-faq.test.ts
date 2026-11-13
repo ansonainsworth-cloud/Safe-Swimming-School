@@ -19,10 +19,13 @@ const pages = [
   '/locations/westlake/',
   '/swim-lessons-coral-springs-parkland/',
 ];
-const offer = 'Do you offer swim lesson gift certificates?';
-const offerAnswer = 'Yes. Our holiday gift certificate is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026, and the certificate is good through December 31, 2027. The recipient books days and times when they redeem it, and lessons happen at their home or community pool.';
-const buy = 'How do I buy a gift certificate?';
-const buyAnswer = 'Visit our gift certificate page at /gift-certificates/, or text 561-236-8260. We email the gift certificate as soon as we receive payment.';
+const giftFaqs: Array<[string, string]> = [
+  ['Do you offer swim lesson gift certificates?', 'Yes. Safe Swimming School offers two gift certificates for private swim lessons. The holiday gift certificate is 8 private 30-minute lessons for $475, and the 20-lesson gift certificate is 20 private 30-minute lessons for $1,100. The $35 annual registration is waived on both.'],
+  ['How much is the holiday swim lesson gift certificate?', 'It is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026.'],
+  ['When does a swim lesson gift certificate expire?', 'Gift certificates expire December 31, 2027.'],
+  ['How does the recipient schedule lessons?', "The recipient books days and times when they redeem the certificate. Lessons are private 30-minute lessons at the family's home or community pool."],
+  ['How do I buy a gift certificate?', 'Pay on our gift certificate page at /gift-certificates/ by Zelle to 561-236-8260 or Venmo @safe-swim. We email the gift certificate when we receive payment. Questions? Text 561-236-8260 or email info@safeswimmingschool.com.'],
+];
 
 function strip(value: string) {
   return value
@@ -59,7 +62,7 @@ function schemaFaqs(html: string) {
 }
 
 describe('town gift certificate FAQs', () => {
-  it('matches the two new questions in the visible FAQ and the FAQPage schema on all 13 pages', () => {
+  it('matches the five gift questions in the visible FAQ and the FAQPage schema on all 13 pages', () => {
     execSync('npm run build', { cwd: root, stdio: 'pipe' });
     expect(pages).toHaveLength(13);
     for (const path of pages) {
@@ -67,19 +70,15 @@ describe('town gift certificate FAQs', () => {
       const visible = visibleFaqs(html);
       const schema = schemaFaqs(html);
       expect(schema, path).toHaveLength(visible.length);
-      expect(visible.slice(-2).map((item) => [item.question, item.answer]), path).toEqual([
-        [offer, offerAnswer],
-        [buy, buyAnswer],
-      ]);
-      expect(schema.slice(-2), path).toEqual([
-        { question: offer, answer: offerAnswer },
-        { question: buy, answer: buyAnswer },
-      ]);
+      const visibleGift = visible.slice(-5).map((item) => [item.question, item.answer]);
+      const schemaGift = schema.slice(-5).map((item: { question: string; answer: string }) => [item.question, item.answer]);
+      expect(visibleGift, path).toEqual(giftFaqs);
+      expect(schemaGift, path).toEqual(giftFaqs);
       const buyHtml = visible.at(-1)!.answerHtml;
       expect(buyHtml, path).toContain('<a href="/gift-certificates/">gift certificate page</a>');
+      expect(buyHtml, path).toContain('Zelle to 561-236-8260 or Venmo @safe-swim');
       expect(schema.at(-1)!.answer, path).not.toContain('<');
-      if (path === '/locations/north-palm-beach/') expect(buyHtml).toContain('href="tel:+15612368260"');
-      else expect(buyHtml).not.toContain('tel:');
+      expect(schema.at(-1)!.answer, path).toContain('/gift-certificates/');
     }
     const banned = [
       '$475 for 8 private 30-minute lessons plus the $35 annual registration',
