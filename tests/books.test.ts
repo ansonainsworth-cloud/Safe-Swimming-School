@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import Books from '../src/pages/books.astro';
 
 describe('books page', () => {
-  it('links the Pearl pack and the Ko-fi shop next to the Amazon paperback', async () => {
+  it('links the Pearl pack, the $9 bundle, and the Ko-fi shop next to the Amazon paperback', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(Books);
     expect(html).toContain('href="https://www.amazon.com/dp/B0HNP7NKDM" target="_blank" rel="noopener"');
@@ -15,6 +15,10 @@ describe('books page', () => {
     expect(html).toContain('>Get it on Ko-fi</a>');
     expect(html).toContain('href="https://ko-fi.com/safeswimmingschoolbooks/shop" target="_blank" rel="noopener"');
     expect(html).toContain('>See all printables in our Ko-fi shop</a>');
-    expect(html).not.toContain('$9');
+    expect(html).toContain('The Day I Found My Float printable bundle');
+    expect(html).toContain("The Book 1 printable PDF plus Pearl's Float Practice activity pack.");
+    expect(html).toContain('>$9</strong>');
+    expect(html).toContain('href="https://ko-fi.com/s/a1bfdb2d75" target="_blank" rel="noopener"');
+    expect(html).toContain('>Get the bundle on Ko-fi</a>');
   });
 });
