@@ -24,7 +24,7 @@ const giftFaqs: Array<[string, string]> = [
   ['How much is the holiday swim lesson gift certificate?', 'It is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026.'],
   ['When does a swim lesson gift certificate expire?', 'Gift certificates expire December 31, 2027.'],
   ['How does the recipient schedule lessons?', "The recipient books days and times when they redeem the certificate. Lessons are private 30-minute lessons at the family's home or community pool."],
-  ['How do I buy a gift certificate?', 'Pay online with the Pay $475 or Pay $1,100 button on our gift certificate page at /gift-certificates/.'],
+  ['How do I buy a gift certificate?', 'Pay on our gift certificate page at /gift-certificates/ by Zelle to 561-236-8260 or Venmo @safe-swim. We email the gift certificate when we receive payment. Questions? Text 561-236-8260 or email info@safeswimmingschool.com.'],
 ];
 
 function strip(value: string) {
@@ -76,9 +76,9 @@ describe('town gift certificate FAQs', () => {
       expect(schemaGift, path).toEqual(giftFaqs);
       const buyHtml = visible.at(-1)!.answerHtml;
       expect(buyHtml, path).toContain('<a href="/gift-certificates/">gift certificate page</a>');
+      expect(buyHtml, path).toContain('Zelle to 561-236-8260 or Venmo @safe-swim');
       expect(schema.at(-1)!.answer, path).not.toContain('<');
-      const giftText = visibleGift.map((item) => item.join(' ')).join(' ');
-      expect(giftText, path).not.toMatch(/Zelle|Venmo|email the gift|email the certificate/i);
+      expect(schema.at(-1)!.answer, path).toContain('/gift-certificates/');
     }
     const banned = [
       '$475 for 8 private 30-minute lessons plus the $35 annual registration',
