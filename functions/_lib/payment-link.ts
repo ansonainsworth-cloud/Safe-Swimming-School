@@ -19,6 +19,7 @@ export function buildCreatePaymentLinkBody(input: {
   customerId?: string;
   children?: SwimmerChild[] | null;
   lines: PricedLine[];
+  discount?: { name: string; amountCents: number; metadata: Record<string, string> };
 }) {
   const buyerPhone = input.buyerPhone ? toE164Phone(input.buyerPhone) : undefined;
   const paymentNote = input.buyerName ? checkoutPaymentNote(input.buyerName, input.children ?? null) : undefined;
@@ -36,6 +37,20 @@ export function buildCreatePaymentLinkBody(input: {
           currency: 'USD',
         },
       })),
+      ...(input.discount
+        ? {
+            discounts: [
+              {
+                uid: 'trial-lesson-credit',
+                name: input.discount.name,
+                type: 'FIXED_AMOUNT',
+                scope: 'ORDER',
+                amount_money: { amount: input.discount.amountCents, currency: 'USD' },
+              },
+            ],
+            metadata: input.discount.metadata,
+          }
+        : {}),
     },
     checkout_options: {
       redirect_url: httpsRedirectUrl(input.redirectUrl),

@@ -20,6 +20,7 @@ export type OrderSearchResult = {
 export type SquareLookup = {
   searchCustomers(email: string): Promise<CustomerSearchResult>;
   searchOrders(customerId: string, closedAfter: string, cursor?: string): Promise<OrderSearchResult>;
+  searchAllOrders?(customerId: string, cursor?: string): Promise<OrderSearchResult>;
 };
 
 export function closedAfterIso(now: Date): string {
@@ -37,21 +38,27 @@ export function customerSearchBody(email: string) {
   };
 }
 
-export function orderSearchBody(locationId: string, customerId: string, closedAfter: string, cursor?: string) {
+export function orderSearchBody(locationId: string, customerId: string, closedAfter?: string, cursor?: string) {
+  const filter: {
+    customer_filter: { customer_ids: string[] };
+    state_filter: { states: string[] };
+    date_time_filter?: { closed_at: { start_at: string } };
+  } = {
+    customer_filter: { customer_ids: [customerId] },
+    state_filter: { states: ['COMPLETED'] },
+  };
+  if (closedAfter) filter.date_time_filter = { closed_at: { start_at: closedAfter } };
   return {
     location_ids: [locationId],
     limit: 100,
     ...(cursor ? { cursor } : {}),
-    query: {
-      filter: {
-        customer_filter: { customer_ids: [customerId] },
-        state_filter: { states: ['COMPLETED'] },
-        date_time_filter: {
-          closed_at: { start_at: closedAfter },
-        },
-      },
-    },
+    query: { filter },
   };
+}
+
+/** Completed orders with no date cutoff, so an older trial is still visible. */
+export function completedOrderSearchBody(locationId: string, customerId: string, cursor?: string) {
+  return orderSearchBody(locationId, customerId, undefined, cursor);
 }
 
 function orderHasRegistration(order: { line_items?: Array<{ name?: string }> }): boolean {

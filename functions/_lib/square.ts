@@ -1,5 +1,5 @@
 import { SQUARE_SANDBOX_ORIGIN, SQUARE_VERSION } from './prices';
-import { customerSearchBody, orderSearchBody, type SquareLookup } from './registration';
+import { completedOrderSearchBody, customerSearchBody, orderSearchBody, type SquareLookup } from './registration';
 
 /** Production Connect API. Selected only when SQUARE_ENV is exactly "production". */
 export const SQUARE_PRODUCTION_ORIGIN = 'https://connect.squareup.com';
@@ -185,6 +185,12 @@ export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fet
     },
     searchOrders(customerId, closedAfter, cursor) {
       return squarePost(env, '/v2/orders/search', orderSearchBody(locationId, customerId, closedAfter, cursor), fetchImpl) as Promise<{
+        orders?: { line_items?: { name?: string }[] }[];
+        cursor?: string;
+      }>;
+    },
+    searchAllOrders(customerId, cursor) {
+      return squarePost(env, '/v2/orders/search', completedOrderSearchBody(locationId, customerId, cursor), fetchImpl) as Promise<{
         orders?: { line_items?: { name?: string }[] }[];
         cursor?: string;
       }>;
