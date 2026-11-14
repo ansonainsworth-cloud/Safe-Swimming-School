@@ -1,25 +1,37 @@
-import { type CustomerSearchResult, type SquareLookup } from './registration';
+import { type CustomerSearchResult, type PaymentListResult, type SquareLookup } from './registration';
 
 /**
  * Trial lesson credit.
  *
- * A completed $75 single lesson can take $75 off one later package order
- * (8 lessons $520, 12 lessons $720, or 20 lessons $1,100). The package order
- * stores metadata.trial_credit_payment_id set to that trial's Square payment id
- * (or order:{orderId} when the tender has no payment id).
+ * A paid $75 single lesson can take $75 off one later package
+ * (8 lessons $520, 12 lessons $720, or 20 lessons $1,100).
+ * The package order stores metadata.trial_credit_payment_id set to that
+ * Square payment id.
  *
- * Only COMPLETED orders count. completedOrderSearchBody asks Square for
- * state COMPLETED and does not filter by date. An unpaid payment link creates
- * an open order, so it does not burn the credit.
+ * Live payments do not leave a COMPLETED order on the customer. The reference
+ * shape is a COMPLETED payment whose customer_id is set, pointing at an OPEN
+ * order with no customer_id, no metadata, and no note. The line item is an
+ * ad hoc "Single lesson" for 7500. The word trial is not on the payment or order.
+ *
+ * Lookup lists payments with total 7500, keeps COMPLETED ones whose customer_id
+ * or buyer_email_address matches, then reads each order and keeps a line named
+ * exactly "Single lesson" with quantity 1 and amount 7500. Order state and
+ * order customer_id are not required.
+ *
+ * Later package purchases are COMPLETED orders on the customer. Those are the
+ * only orders that mark the credit used, or that count as a package bought
+ * after the trial.
  *
  * Limits:
- * - Two open links at once can both show the discount. Paying both would
- *   discount twice, because the second link was built before either order completed.
- * - A trial paid under a different email is not found. Lookup is the exact
- *   buyer email on the Square customer.
- * - Cash or Zelle trials are not Square payments, so they are not credited here.
- * - One checkout applies one $75 credit, the oldest eligible trial. Another
- *   uncredited trial can apply to a later package.
+ * - ListPayments has no customer filter. We ask for amount 7500 at this location
+ *   from the last five years, then filter. At most 10 pages. A match past that
+ *   window is missed, and checkout continues at full price.
+ * - An unpaid payment is not COMPLETED, so it does not burn the credit.
+ * - Two open package links can both include the discount. Paying both would
+ *   discount twice.
+ * - A payment under a different email and a different customer id is not found.
+ * - Cash or Zelle is not a Square payment, so it is not credited here.
+ * - One checkout applies one $75 credit, the oldest eligible payment.
  * - A completed package with no closed_at is treated as after the trial.
  * - Any Square lookup error skips the discount and continues checkout.
  */
@@ -27,6 +39,7 @@ import { type CustomerSearchResult, type SquareLookup } from './registration';
 export const TRIAL_CREDIT_CENTS = 7500;
 export const TRIAL_CREDIT_NAME = 'Trial lesson credit';
 export const TRIAL_CREDIT_METADATA_KEY = 'trial_credit_payment_id';
+export const SINGLE_LESSON_NAME = 'Single lesson';
 
 const PACKAGE_AMOUNTS = new Set([52000, 72000, 110000]);
 
@@ -36,16 +49,27 @@ export type CreditLine = {
   base_price_money?: { amount?: number };
   gross_sales_money?: { amount?: number };
   total_money?: { amount?: number };
+  catalog_object_id?: string;
+  variation_name?: string;
 };
 
 export type CreditOrder = {
   id?: string;
+  state?: string;
   closed_at?: string;
   created_at?: string;
+  customer_id?: string;
   line_items?: CreditLine[];
   total_money?: { amount?: number };
-  tenders?: Array<{ payment_id?: string }>;
   metadata?: Record<string, string>;
+  note?: string;
+};
+
+export type SquarePayment = NonNullable<PaymentListResult['payments']>[number];
+
+export type FoundTrial = {
+  paymentId: string;
+  paidAt: string;
 };
 
 export type TrialCreditReason =
@@ -98,14 +122,13 @@ function isPackageLine(line: CreditLine): boolean {
   return amount != null && PACKAGE_AMOUNTS.has(amount);
 }
 
-function isTrialOrder(order: CreditOrder): boolean {
-  const lines = order.line_items ?? [];
-  const namedTrial = lines.some((line) => {
-    const name = line.name || '';
-    return lineQuantity(line) === 1 && lineAmount(line) === TRIAL_CREDIT_CENTS && /single lesson|trial/i.test(name);
-  });
-  if (namedTrial) return true;
-  return order.total_money?.amount === TRIAL_CREDIT_CENTS && !lines.some(isPackageLine);
+/** Exact ad hoc line. Order state and customer_id are ignored. */
+export function isSingleLessonOrder(order: CreditOrder): boolean {
+  return (order.line_items ?? []).some((line) => (
+    line.name === SINGLE_LESSON_NAME
+    && lineQuantity(line) === 1
+    && lineAmount(line) === TRIAL_CREDIT_CENTS
+  ));
 }
 
 function isPackageOrder(order: CreditOrder): boolean {
@@ -116,40 +139,41 @@ function orderTime(order: CreditOrder): string {
   return order.closed_at || order.created_at || '';
 }
 
-export function trialPaymentId(order: CreditOrder): string {
-  const paymentId = (order.tenders ?? []).find((tender) => tender.payment_id)?.payment_id;
-  if (paymentId) return paymentId;
-  return order.id ? `order:${order.id}` : '';
+export function paymentMatchesBuyer(payment: SquarePayment, email: string, customerIds: ReadonlySet<string>): boolean {
+  if (payment.status !== 'COMPLETED') return false;
+  const amount = payment.amount_money?.amount ?? payment.total_money?.amount;
+  if (amount !== TRIAL_CREDIT_CENTS) return false;
+  if (payment.amount_money?.currency && payment.amount_money.currency !== 'USD') return false;
+  const emailMatch = (payment.buyer_email_address || '').toLowerCase() === email;
+  const customerMatch = Boolean(payment.customer_id && customerIds.has(payment.customer_id));
+  return emailMatch || customerMatch;
 }
 
-export function decideTrialCredit(buyingPackage: boolean, orders: CreditOrder[]): TrialCreditDecision {
+export function decideTrialCredit(buyingPackage: boolean, trials: FoundTrial[], packageOrders: CreditOrder[]): TrialCreditDecision {
   if (!buyingPackage) return { apply: false, reason: 'no-package' };
-  const trials = orders.filter(isTrialOrder).sort((a, b) => orderTime(a).localeCompare(orderTime(b)));
-  const packages = orders.filter(isPackageOrder);
+  const packages = packageOrders.filter((order) => isPackageOrder(order) || Boolean(order.metadata?.[TRIAL_CREDIT_METADATA_KEY]));
   const used = new Set(
-    orders
+    packageOrders
       .map((order) => order.metadata?.[TRIAL_CREDIT_METADATA_KEY])
       .filter((id): id is string => Boolean(id)),
   );
+  const sorted = [...trials].filter((trial) => trial.paymentId).sort((a, b) => a.paidAt.localeCompare(b.paidAt));
   let sawUsed = false;
   let sawPackageAfter = false;
-  for (const trial of trials) {
-    const paymentId = trialPaymentId(trial);
-    if (!paymentId) continue;
-    if (used.has(paymentId)) {
+  for (const trial of sorted) {
+    if (used.has(trial.paymentId)) {
       sawUsed = true;
       continue;
     }
-    const trialTime = orderTime(trial);
     const packageAfter = packages.some((pack) => {
       const packTime = orderTime(pack);
-      return !packTime || !trialTime || packTime > trialTime;
+      return !packTime || !trial.paidAt || packTime > trial.paidAt;
     });
     if (packageAfter) {
       sawPackageAfter = true;
       continue;
     }
-    return { apply: true, reason: 'applied', paymentId };
+    return { apply: true, reason: 'applied', paymentId: trial.paymentId };
   }
   if (sawUsed) return { apply: false, reason: 'credit-used' };
   if (sawPackageAfter) return { apply: false, reason: 'package-after-trial' };
@@ -163,24 +187,41 @@ function customerIds(customers: CustomerSearchResult): string[] | null {
 
 export async function lookupTrialCredit(email: string, lookup: SquareLookup, buyingPackage: boolean): Promise<TrialCreditDecision> {
   if (!buyingPackage) return { apply: false, reason: 'no-package' };
+  if (!lookup.listPayments || !lookup.retrieveOrder) return { apply: false, reason: 'lookup-error' };
   try {
     const ids = customerIds(await lookup.searchCustomers(email));
     if (ids === null) return { apply: false, reason: 'lookup-error' };
-    if (ids.length === 0) return { apply: false, reason: 'no-trial' };
-    const orders: CreditOrder[] = [];
+    const idSet = new Set(ids);
+    const trials: FoundTrial[] = [];
+    let cursor: string | undefined;
+    let page = 0;
+    do {
+      const listed = await lookup.listPayments(cursor);
+      page += 1;
+      for (const payment of listed.payments ?? []) {
+        if (!paymentMatchesBuyer(payment, email, idSet) || !payment.id || !payment.order_id) continue;
+        const retrieved = await lookup.retrieveOrder(payment.order_id);
+        const order = retrieved.order as CreditOrder | undefined;
+        if (!order || !isSingleLessonOrder(order)) continue;
+        trials.push({ paymentId: payment.id, paidAt: payment.created_at || '' });
+      }
+      cursor = listed.cursor || undefined;
+    } while (cursor && page < 10);
+
+    const packageOrders: CreditOrder[] = [];
     for (const customerId of ids) {
-      let cursor: string | undefined;
-      let page = 0;
+      let orderCursor: string | undefined;
+      let orderPage = 0;
       do {
         const result = lookup.searchAllOrders
-          ? await lookup.searchAllOrders(customerId, cursor)
-          : await lookup.searchOrders(customerId, '1970-01-01T00:00:00.000Z', cursor);
-        page += 1;
-        orders.push(...((result.orders ?? []) as CreditOrder[]));
-        cursor = result.cursor || undefined;
-      } while (cursor && page < 10);
+          ? await lookup.searchAllOrders(customerId, orderCursor)
+          : await lookup.searchOrders(customerId, '1970-01-01T00:00:00.000Z', orderCursor);
+        orderPage += 1;
+        packageOrders.push(...((result.orders ?? []) as CreditOrder[]));
+        orderCursor = result.cursor || undefined;
+      } while (orderCursor && orderPage < 10);
     }
-    return decideTrialCredit(true, orders);
+    return decideTrialCredit(true, trials, packageOrders);
   } catch {
     return { apply: false, reason: 'lookup-error' };
   }

@@ -17,10 +17,26 @@ export type OrderSearchResult = {
   cursor?: string;
 };
 
+export type PaymentListResult = {
+  payments?: Array<{
+    id?: string;
+    status?: string;
+    created_at?: string;
+    customer_id?: string;
+    order_id?: string;
+    buyer_email_address?: string;
+    amount_money?: { amount?: number; currency?: string };
+    total_money?: { amount?: number; currency?: string };
+  }>;
+  cursor?: string;
+};
+
 export type SquareLookup = {
   searchCustomers(email: string): Promise<CustomerSearchResult>;
   searchOrders(customerId: string, closedAfter: string, cursor?: string): Promise<OrderSearchResult>;
   searchAllOrders?(customerId: string, cursor?: string): Promise<OrderSearchResult>;
+  listPayments?(cursor?: string): Promise<PaymentListResult>;
+  retrieveOrder?(orderId: string): Promise<{ order?: { id?: string; state?: string; line_items?: Array<{ name?: string; quantity?: string; base_price_money?: { amount?: number }; gross_sales_money?: { amount?: number }; total_money?: { amount?: number } }> } }>;
 };
 
 export function closedAfterIso(now: Date): string {

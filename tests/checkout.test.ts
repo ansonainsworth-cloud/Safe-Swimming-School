@@ -385,6 +385,7 @@ describe('checkout endpoint', () => {
     const amounts: number[] = [];
     const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
       if (String(url).endsWith('/v2/customers/search')) return new Response(JSON.stringify({}), { status: 200 });
+      if (String(url).includes('/v2/payments')) return new Response(JSON.stringify({ payments: [] }), { status: 200 });
       const body = JSON.parse(String(init?.body));
       const registration = body.order.line_items.find((line: { name: string }) => line.name === 'Annual Registration');
       amounts.push(registration.base_price_money.amount);

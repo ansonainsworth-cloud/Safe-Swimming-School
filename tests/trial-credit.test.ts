@@ -5,13 +5,20 @@ import { resetRateLimit } from '../functions/_lib/rate-limit';
 import { completedOrderSearchBody } from '../functions/_lib/registration';
 import {
   decideTrialCredit,
+  isSingleLessonOrder,
+  paymentMatchesBuyer,
   TRIAL_CREDIT_METADATA_KEY,
   TRIAL_CREDIT_NAME,
   type CreditOrder,
+  type FoundTrial,
+  type SquarePayment,
 } from '../functions/_lib/trial-credit';
 
 const CHANTAL_EMAIL = 'chantalbuck1@gmail.com';
-const CHANTAL_PAYMENT = 'pay_chantal_20261114';
+const CHANTAL_CUSTOMER = 'P59HZ6JVHCK7ZCAH5XD6EPNGSR';
+const CHANTAL_PAYMENT = 'EzBmv3fKTzpnDvq5YVfcNrXbjKZZY';
+const CHANTAL_ORDER = 'LKwXE3DBqMEBpzLa2Ip77YuKAYHZY';
+const CHANTAL_PAID_AT = '2026-11-14T19:11:00.000Z';
 
 const checkoutEnv = {
   SQUARE_ENV: 'sandbox',
@@ -27,14 +34,30 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function chantalTrial(): CreditOrder {
+function chantalPayment(): SquarePayment {
   return {
-    id: 'order_chantal_trial',
-    closed_at: '2026-11-14T18:00:00.000Z',
-    line_items: [{ name: 'Single lesson', quantity: '1', base_price_money: { amount: 7500 } }],
-    total_money: { amount: 7500 },
-    tenders: [{ payment_id: CHANTAL_PAYMENT }],
+    id: CHANTAL_PAYMENT,
+    status: 'COMPLETED',
+    created_at: CHANTAL_PAID_AT,
+    customer_id: CHANTAL_CUSTOMER,
+    order_id: CHANTAL_ORDER,
+    buyer_email_address: CHANTAL_EMAIL,
+    amount_money: { amount: 7500, currency: 'USD' },
+    total_money: { amount: 7500, currency: 'USD' },
   };
+}
+
+/** Mirrors the live order: OPEN, no customer_id, no metadata, no note, ad hoc line. */
+function chantalOrder(): CreditOrder {
+  return {
+    id: CHANTAL_ORDER,
+    state: 'OPEN',
+    line_items: [{ name: 'Single lesson', quantity: '1', base_price_money: { amount: 7500 } }],
+  };
+}
+
+function chantalTrial(): FoundTrial {
+  return { paymentId: CHANTAL_PAYMENT, paidAt: CHANTAL_PAID_AT };
 }
 
 function laterPackage(metadata?: Record<string, string>): CreditOrder {
@@ -52,17 +75,20 @@ function netCents(order: { line_items: Array<{ quantity: string; base_price_mone
   return lines - off;
 }
 
-function squareFetch(orders: CreditOrder[] | 'error') {
+function squareFetch(fixture: { payments?: SquarePayment[]; order?: CreditOrder | null; packages?: CreditOrder[] } | 'error') {
+  const error = fixture === 'error';
+  const payments = error ? [] : fixture.payments ?? [];
+  const order = error || fixture === 'error' ? null : fixture.order ?? null;
+  const packages = error ? [] : fixture.packages ?? [];
   return vi.fn(async (url: string) => {
     const path = String(url);
     if (path.endsWith('/customers/search')) {
-      if (orders === 'error') return new Response(JSON.stringify({ errors: [{ code: 'INTERNAL_SERVER_ERROR', category: 'API_ERROR' }] }), { status: 500 });
-      return Response.json({ customers: [{ id: 'CUST_CHANTAL' }] });
+      if (error) return new Response(JSON.stringify({ errors: [{ code: 'INTERNAL_SERVER_ERROR', category: 'API_ERROR' }] }), { status: 500 });
+      return Response.json({ customers: [{ id: CHANTAL_CUSTOMER }] });
     }
-    if (path.endsWith('/orders/search')) {
-      if (orders === 'error') return new Response(JSON.stringify({ errors: [{ code: 'INTERNAL_SERVER_ERROR', category: 'API_ERROR' }] }), { status: 500 });
-      return Response.json({ orders });
-    }
+    if (path.includes('/v2/payments')) return Response.json({ payments });
+    if (path.endsWith('/orders/search')) return Response.json({ orders: packages });
+    if (path.includes('/v2/orders/')) return Response.json({ order });
     return Response.json({ payment_link: { url: 'https://sandbox.square.link/u/credit' } });
   });
 }
@@ -75,10 +101,10 @@ function checkoutRequest(itemId: string, ip: string) {
   });
 }
 
-async function checkoutOrder(orders: CreditOrder[] | 'error', itemId: string, ip: string) {
+async function checkoutOrder(fixture: { payments?: SquarePayment[]; order?: CreditOrder | null; packages?: CreditOrder[] } | 'error', itemId: string, ip: string) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-11-14T18:00:00.000Z'));
-  const fetchImpl = squareFetch(orders);
+  const fetchImpl = squareFetch(fixture);
   vi.stubGlobal('fetch', fetchImpl);
   const response = await onCheckoutPost({ request: checkoutRequest(itemId, ip), env: checkoutEnv });
   expect(response.status).toBe(200);
@@ -87,14 +113,24 @@ async function checkoutOrder(orders: CreditOrder[] | 'error', itemId: string, ip
 }
 
 describe('trial lesson credit', () => {
-  it('searches completed orders only, with no date cutoff', () => {
-    const body = completedOrderSearchBody('LOC123', 'CUST_CHANTAL');
+  it('keeps package history on completed orders, and lists $75 payments without requiring a completed order', () => {
+    const body = completedOrderSearchBody('LOC123', CHANTAL_CUSTOMER);
     expect(body.query.filter.state_filter).toEqual({ states: ['COMPLETED'] });
     expect(body.query.filter).not.toHaveProperty('date_time_filter');
+    const order = chantalOrder();
+    expect(order.state).toBe('OPEN');
+    expect(order.customer_id).toBeUndefined();
+    expect(order.metadata).toBeUndefined();
+    expect(order.note).toBeUndefined();
+    expect(order.line_items?.[0]).not.toHaveProperty('catalog_object_id');
+    expect(isSingleLessonOrder(order)).toBe(true);
+    expect(isSingleLessonOrder({ ...order, line_items: [{ name: 'Trial lesson', quantity: '1', base_price_money: { amount: 7500 } }] })).toBe(false);
+    expect(paymentMatchesBuyer(chantalPayment(), CHANTAL_EMAIL, new Set([CHANTAL_CUSTOMER]))).toBe(true);
+    expect(paymentMatchesBuyer({ ...chantalPayment(), status: 'APPROVED' }, CHANTAL_EMAIL, new Set([CHANTAL_CUSTOMER]))).toBe(false);
   });
 
-  it('credits Chantal Buchanan $75 on an uncredited trial from November 14, 2026', () => {
-    expect(decideTrialCredit(true, [chantalTrial()])).toEqual({ apply: true, reason: 'applied', paymentId: CHANTAL_PAYMENT });
+  it('credits the open Single lesson order from the completed November 14 payment', () => {
+    expect(decideTrialCredit(true, [chantalTrial()], [])).toEqual({ apply: true, reason: 'applied', paymentId: CHANTAL_PAYMENT });
   });
 
   it('gives $445, $645, and $1,025 when the $75 trial is paid and uncredited', async () => {
@@ -104,7 +140,7 @@ describe('trial lesson credit', () => {
       ['pkg-20', 102500, '203.0.113.92'],
     ] as const;
     for (const [itemId, net, ip] of expected) {
-      const order = await checkoutOrder([chantalTrial()], itemId, ip);
+      const order = await checkoutOrder({ payments: [chantalPayment()], order: chantalOrder() }, itemId, ip);
       expect(order.discounts).toEqual([
         expect.objectContaining({ name: TRIAL_CREDIT_NAME, scope: 'ORDER', amount_money: { amount: 7500, currency: 'USD' } }),
       ]);
@@ -112,31 +148,38 @@ describe('trial lesson credit', () => {
       expect(order.line_items.some((line: { name: string }) => line.name === 'Annual Registration')).toBe(false);
       expect(netCents(order)).toBe(net);
     }
+    const listed = vi.mocked(fetch).mock.calls.map((call) => String(call[0])).find((url) => url.includes('/v2/payments'));
+    expect(listed).toContain('total=7500');
+    expect(listed).not.toContain('state=COMPLETED');
   });
 
   it('charges full price when that trial credit is already on a completed package', async () => {
     const order = await checkoutOrder(
-      [chantalTrial(), laterPackage({ [TRIAL_CREDIT_METADATA_KEY]: CHANTAL_PAYMENT })],
+      { payments: [chantalPayment()], order: chantalOrder(), packages: [laterPackage({ [TRIAL_CREDIT_METADATA_KEY]: CHANTAL_PAYMENT })] },
       'pkg-8',
       '203.0.113.93',
     );
     expect(order.discounts).toBeUndefined();
     expect(netCents(order)).toBe(52000);
-    expect(decideTrialCredit(true, [chantalTrial(), laterPackage({ [TRIAL_CREDIT_METADATA_KEY]: CHANTAL_PAYMENT })]).reason).toBe('credit-used');
+    expect(decideTrialCredit(true, [chantalTrial()], [laterPackage({ [TRIAL_CREDIT_METADATA_KEY]: CHANTAL_PAYMENT })]).reason).toBe('credit-used');
   });
 
   it('charges full price when a package was bought after the trial', async () => {
-    const order = await checkoutOrder([chantalTrial(), laterPackage()], 'pkg-12', '203.0.113.94');
+    const order = await checkoutOrder(
+      { payments: [chantalPayment()], order: chantalOrder(), packages: [laterPackage()] },
+      'pkg-12',
+      '203.0.113.94',
+    );
     expect(order.discounts).toBeUndefined();
     expect(netCents(order)).toBe(72000);
-    expect(decideTrialCredit(true, [chantalTrial(), laterPackage()]).reason).toBe('package-after-trial');
+    expect(decideTrialCredit(true, [chantalTrial()], [laterPackage()]).reason).toBe('package-after-trial');
   });
 
   it('charges full price when there is no trial payment', async () => {
-    const order = await checkoutOrder([], 'pkg-20', '203.0.113.95');
+    const order = await checkoutOrder({ payments: [], order: null }, 'pkg-20', '203.0.113.95');
     expect(order.discounts).toBeUndefined();
     expect(netCents(order)).toBe(110000);
-    expect(decideTrialCredit(true, []).reason).toBe('no-trial');
+    expect(decideTrialCredit(true, [], []).reason).toBe('no-trial');
   });
 
   it('charges full price when the Square lookup fails', async () => {
@@ -153,7 +196,7 @@ describe('trial lesson credit', () => {
   });
 
   it('applies the same credit on /api/book package checkout', async () => {
-    const fetchImpl = squareFetch([chantalTrial()]);
+    const fetchImpl = squareFetch({ payments: [chantalPayment()], order: chantalOrder() });
     vi.stubGlobal('fetch', fetchImpl);
     const response = await onBookPost({
       request: new Request('https://safeswimmingschool.com/api/book', {

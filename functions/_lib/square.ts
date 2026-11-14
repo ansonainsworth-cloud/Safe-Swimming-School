@@ -63,6 +63,8 @@ export function checkoutConfigured(env: SquareEnv): boolean {
 export function stepForSquarePath(path: string): string {
   if (path.endsWith('/customers/search')) return 'customers-search';
   if (path.endsWith('/orders/search')) return 'orders-search';
+  if (path.startsWith('/v2/orders/')) return 'order';
+  if (path.startsWith('/v2/payments')) return 'payments';
   if (path.endsWith('/payment-links')) return 'payment-link';
   if (/^\/v2\/locations\/[^/]+$/.test(path)) return 'location';
   return 'square';
@@ -177,6 +179,10 @@ export async function squarePost(env: SquareEnv, path: string, body: unknown, fe
   return squareRequest(env, 'POST', path, body, fetchImpl);
 }
 
+export async function squareGet(env: SquareEnv, path: string, fetchImpl: typeof fetch = fetch): Promise<unknown> {
+  return squareRequest(env, 'GET', path, undefined, fetchImpl);
+}
+
 export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fetch): SquareLookup {
   const locationId = env.SQUARE_LOCATION_ID || '';
   return {
@@ -194,6 +200,25 @@ export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fet
         orders?: { line_items?: { name?: string }[] }[];
         cursor?: string;
       }>;
+    },
+    listPayments(cursor?: string) {
+      const begin = new Date(Date.now() - 5 * 365.25 * 24 * 60 * 60 * 1000).toISOString();
+      const params = new URLSearchParams({
+        location_id: locationId,
+        total: '7500',
+        begin_time: begin,
+        sort_order: 'ASC',
+        limit: '100',
+      });
+      if (cursor) params.set('cursor', cursor);
+      return squareGet(env, `/v2/payments?${params.toString()}`, fetchImpl) as Promise<{
+        payments?: Array<{ id?: string; status?: string; customer_id?: string; order_id?: string; buyer_email_address?: string; created_at?: string; amount_money?: { amount?: number; currency?: string }; total_money?: { amount?: number } }>;
+        cursor?: string;
+      }>;
+    },
+    retrieveOrder(orderId: string) {
+      if (!/^[A-Za-z0-9]+$/.test(orderId)) return Promise.reject(new SquareRequestError(400));
+      return squareGet(env, `/v2/orders/${orderId}`, fetchImpl) as Promise<{ order?: { id?: string; line_items?: { name?: string }[] } }>;
     },
   };
 }
