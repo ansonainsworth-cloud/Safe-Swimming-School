@@ -17,9 +17,26 @@ export type OrderSearchResult = {
   cursor?: string;
 };
 
+export type PaymentListResult = {
+  payments?: Array<{
+    id?: string;
+    status?: string;
+    created_at?: string;
+    customer_id?: string;
+    order_id?: string;
+    buyer_email_address?: string;
+    amount_money?: { amount?: number; currency?: string };
+    total_money?: { amount?: number; currency?: string };
+  }>;
+  cursor?: string;
+};
+
 export type SquareLookup = {
   searchCustomers(email: string): Promise<CustomerSearchResult>;
   searchOrders(customerId: string, closedAfter: string, cursor?: string): Promise<OrderSearchResult>;
+  searchAllOrders?(customerId: string, cursor?: string): Promise<OrderSearchResult>;
+  listPayments?(cursor?: string): Promise<PaymentListResult>;
+  retrieveOrder?(orderId: string): Promise<{ order?: { id?: string; state?: string; line_items?: Array<{ name?: string; quantity?: string; base_price_money?: { amount?: number }; gross_sales_money?: { amount?: number }; total_money?: { amount?: number } }> } }>;
 };
 
 export function closedAfterIso(now: Date): string {
@@ -37,21 +54,27 @@ export function customerSearchBody(email: string) {
   };
 }
 
-export function orderSearchBody(locationId: string, customerId: string, closedAfter: string, cursor?: string) {
+export function orderSearchBody(locationId: string, customerId: string, closedAfter?: string, cursor?: string) {
+  const filter: {
+    customer_filter: { customer_ids: string[] };
+    state_filter: { states: string[] };
+    date_time_filter?: { closed_at: { start_at: string } };
+  } = {
+    customer_filter: { customer_ids: [customerId] },
+    state_filter: { states: ['COMPLETED'] },
+  };
+  if (closedAfter) filter.date_time_filter = { closed_at: { start_at: closedAfter } };
   return {
     location_ids: [locationId],
     limit: 100,
     ...(cursor ? { cursor } : {}),
-    query: {
-      filter: {
-        customer_filter: { customer_ids: [customerId] },
-        state_filter: { states: ['COMPLETED'] },
-        date_time_filter: {
-          closed_at: { start_at: closedAfter },
-        },
-      },
-    },
+    query: { filter },
   };
+}
+
+/** Completed orders with no date cutoff, so an older trial is still visible. */
+export function completedOrderSearchBody(locationId: string, customerId: string, cursor?: string) {
+  return orderSearchBody(locationId, customerId, undefined, cursor);
 }
 
 function orderHasRegistration(order: { line_items?: Array<{ name?: string }> }): boolean {

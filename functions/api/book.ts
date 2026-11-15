@@ -1,5 +1,6 @@
 import { normalizeEmail, normalizeName, normalizePhone } from '../_lib/prices';
-import { buyerFieldRejection, squarePost, SquareRequestError, type SquareEnv } from '../_lib/square';
+import { buyerFieldRejection, createSquareLookup, squarePost, SquareRequestError, type SquareEnv } from '../_lib/square';
+import { lookupTrialCredit, trialCreditOrderFields } from '../_lib/trial-credit';
 import { BOOK_DAYS, bookStartTimes, formatBookTime, isBookSlotBlocked } from '../../src/data/blocked-slots';
 import { bookTown } from '../../src/data/book-towns';
 
@@ -123,9 +124,11 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
 
   const origin = new URL(request.url).origin;
   const redirectHost = origin.replace(/^http:/, 'https:');
+  const squareEnv = bookSquareEnv(env);
+  const credit = await lookupTrialCredit(email, createSquareLookup(squareEnv), body.option !== 'single');
   let created: unknown;
   try {
-    created = await squarePost(bookSquareEnv(env), '/v2/online-checkout/payment-links', {
+    created = await squarePost(squareEnv, '/v2/online-checkout/payment-links', {
       idempotency_key: crypto.randomUUID(),
       payment_note: note,
       order: {
@@ -138,6 +141,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
             note,
           },
         ],
+        ...trialCreditOrderFields(credit),
       },
       checkout_options: { redirect_url: `${redirectHost}/checkout/thanks/` },
       pre_populated_data: { buyer_email: email, buyer_phone_number: phone },

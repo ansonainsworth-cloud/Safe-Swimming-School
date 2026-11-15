@@ -3,6 +3,7 @@ import { buildCreatePaymentLinkBody } from '../_lib/payment-link';
 import { allowCheckout } from '../_lib/rate-limit';
 import { decideRegistration } from '../_lib/registration';
 import { buyerFieldRejection, checkoutConfigured, createSquareLookup, squarePost, SquareRequestError, type SquareEnv } from '../_lib/square';
+import { lookupTrialCredit, TRIAL_CREDIT_CENTS, TRIAL_CREDIT_METADATA_KEY, TRIAL_CREDIT_NAME } from '../_lib/trial-credit';
 
 type PagesContext = { request: Request; env: SquareEnv };
 
@@ -48,11 +49,14 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
   const phone = normalizePhone(body.buyer?.phone);
   if (!name || !email || phone === null) return json({ error: 'invalid-buyer' }, 400);
 
-  const decision = await decideRegistration(email, createSquareLookup(env));
+  const lookup = createSquareLookup(env);
+  const decision = await decideRegistration(email, lookup);
   const waiveRegistration = packageRegistrationWaived(items.lines.map((line) => line.id), new Date());
   const addRegistration = decision.add && !waiveRegistration;
   const lines = priceClientLines(items.lines, addRegistration, swimmers);
   const registrationCents = addRegistration ? registrationPriceCents(swimmers) : undefined;
+  const buyingPackage = items.lines.some((line) => line.id === 'pkg-8' || line.id === 'pkg-12' || line.id === 'pkg-20');
+  const credit = await lookupTrialCredit(email, lookup, buyingPackage);
   const origin = new URL(request.url).origin;
   const paymentBody = buildCreatePaymentLinkBody({
     locationId: env.SQUARE_LOCATION_ID || '',
@@ -64,6 +68,9 @@ async function handleCheckoutPost({ request, env }: PagesContext): Promise<Respo
     customerId: decision.customerId,
     children: parsedChildren.children,
     lines,
+    ...(credit.apply && credit.paymentId
+      ? { discount: { name: TRIAL_CREDIT_NAME, amountCents: TRIAL_CREDIT_CENTS, metadata: { [TRIAL_CREDIT_METADATA_KEY]: credit.paymentId } } }
+      : {}),
   });
 
   let created: unknown;
