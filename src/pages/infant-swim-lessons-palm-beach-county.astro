@@ -1,0 +1,59 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { SITE, pageChrome, webPage, faqSchema } from '../data/newpage.js';
+
+const path = '/infant-swim-lessons-palm-beach-county/';
+const title = 'Infant Swim Lessons in Palm Beach County | Safe Swimming School';
+const description = 'Safe Swimming School teaches private infant swim lessons at your home or community pool across Palm Beach County, including Jupiter, West Palm Beach, and surrounding areas. Lessons start as young as 3 months, with a parent in the water at first, and your instructor comes to you any day from 8 AM to 7 PM.';
+const palmBeach = { '@type': 'AdministrativeArea', name: 'Palm Beach County', containedInPlace: { '@type': 'State', name: 'Florida' } };
+const service = {
+  '@type': 'Service',
+  name: 'Infant swim lessons in Palm Beach County',
+  serviceType: 'Infant swim lessons',
+  provider: { '@id': `${SITE}/#localbusiness` },
+  areaServed: palmBeach,
+};
+const faqs: [string, string][] = [
+  ['Do you offer infant swim lessons in Jupiter and the rest of Palm Beach County?', 'Yes. We teach private infant lessons at your home or community pool across Palm Beach County, including Jupiter, West Palm Beach, and surrounding areas. Your instructor comes to you any day from 8 AM to 7 PM.'],
+  ['What age can an infant start, and do you teach newborns?', 'We teach swimmers as young as 3 months. We do not start lessons at birth. Talk with your pediatrician about when your baby is ready for the pool. Until then, bath time can help your baby feel calm around water.'],
+  ['Does a parent get in the water for infant lessons?', 'Yes. Infant lessons start with a parent in the water, then move to private lessons as your baby grows more comfortable.'],
+  ['How long is an infant lesson, and can siblings learn together?', 'Each lesson is private and 30 minutes. Siblings can share a semi-private lesson. Lessons run any day from 8 AM to 7 PM.'],
+];
+const related = [
+  ['/water-safety-drowning-prevention-palm-beach-county/', 'Water Safety and Drowning Prevention in Palm Beach County'],
+  ['/locations/jupiter/', 'Jupiter'],
+  ['/pricing/', 'Pricing'],
+  ['/enroll/', 'Enroll'],
+  ['/service/', 'Private swim lessons'],
+];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Infant swim lessons in Palm Beach County', description, [service]), faqSchema(faqs)]}>
+<PageShell h1="Infant swim lessons in Palm Beach County">
+<p>Safe Swimming School teaches private infant swim lessons at your home or community pool across Palm Beach County, including Jupiter, West Palm Beach, and surrounding areas. Lessons start as young as 3 months, with a parent in the water at first, and your instructor comes to you any day from 8 AM to 7 PM.</p>
+<h2 class="wp-block-heading">When an infant can start</h2>
+<p>We teach swimmers as young as 3 months. We do not start lessons at birth. If you are looking for newborn swimming lessons, the honest starting point is 3 months, once your pediatrician agrees your baby is ready for the pool.</p>
+<p>Until then, bath time can help your baby feel calm around water. Keep a hand on your baby the whole time, and leave swim skills for the pool with an instructor. More on that is on our <a href="/baby-bath-time-water-comfort/">baby bath time and water comfort</a> page.</p>
+<h2 class="wp-block-heading">What infant lessons look like</h2>
+<p>Infant lessons start with a parent in the water, so your baby learns with you close by. As your baby grows more comfortable, we gradually move to private lessons with the instructor. You have the same instructor every lesson, and that instructor adjusts to how your baby responds that day. Each lesson is 30 minutes. Siblings can learn together in a semi-private lesson.</p>
+<p>Lessons start with safety skills, then strokes. Swimmers practice how to roll to back, float and rest, and swim to the wall. These skills are one layer of protection. Nothing replaces adult supervision and pool barriers. Infant lessons also focus on water comfort and breath control, at a pace your baby can handle.</p>
+<h2 class="wp-block-heading">Lessons at your home or community pool</h2>
+<p>Your instructor comes to your home or community pool, so your baby learns in the water they already know and you do not have to drive. Lessons run any day from 8 AM to 7 PM.</p>
+<p>We teach across Palm Beach County, including West Palm Beach and surrounding areas. Jupiter, Wellington, and Royal Palm Beach are examples, not a limit. If your town is not listed, ask. See <a href="/locations/">all locations</a>.</p>
+<h2 class="wp-block-heading">Pricing</h2>
+<p>A single lesson is $75 and can be credited toward a package. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100, plus annual registration of $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Annual registration is waived on lock in packages bought by December 31, 2026, and those lessons never expire. Refer a friend: when a friend you refer buys any package by December 31, 2026, you get 1 free lesson.</p>
+<p>Lessons are taught by certified instructors, led by founder Cortney Berry, with 20 years of experience, and cofounder Anson Ainsworth, with 18 years of experience. Safe Swimming School is fully insured.</p>
+<p>Text <a href="sms:+15612368260">561-236-8260</a> with your baby's age, your town or neighborhood, and your preferred days, and we will plan the first lesson around your swimmer.</p>
+<h2 class="wp-block-heading">FAQs</h2>
+{faqs.map(([q, a]) => (
+  <Fragment>
+    <p><strong>{q}</strong></p>
+    <p>{a}</p>
+  </Fragment>
+))}
+<h2 class="wp-block-heading">Related</h2>
+<ul class="wp-block-list">
+{related.map(([href, label]) => <li><a href={href}>{label}</a></li>)}
+</ul>
+</PageShell>
+</Base>
