@@ -9,6 +9,7 @@ describe('llms.txt gift certificates', () => {
     expect(text).toContain('$1,100 for 20 private 30-minute lessons');
     expect(text).toContain('the $35 annual registration is waived');
     expect(text).toContain('the $475 offer ends December 24, 2026');
+    expect(text).toContain('good through December 31, 2027. The $1,100 20-lesson gift certificate is available through December 31, 2026.');
     expect(text).not.toContain('$1,100 offer ends');
   });
 });
