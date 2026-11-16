@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = new URL('..', import.meta.url).pathname;
-const title = 'Infant Swim Lessons in Palm Beach County | Safe Swimming School';
-const description = 'Safe Swimming School teaches private infant swim lessons at your home or community pool across Palm Beach County, including Jupiter, West Palm Beach, and surrounding areas. Lessons start as young as 3 months, with a parent in the water at first, and your instructor comes to you any day from 8 AM to 7 PM.';
+const title = 'Infant Swim Lessons in Palm Beach County';
+const description = 'Private infant swim lessons at your home or community pool in Palm Beach County. Starts at 3 months, parent in the water first. Text 561-236-8260.';
 const faqs: Array<[string, string]> = [
   ['Do you offer infant swim lessons in Jupiter and the rest of Palm Beach County?', 'Yes. We teach private infant lessons at your home or community pool across Palm Beach County, including Jupiter, West Palm Beach, and surrounding areas. Your instructor comes to you any day from 8 AM to 7 PM.'],
   ['What age can an infant start, and do you teach newborns?', 'We teach swimmers as young as 3 months. We do not start lessons at birth. Talk with your pediatrician about when your baby is ready for the pool. Until then, bath time can help your baby feel calm around water.'],
@@ -28,8 +28,17 @@ describe('infant swim lessons page', () => {
     expect(strip(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || '')).toBe('Infant swim lessons in Palm Beach County');
     const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
     const nodes = blocks.flatMap((block) => (Array.isArray(block['@graph']) ? block['@graph'] : [block]));
+    expect(nodes.filter((node) => node['@type'] === 'FAQPage')).toHaveLength(1);
     expect(nodes.map((node) => node['@type'])).toEqual(expect.arrayContaining(['WebPage', 'BreadcrumbList', 'Service', 'FAQPage']));
+    const service = nodes.find((node) => node['@type'] === 'Service');
+    expect(service.url).toBe('https://safeswimmingschool.com/infant-swim-lessons-palm-beach-county/');
+    expect(service.description).toBe(description);
+    expect(service.name).toBe('Infant swim lessons in Palm Beach County');
     expect(JSON.stringify(nodes)).not.toMatch(/Review|AggregateRating/);
+    expect(html).toContain('href="/locations/"');
+    expect(html).toContain('>All locations</a>');
+    expect(html).toContain('href="/adult-swim-lessons-palm-beach-county/"');
+    expect(html).toContain('>Adult swim lessons</a>');
     const faq = nodes.find((node) => node['@type'] === 'FAQPage');
     const visible = [...html.matchAll(/<p[^>]*>\s*<strong[^>]*>([\s\S]*?)<\/strong><\/p>\s*<p[^>]*>([\s\S]*?)<\/p>/g)].map((match) => [strip(match[1]), strip(match[2])]);
     expect(visible).toEqual(faqs);

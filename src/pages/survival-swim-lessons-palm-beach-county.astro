@@ -4,13 +4,15 @@ import PageShell from '../components/PageShell.astro';
 import { SITE, pageChrome, webPage, faqSchema } from '../data/newpage.js';
 
 const path = '/survival-swim-lessons-palm-beach-county/';
-const title = 'Survival Swim Lessons in Palm Beach County | Safe Swimming School';
-const description = 'Safe Swimming School teaches private survival swim lessons at your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas. Lessons start with safety skills, then strokes: swimmers practice how to roll to back, float and rest, and swim to the wall.';
+const title = 'Survival Swim Lessons in Palm Beach County';
+const description = 'Private lessons at your home or community pool in Palm Beach County. Start with roll to back, float and rest, and swim to the wall. Text 561-236-8260.';
 const palmBeach = { '@type': 'AdministrativeArea', name: 'Palm Beach County', containedInPlace: { '@type': 'State', name: 'Florida' } };
 const service = {
   '@type': 'Service',
   name: 'Survival swim lessons in Palm Beach County',
   serviceType: 'Survival swim lessons',
+  url: `${SITE}${path}`,
+  description,
   provider: { '@id': `${SITE}/#localbusiness` },
   areaServed: palmBeach,
 };
@@ -24,6 +26,7 @@ const related = [
   ['/water-safety-drowning-prevention-palm-beach-county/', 'Water Safety and Drowning Prevention in Palm Beach County'],
   ['/infant-swim-lessons-palm-beach-county/', 'Infant swim lessons in Palm Beach County'],
   ['/locations/palm-beach/', 'Palm Beach'],
+  ['/adult-swim-lessons-palm-beach-county/', 'Adult swim lessons'],
   ['/pricing/', 'Pricing'],
   ['/enroll/', 'Enroll'],
   ['/about-us/', 'About'],
@@ -31,7 +34,7 @@ const related = [
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Survival swim lessons in Palm Beach County', description, [service]), faqSchema(faqs)]}>
 <PageShell h1="Survival swim lessons in Palm Beach County">
-<p>Safe Swimming School teaches private survival swim lessons at your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas. Lessons start with safety skills, then strokes: swimmers practice how to roll to back, float and rest, and swim to the wall.</p>
+<p>Safe Swimming School teaches private lessons at your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas. Lessons start with safety skills, then strokes: swimmers practice how to roll to back, float and rest, and swim to the wall.</p>
 <p>These skills are one layer of protection. Nothing replaces adult supervision and pool barriers.</p>
 <h2 class="wp-block-heading">How our lessons work</h2>
 <p>We teach our own private lessons at your home or community pool. Your instructor comes to you any day from 8 AM to 7 PM, so practice happens in the water your swimmer already knows. Lessons are one-on-one, or semi-private for siblings, and you have the same instructor every lesson, at your swimmer's pace.</p>
