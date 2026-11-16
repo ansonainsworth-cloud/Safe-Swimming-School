@@ -4,13 +4,15 @@ import PageShell from '../components/PageShell.astro';
 import { SITE, pageChrome, webPage, faqSchema } from '../data/newpage.js';
 
 const path = '/infant-swim-lessons-palm-beach-county/';
-const title = 'Infant Swim Lessons in Palm Beach County | Safe Swimming School';
-const description = 'Safe Swimming School teaches private infant swim lessons at your home or community pool across Palm Beach County, including Jupiter, West Palm Beach, and surrounding areas. Lessons start as young as 3 months, with a parent in the water at first, and your instructor comes to you any day from 8 AM to 7 PM.';
+const title = 'Infant Swim Lessons in Palm Beach County';
+const description = 'Private infant swim lessons at your home or community pool in Palm Beach County. Starts at 3 months, parent in the water first. Text 561-236-8260.';
 const palmBeach = { '@type': 'AdministrativeArea', name: 'Palm Beach County', containedInPlace: { '@type': 'State', name: 'Florida' } };
 const service = {
   '@type': 'Service',
   name: 'Infant swim lessons in Palm Beach County',
   serviceType: 'Infant swim lessons',
+  url: `${SITE}${path}`,
+  description,
   provider: { '@id': `${SITE}/#localbusiness` },
   areaServed: palmBeach,
 };
@@ -26,6 +28,8 @@ const related = [
   ['/pricing/', 'Pricing'],
   ['/enroll/', 'Enroll'],
   ['/service/', 'Private swim lessons'],
+  ['/locations/', 'All locations'],
+  ['/adult-swim-lessons-palm-beach-county/', 'Adult swim lessons'],
 ];
 ---
 <Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Infant swim lessons in Palm Beach County', description, [service]), faqSchema(faqs)]}>
