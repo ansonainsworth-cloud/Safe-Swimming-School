@@ -17,8 +17,9 @@ describe('gift pay links', () => {
     expect(certificates).toContain('It is $720. That is 12 private 30 minute lessons. The $35 annual registration is waived. Expires December 31, 2027.');
     expect(certificates).toContain('</strong> 12 private 30 minute lessons. The $35 annual registration is waived. Expires December 31, 2027.');
     expect(certificates).toContain('How much is the 20 lesson gift certificate?');
-    expect(certificates).toContain('It is $1,100. That is 20 private 30 minute lessons. The $35 annual registration is waived. Expires December 31, 2027. The $1,100 20-lesson gift certificate is available through December 31, 2026.');
-    expect(certificates).toContain('>The $1,100 20-lesson gift certificate is available through December 31, 2026.</p>');
+    expect(certificates).toContain('It is $1,100. That is 20 private 30 minute lessons. The $35 annual registration is waived. Expires December 31, 2027. Offer ends December 31, 2026.');
+    expect(certificates).toContain('>Offer ends December 31, 2026.</p>');
+    expect(certificates).toContain('>Siblings can share one gift certificate. Lessons are taught one swimmer at a time, never as a group lesson.</p>');
     expect(certificates.match(/December 24, 2026/g)).toHaveLength(3);
     expect(certificates).not.toContain('RSY4plY8');
     expect(certificates.slice(certificates.indexOf('<main'))).not.toContain('never expire');
