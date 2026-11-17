@@ -177,3 +177,5 @@ body{padding-bottom:52px}
 #site-scroll-top{bottom:70px!important}
 body:has(#book-mobile-summary:not([hidden])) #site-scroll-top{bottom:140px!important}
 }
+.sss-blog-photo{margin:16px 0;max-width:100%}
+.sss-blog-photo img{display:block;width:100%;max-width:100%;height:auto}
