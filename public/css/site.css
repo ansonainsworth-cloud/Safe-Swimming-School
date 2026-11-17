@@ -178,4 +178,6 @@ body{padding-bottom:52px}
 body:has(#book-mobile-summary:not([hidden])) #site-scroll-top{bottom:140px!important}
 }
 .sss-blog-photo{margin:16px 0;max-width:100%}
-.sss-blog-photo img{display:block;width:100%;max-width:100%;height:auto}
+.sss-blog-photo img{display:block;width:100%;max-width:100%;height:auto;object-fit:contain}
+.sss-blog-photo-portrait{width:min(420px,100%);max-width:420px;margin-left:auto;margin-right:auto}
+.sss-blog-photo-portrait img{width:100%;max-width:100%;height:auto;object-fit:contain}

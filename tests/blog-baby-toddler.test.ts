@@ -47,6 +47,13 @@ describe('baby and toddler lesson post', () => {
     expect(html.match(/survival swim lessons/g)).toHaveLength(1);
     expect(html).toContain('fetchpriority="high"');
     expect(html).toContain('loading="lazy"');
+    expect(html).toContain('class="sss-blog-photo sss-blog-photo-portrait"');
+    expect(html).toContain('width="1080" height="1920"');
+    const article = html.slice(html.indexOf('single-blog-content'), html.indexOf('single-blog-content') + 8000);
+    for (const block of article.matchAll(/<ul>([\s\S]*?)<\/ul>/g)) {
+      expect(block[1]).not.toContain('<img');
+      expect(block[1]).not.toContain('<figure');
+    }
     const sitemap = readFileSync(join(root, 'dist/sitemap.xml'), 'utf8');
     expect(sitemap.split(path).length - 1).toBe(1);
     const blog = readFileSync(join(root, 'dist/blog/index.html'), 'utf8');
