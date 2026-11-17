@@ -1,6 +1,6 @@
 /**
- * Fill rating, count, and url from the live Google Business Profile before showing the strip.
- * Leave them null until those three values are verified. checkedDate is the day they were checked.
+ * Public Google Maps listing. Refresh rating, count, url, and checkedDate together.
+ * as of 2026-11-16.
  */
 export const googleReviews: {
   rating: number | null;
@@ -8,10 +8,11 @@ export const googleReviews: {
   url: string | null;
   checkedDate: string | null;
 } = {
-  rating: null,
-  count: null,
-  url: null,
-  checkedDate: null,
+  rating: 4.3,
+  count: 6,
+  url: 'https://maps.app.goo.gl/uhvbr4NSqpAEsPSE9',
+  // as of 2026-11-16. Refresh this date when the listing is checked again.
+  checkedDate: '2026-11-16',
 };
 
 export function googleReviewsReady(source = googleReviews): boolean {

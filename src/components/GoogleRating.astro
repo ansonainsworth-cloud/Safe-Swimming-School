@@ -3,7 +3,7 @@ import { googleReviews, googleReviewsReady } from '../data/google-reviews';
 const show = googleReviewsReady();
 ---
 {show && (
-  <p class="sss-google-rating">Google rating {googleReviews.rating} from {googleReviews.count} reviews. <a href={googleReviews.url!}>Read the reviews</a></p>
+  <p class="sss-google-rating"><a href={googleReviews.url!} target="_blank" rel="noopener">{googleReviews.rating} on Google ({googleReviews.count} reviews)</a></p>
 )}
 <style>
 .sss-google-rating{margin:0;padding:8px 16px;text-align:center;background:#f4f7fb;color:var(--sss-ink);font-size:15px}
