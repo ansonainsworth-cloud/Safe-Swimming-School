@@ -45,6 +45,6 @@ if (page.slug === 'pricing') {
   if (!body.includes(winterPackageMarkup)) throw new Error('Pricing page is missing the Wellington winter package line');
 }
 ---
-<Base title={page.title} description={page.description} path={page.path} bodyClass={page.bodyClass} pageStyle={page.pageStyle} ldjson={page.ldjson} robots={page.robots}>
+<Base title={page.title} description={page.description} path={page.path} bodyClass={page.bodyClass} pageStyle={page.pageStyle} ldjson={page.ldjson} robots={page.robots} ogImage={page.ogImage} ogType={page.ogType}>
   <Fragment set:html={body} />
 </Base>
