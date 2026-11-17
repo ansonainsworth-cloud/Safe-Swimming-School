@@ -40,6 +40,7 @@ export const TRIAL_CREDIT_CENTS = 7500;
 export const TRIAL_CREDIT_NAME = 'Trial lesson credit';
 export const TRIAL_CREDIT_METADATA_KEY = 'trial_credit_payment_id';
 export const SINGLE_LESSON_NAME = 'Single lesson';
+const SINGLE_LESSON_NAMES = new Set(['single lesson', 'single lesson (30 min)']);
 
 const PACKAGE_AMOUNTS = new Set([52000, 72000, 110000]);
 
@@ -122,13 +123,15 @@ function isPackageLine(line: CreditLine): boolean {
   return amount != null && PACKAGE_AMOUNTS.has(amount);
 }
 
-/** Exact ad hoc line. Order state and customer_id are ignored. */
+/** A single-lesson line anywhere on the order. Other lines, including registration, can sit beside it. */
+export function isSingleLessonLine(line: CreditLine): boolean {
+  const name = (line.name || '').trim().toLowerCase();
+  return SINGLE_LESSON_NAMES.has(name) && lineQuantity(line) === 1 && lineAmount(line) === TRIAL_CREDIT_CENTS;
+}
+
+/** Order state and customer_id are ignored. */
 export function isSingleLessonOrder(order: CreditOrder): boolean {
-  return (order.line_items ?? []).some((line) => (
-    line.name === SINGLE_LESSON_NAME
-    && lineQuantity(line) === 1
-    && lineAmount(line) === TRIAL_CREDIT_CENTS
-  ));
+  return (order.line_items ?? []).some(isSingleLessonLine);
 }
 
 function isPackageOrder(order: CreditOrder): boolean {

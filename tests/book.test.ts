@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 import { onRequestPost } from '../functions/api/book';
 
 const env = { SQUARE_ACCESS_TOKEN: 'token', SQUARE_LOCATION_ID: 'LOC123' };
@@ -33,11 +33,17 @@ function paymentBody(fetchMock: { mock: { calls: Array<[unknown, { body?: unknow
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('/api/book swimmer ages', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-16T15:00:00.000Z'));
+  });
+
   it('keeps a one child booking on the package price', async () => {
     const fetchMock = vi.fn(async () => Response.json({ payment_link: { url: 'https://square.test/pay' } }));
     vi.stubGlobal('fetch', fetchMock);
@@ -68,9 +74,8 @@ describe('/api/book swimmer ages', () => {
     });
     expect(three.status).toBe(200);
     const threeBody = paymentBody(fetchMock, 1);
-    expect(threeBody.order.line_items).toHaveLength(1);
     expect(threeBody.order.line_items[0].base_price_money.amount).toBe(7500);
-    expect(JSON.stringify(threeBody.order.line_items)).not.toMatch(/registration/i);
+    expect(threeBody.order.line_items[1]).toMatchObject({ name: 'Annual Registration', base_price_money: { amount: 6000, currency: 'USD' } });
     expect(threeBody.payment_note).toContain('Third child age: 2');
     expect(threeBody.payment_note).toContain('Swimmers: 3');
   });
@@ -99,8 +104,12 @@ describe('/api/book swimmer ages', () => {
         quantity: '1',
         base_price_money: { amount: 7500, currency: 'USD' },
       }),
+      expect.objectContaining({
+        name: 'Annual Registration',
+        quantity: '1',
+        base_price_money: { amount: 3500, currency: 'USD' },
+      }),
     ]);
-    expect(JSON.stringify(oneBody.order.line_items)).not.toMatch(/registration/i);
 
     const two = await onRequestPost({
       request: request(booking({ option: 'single', swimmers: 2, childAge2: '6' })),
@@ -108,10 +117,9 @@ describe('/api/book swimmer ages', () => {
     });
     expect(two.status).toBe(200);
     const twoBody = paymentBody(fetchMock, 1);
-    expect(twoBody.order.line_items).toHaveLength(1);
     expect(twoBody.order.line_items[0].name).toBe('Single lesson');
     expect(twoBody.order.line_items[0].base_price_money).toEqual({ amount: 7500, currency: 'USD' });
-    expect(JSON.stringify(twoBody.order.line_items)).not.toMatch(/registration/i);
+    expect(twoBody.order.line_items[1]).toMatchObject({ name: 'Annual Registration', base_price_money: { amount: 5000, currency: 'USD' } });
     expect(twoBody.payment_note).toContain('Swimmers: 2');
   });
 });
