@@ -36,7 +36,7 @@ describe('price validation', () => {
     });
     expect(CATALOG.find((item) => item.id === 'pkg-8')?.name).toBe('8 Private Lessons (30 min)');
     expect(CATALOG.find((item) => item.id === 'water-aerobics')?.maxQty).toBe(20);
-    expect(CATALOG.find((item) => item.id === 'trial')?.name).toBe('Single lesson (30 min)');
+    expect(CATALOG.find((item) => item.id === 'trial')?.name).toBe('Single lesson');
     expect(CATALOG.find((item) => item.id === 'trial')?.priceCents).toBe(7500);
     expect(CATALOG.find((item) => item.id === 'trial')?.maxQty).toBe(3);
   });
@@ -366,7 +366,7 @@ describe('checkout endpoint', () => {
     expect(paymentCall?.[0]).toBe('https://connect.squareupsandbox.com/v2/online-checkout/payment-links');
     const sent = JSON.parse(String(paymentCall?.[1]?.body));
     expect(sent.order.line_items).toEqual([
-      { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+      { name: 'Single lesson', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
     expect(sent.order).not.toHaveProperty('metadata');
@@ -505,7 +505,7 @@ describe('checkout endpoint', () => {
     const paymentCall = fetchImpl.mock.calls.find((call) => String(call[0]).includes('/v2/online-checkout/payment-links'));
     const sent = JSON.parse(String(paymentCall?.[1]?.body));
     expect(sent.order.line_items).toEqual([
-      { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
+      { name: 'Single lesson', quantity: '1', base_price_money: { amount: 7500, currency: 'USD' } },
       { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500, currency: 'USD' } },
     ]);
     expect(sent.pre_populated_data).toEqual({ buyer_email: 'info@safeswimmingschool.com' });
@@ -623,7 +623,7 @@ describe('Square error logs', () => {
     });
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ error: 'checkout-failed' });
-    expect(JSON.parse(logs[0])).toEqual({ step: 'payment-link', status: 400, errors: [] });
+    expect(logs.map((line) => JSON.parse(line)).find((entry) => entry.step === 'payment-link')).toEqual({ step: 'payment-link', status: 400, errors: [] });
     expect(logs.join('\n')).not.toContain('prod-token');
     expect(logs.join('\n')).not.toContain('info@safeswimmingschool.com');
     expect(logs.join('\n')).not.toContain('not-json');
@@ -651,7 +651,7 @@ describe('Square error logs', () => {
     expect(response.status).toBe(502);
     expect(response.headers.get('content-type')).toContain('application/json');
     expect(await response.json()).toEqual({ error: 'checkout-failed' });
-    expect(JSON.parse(logs[0])).toEqual({ step: 'payment-link', status: 502, errors: [] });
+    expect(logs.map((line) => JSON.parse(line)).find((entry) => entry.step === 'payment-link')).toEqual({ step: 'payment-link', status: 502, errors: [] });
     const logged = logs.join('\n');
     expect(logged).not.toContain('error code');
     expect(logged).not.toContain('prod-token');

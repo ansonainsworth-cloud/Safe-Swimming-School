@@ -1,4 +1,5 @@
-import { normalizeEmail, normalizeName, normalizePhone } from '../_lib/prices';
+import { normalizeEmail, normalizeName, normalizePhone, packageRegistrationWaived, REGISTRATION_NAME, registrationPriceCents } from '../_lib/prices';
+import { decideRegistration } from '../_lib/registration';
 import { buyerFieldRejection, createSquareLookup, squarePost, SquareRequestError, type SquareEnv } from '../_lib/square';
 import { lookupTrialCredit, trialCreditOrderFields } from '../_lib/trial-credit';
 import { BOOK_DAYS, bookStartTimes, formatBookTime, isBookSlotBlocked } from '../../src/data/blocked-slots';
@@ -125,7 +126,26 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   const origin = new URL(request.url).origin;
   const redirectHost = origin.replace(/^http:/, 'https:');
   const squareEnv = bookSquareEnv(env);
-  const credit = await lookupTrialCredit(email, createSquareLookup(squareEnv), body.option !== 'single');
+  const lookup = createSquareLookup(squareEnv);
+  const optionId = body.option as BookOption;
+  const decision = await decideRegistration(email, lookup);
+  const addRegistration = decision.add && !packageRegistrationWaived([optionId], new Date());
+  const credit = await lookupTrialCredit(email, lookup, optionId !== 'single');
+  const lineItems: Array<Record<string, unknown>> = [
+    {
+      name: option.name,
+      quantity: '1',
+      base_price_money: { amount: option.amount, currency: 'USD' },
+      note,
+    },
+  ];
+  if (addRegistration) {
+    lineItems.push({
+      name: REGISTRATION_NAME,
+      quantity: '1',
+      base_price_money: { amount: registrationPriceCents(swimmers), currency: 'USD' },
+    });
+  }
   let created: unknown;
   try {
     created = await squarePost(squareEnv, '/v2/online-checkout/payment-links', {
@@ -133,14 +153,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
       payment_note: note,
       order: {
         location_id: locationId,
-        line_items: [
-          {
-            name: option.name,
-            quantity: '1',
-            base_price_money: { amount: option.amount, currency: 'USD' },
-            note,
-          },
-        ],
+        line_items: lineItems,
         ...trialCreditOrderFields(credit),
       },
       checkout_options: { redirect_url: `${redirectHost}/checkout/thanks/` },

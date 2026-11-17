@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { onRequestPost as onBookPost } from '../functions/api/book';
 import { onRequestPost as onCheckoutPost } from '../functions/api/checkout';
 import { resetRateLimit } from '../functions/_lib/rate-limit';
@@ -26,6 +26,11 @@ const checkoutEnv = {
   SQUARE_LOCATION_ID: 'LOC123',
   SQUARE_WEBHOOK_SIGNATURE_KEY: 'sig-key',
 };
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-16T15:00:00.000Z'));
+});
 
 afterEach(() => {
   resetRateLimit();
@@ -125,6 +130,14 @@ describe('trial lesson credit', () => {
     expect(order.line_items?.[0]).not.toHaveProperty('catalog_object_id');
     expect(isSingleLessonOrder(order)).toBe(true);
     expect(isSingleLessonOrder({ ...order, line_items: [{ name: 'Trial lesson', quantity: '1', base_price_money: { amount: 7500 } }] })).toBe(false);
+    expect(isSingleLessonOrder({
+      line_items: [
+        { name: 'Single lesson (30 min)', quantity: '1', base_price_money: { amount: 7500 } },
+        { name: 'Annual Registration', quantity: '1', base_price_money: { amount: 3500 } },
+      ],
+    })).toBe(true);
+    expect(isSingleLessonOrder({ line_items: [{ name: 'SINGLE LESSON', quantity: '1', base_price_money: { amount: 7500 } }] })).toBe(true);
+    expect(isSingleLessonOrder({ line_items: [{ name: 'Single lesson', quantity: '2', base_price_money: { amount: 7500 } }] })).toBe(false);
     expect(paymentMatchesBuyer(chantalPayment(), CHANTAL_EMAIL, new Set([CHANTAL_CUSTOMER]))).toBe(true);
     expect(paymentMatchesBuyer({ ...chantalPayment(), status: 'APPROVED' }, CHANTAL_EMAIL, new Set([CHANTAL_CUSTOMER]))).toBe(false);
   });
@@ -148,8 +161,8 @@ describe('trial lesson credit', () => {
       expect(order.line_items.some((line: { name: string }) => line.name === 'Annual Registration')).toBe(false);
       expect(netCents(order)).toBe(net);
     }
-    const listed = vi.mocked(fetch).mock.calls.map((call) => String(call[0])).find((url) => url.includes('/v2/payments'));
-    expect(listed).toContain('total=7500');
+    const listed = vi.mocked(fetch).mock.calls.map((call) => String(call[0])).find((url) => url.includes('total=7500'));
+    expect(listed).toContain('/v2/payments');
     expect(listed).not.toContain('state=COMPLETED');
   });
 

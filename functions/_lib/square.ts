@@ -1,5 +1,5 @@
 import { SQUARE_SANDBOX_ORIGIN, SQUARE_VERSION } from './prices';
-import { completedOrderSearchBody, customerSearchBody, orderSearchBody, type SquareLookup } from './registration';
+import { completedOrderSearchBody, customerSearchBody, openOrderSearchBody, orderSearchBody, type SquareLookup } from './registration';
 
 /** Production Connect API. Selected only when SQUARE_ENV is exactly "production". */
 export const SQUARE_PRODUCTION_ORIGIN = 'https://connect.squareup.com';
@@ -195,6 +195,12 @@ export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fet
         cursor?: string;
       }>;
     },
+    searchOpenOrders(customerId, cursor) {
+      return squarePost(env, '/v2/orders/search', openOrderSearchBody(locationId, customerId, cursor), fetchImpl) as Promise<{
+        orders?: { line_items?: { name?: string }[] }[];
+        cursor?: string;
+      }>;
+    },
     searchAllOrders(customerId, cursor) {
       return squarePost(env, '/v2/orders/search', completedOrderSearchBody(locationId, customerId, cursor), fetchImpl) as Promise<{
         orders?: { line_items?: { name?: string }[] }[];
@@ -208,6 +214,19 @@ export function createSquareLookup(env: SquareEnv, fetchImpl: typeof fetch = fet
         total: '7500',
         begin_time: begin,
         sort_order: 'ASC',
+        limit: '100',
+      });
+      if (cursor) params.set('cursor', cursor);
+      return squareGet(env, `/v2/payments?${params.toString()}`, fetchImpl) as Promise<{
+        payments?: Array<{ id?: string; status?: string; customer_id?: string; order_id?: string; buyer_email_address?: string; created_at?: string; amount_money?: { amount?: number; currency?: string }; total_money?: { amount?: number } }>;
+        cursor?: string;
+      }>;
+    },
+    listRecentPayments(beginTime: string, cursor?: string) {
+      const params = new URLSearchParams({
+        location_id: locationId,
+        begin_time: beginTime,
+        sort_order: 'DESC',
         limit: '100',
       });
       if (cursor) params.set('cursor', cursor);
