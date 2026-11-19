@@ -9,6 +9,8 @@
     "/footer/*",
     "/comments/feed",
     "/comments/feed/*",
+    "/feed",
+    "/feed/*",
     "/pricing/feed",
     "/pricing/feed/*",
     "/houston.html",

@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { onRequest as teamGone } from '../functions/team/[[path]].js';
 import { onRequest as commentsFeed } from '../functions/comments/feed/[[path]].js';
 import { onRequest as pricingFeed } from '../functions/pricing/feed/[[path]].js';
+import { onRequest as feedGone } from '../functions/feed.js';
+import { onRequest as feedSlashGone } from '../functions/feed/[[path]].js';
 import { onRequest as houstonGone } from '../functions/houston.html.js';
 import { clickEvent, installGaEvents, leadFromTallyMessage } from '../public/js/ga-events.js';
 
@@ -29,11 +31,12 @@ describe('redirects', () => {
 describe('removed URLs', () => {
   it('returns 410 for the old feeds and houston.html, and still for /team/matt/', async () => {
     const routes = JSON.parse(readFileSync(new URL('../public/_routes.json', import.meta.url), 'utf8')) as { include: string[] };
-    for (const path of ['/comments/feed', '/comments/feed/*', '/pricing/feed', '/pricing/feed/*', '/houston.html', '/team/*']) {
+    for (const path of ['/comments/feed', '/comments/feed/*', '/pricing/feed', '/pricing/feed/*', '/feed', '/feed/*', '/houston.html', '/team/*']) {
       expect(routes.include).toContain(path);
     }
     expect(redirectLines.some((line) => line.startsWith('/houston.html '))).toBe(false);
-    for (const respond of [commentsFeed, pricingFeed, houstonGone, teamGone]) {
+    expect(redirectLines.some((line) => line.startsWith('/feed'))).toBe(false);
+    for (const respond of [commentsFeed, pricingFeed, feedGone, feedSlashGone, houstonGone, teamGone]) {
       const response = respond();
       expect(response.status).toBe(410);
       expect(await response.text()).toBe('Gone');

@@ -1,0 +1,19 @@
+---
+import { showDec31Banner } from '../data/dec31-banner';
+const show = showDec31Banner(new Date());
+---
+{show && (
+  <div class="sss-dec31-banner" role="region" aria-label="Package registration waiver">
+    <p>Packages bought by December 31, 2026 have the registration fee waived, and the lessons never expire. <a href="/pricing/">See pricing</a></p>
+  </div>
+)}
+<style is:global>
+.sss-dec31-banner{background:var(--sss-blue-deep);color:#fff;text-align:center;padding:6px 16px;font-size:15px;line-height:1.3}
+.sss-dec31-banner p{margin:0}
+.sss-dec31-banner a{color:#fff !important;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.sss-dec31-banner a:hover,.sss-dec31-banner a:focus{color:#fff !important}
+.sss-dec31-banner a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media (max-width:767px){
+.sss-dec31-banner{font-size:12.5px;padding:5px 12px;line-height:1.25}
+}
+</style>

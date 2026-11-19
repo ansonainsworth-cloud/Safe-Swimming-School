@@ -30,7 +30,7 @@ const twentyPay = {
 const faqs = [
   ['How much is the holiday gift certificate?', `It is $475. That is ${included} ${expires} The $475 gift offer ends December 24, 2026.`],
   ['How much is the 12 lesson gift certificate?', `It is $720. That is ${twelveIncluded} ${expires}`],
-  ['How much is the 20 lesson gift certificate?', `It is $1,100. That is ${twentyIncluded} ${expires}`],
+  ['How much is the 20 lesson gift certificate?', `It is $1,100. That is ${twentyIncluded} ${expires} Offer ends December 31, 2026.`],
   ['When does the certificate expire?', expires],
   ['When does the recipient choose days and times?', redeemLine],
   ['Where are the lessons?', 'Lessons are private 30 minute lessons in the family\'s own pool. Safe Swimming School teaches across Palm Beach County, including West Palm Beach and surrounding areas.'],
@@ -44,6 +44,8 @@ const faqs = [
 <p><strong>$475.</strong> {included} {expires} The $475 gift offer ends December 24, 2026.</p>
 <p><strong>Gift certificate: 12 private lessons. $720.</strong> {twelveIncluded} {expires}</p>
 <p><strong>Gift certificate: 20 private lessons. $1,100.</strong> {twentyIncluded} {expires}</p>
+<p>Offer ends December 31, 2026.</p>
+<p>Siblings can share one gift certificate. Lessons are taught one swimmer at a time, never as a group lesson.</p>
 <div class="sss-gift-pay">
 <p><PayButton link={holidayPay} text="Pay $475" /></p>
 <p><PayButton link={twelvePay} text="Pay $720" /></p>
