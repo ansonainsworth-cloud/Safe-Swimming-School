@@ -8,6 +8,7 @@ const KNOWN_PATHS = {
   '/u/RSY4plY8': '20',
   '/u/UeHllrka': 'water aerobics',
   '/u/IiddEmp0': 'gift certificate',
+  '/u/pNjl7ShA': '12 lesson gift certificate',
   '/u/sLsPsavs': '20 lesson gift certificate',
 };
 
@@ -28,6 +29,7 @@ export function itemFromText(value) {
   if (!text) return '';
   if (text.includes('water aerobics')) return 'water aerobics';
   if (text.includes('gift certificate') && /\b20\b/.test(text)) return '20 lesson gift certificate';
+  if (text.includes('gift certificate') && /\b12\b/.test(text)) return '12 lesson gift certificate';
   if (text.includes('gift certificate')) return 'gift certificate';
   if (/\bregistration\b/.test(text)) return 'registration';
   if (/\b20\b/.test(text) && text.includes('lesson')) return '20';

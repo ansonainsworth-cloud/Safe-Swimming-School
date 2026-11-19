@@ -37,7 +37,7 @@ describe('JSON-LD service area', () => {
         });
       }
     }
-    expect(descriptions).toHaveLength(24);
+    expect(descriptions).toHaveLength(23);
     for (const description of descriptions) {
       expect(description).toContain('Palm Beach County, including West Palm Beach and surrounding areas.');
       expect(description).toContain(openCounty);

@@ -1,6 +1,7 @@
 ---
 import '@fontsource/fraunces/latin-600.css';
 import Header from '../components/Header.astro';
+import Dec31Banner from '../components/Dec31Banner.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
 import { bookingHref } from '../data/payment-links';
@@ -95,6 +96,7 @@ p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep);outline-
 {ldjson.map((j) => <script type="application/ld+json" is:inline set:html={j}></script>)}
 </head>
 <body class={bodyClass}>
+<Dec31Banner />
 <div class="sss-holiday-banner" role="region" aria-label="Holiday gift certificates">
 <p>Give the gift of swim lessons this holiday. <a href="/gift-certificates/">Shop gift certificates</a></p>
 </div>

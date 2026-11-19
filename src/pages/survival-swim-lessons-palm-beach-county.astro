@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+import PageShell from '../components/PageShell.astro';
+import { SITE, pageChrome, webPage, faqSchema } from '../data/newpage.js';
+
+const path = '/survival-swim-lessons-palm-beach-county/';
+const title = 'Survival Swim Lessons in Palm Beach County';
+const description = 'Private lessons at your home or community pool in Palm Beach County. Start with roll to back, float and rest, and swim to the wall. Text 561-236-8260.';
+const palmBeach = { '@type': 'AdministrativeArea', name: 'Palm Beach County', containedInPlace: { '@type': 'State', name: 'Florida' } };
+const service = {
+  '@type': 'Service',
+  name: 'Survival swim lessons in Palm Beach County',
+  serviceType: 'Survival swim lessons',
+  url: `${SITE}${path}`,
+  description,
+  provider: { '@id': `${SITE}/#localbusiness` },
+  areaServed: palmBeach,
+};
+const faqs: [string, string][] = [
+  ['What skills do the lessons teach?', 'Swimmers practice how to roll to back, float and rest, and swim to the wall, then work on strokes. These skills are one layer of protection. Nothing replaces adult supervision and pool barriers.'],
+  ['How young can a child start?', 'We teach swimmers as young as 3 months. Infant lessons start with a parent in the water, then move to private lessons.'],
+  ['Do you come to my house?', 'Yes. Your instructor comes to your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas, any day from 8 AM to 7 PM.'],
+];
+const related = [
+  ['/service/', 'Private swim lessons'],
+  ['/water-safety-drowning-prevention-palm-beach-county/', 'Water Safety and Drowning Prevention in Palm Beach County'],
+  ['/infant-swim-lessons-palm-beach-county/', 'Infant swim lessons in Palm Beach County'],
+  ['/locations/palm-beach/', 'Palm Beach'],
+  ['/adult-swim-lessons-palm-beach-county/', 'Adult swim lessons'],
+  ['/pricing/', 'Pricing'],
+  ['/enroll/', 'Enroll'],
+  ['/about-us/', 'About'],
+];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Survival swim lessons in Palm Beach County', description, [service]), faqSchema(faqs)]}>
+<PageShell h1="Survival swim lessons in Palm Beach County">
+<p>Safe Swimming School teaches private lessons at your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas. Lessons start with safety skills, then strokes: swimmers practice how to roll to back, float and rest, and swim to the wall.</p>
+<p>These skills are one layer of protection. Nothing replaces adult supervision and pool barriers.</p>
+<h2 class="wp-block-heading">How our lessons work</h2>
+<p>We teach our own private lessons at your home or community pool. Your instructor comes to you any day from 8 AM to 7 PM, so practice happens in the water your swimmer already knows. Lessons are one-on-one, or semi-private for siblings, and you have the same instructor every lesson, at your swimmer's pace.</p>
+<h2 class="wp-block-heading">What the lessons cover</h2>
+<p>Swimmers practice how to roll to back, float and rest, and swim to the wall. After those safety skills, lessons move into strokes. Lessons also include water comfort and breath control.</p>
+<p>We teach infants as young as 3 months, toddlers, school-age kids, teens, and adults. Infant lessons start with a parent in the water, then move to private lessons. Each lesson is 30 minutes.</p>
+<h2 class="wp-block-heading">Lessons at your home or community pool</h2>
+<p>Your instructor comes to your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas. Wellington and Royal Palm Beach are examples, not a limit. If your town is not listed, ask. See <a href="/locations/">all locations</a>.</p>
+<p>Lessons are taught by certified instructors, led by founder Cortney Berry, with 20 years of experience, and cofounder Anson Ainsworth, with 18 years of experience. Safe Swimming School is fully insured. If your family wants privacy, we are happy to sign an NDA.</p>
+<h2 class="wp-block-heading">Pricing</h2>
+<p>A single lesson is $75 and can be credited toward a package. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100, plus annual registration of $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. Annual registration is waived on lock in packages bought by December 31, 2026, and those lessons never expire. Refer a friend: when a friend you refer buys any package by December 31, 2026, you get 1 free lesson.</p>
+<p>Text <a href="sms:+15612368260">561-236-8260</a> with your swimmer's age, your town or neighborhood, and your preferred days, and we will plan the first lesson around your swimmer.</p>
+<h2 class="wp-block-heading">FAQs</h2>
+{faqs.map(([q, a]) => (
+  <Fragment>
+    <p><strong>{q}</strong></p>
+    <p>{a}</p>
+  </Fragment>
+))}
+<h2 class="wp-block-heading">Related</h2>
+<ul class="wp-block-list">
+{related.map(([href, label]) => <li><a href={href}>{label}</a></li>)}
+</ul>
+</PageShell>
+</Base>

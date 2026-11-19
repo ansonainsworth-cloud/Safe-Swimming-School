@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 import { onRequestPost } from '../functions/api/book';
 
 const env = { SQUARE_ACCESS_TOKEN: 'token', SQUARE_LOCATION_ID: 'LOC123' };
@@ -27,18 +27,29 @@ function request(body: unknown) {
   });
 }
 
+function paymentBody(fetchMock: { mock: { calls: Array<[unknown, { body?: unknown }?]> } }, nth = 0) {
+  const calls = fetchMock.mock.calls.filter((call) => String(call[1]?.body ?? '').includes('line_items'));
+  return JSON.parse(String(calls[nth][1]?.body));
+}
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('/api/book swimmer ages', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-16T15:00:00.000Z'));
+  });
+
   it('keeps a one child booking on the package price', async () => {
     const fetchMock = vi.fn(async () => Response.json({ payment_link: { url: 'https://square.test/pay' } }));
     vi.stubGlobal('fetch', fetchMock);
     const response = await onRequestPost({ request: request(booking()), env });
     expect(response.status).toBe(200);
-    const sent = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    const sent = paymentBody(fetchMock);
     expect(sent.order.line_items).toHaveLength(1);
     expect(sent.order.line_items[0].base_price_money).toEqual({ amount: 52000, currency: 'USD' });
     expect(sent.payment_note).toContain('Child age: 4');
@@ -51,7 +62,7 @@ describe('/api/book swimmer ages', () => {
     vi.stubGlobal('fetch', fetchMock);
     const two = await onRequestPost({ request: request(booking({ swimmers: 2, childAge2: '6' })), env });
     expect(two.status).toBe(200);
-    const twoBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    const twoBody = paymentBody(fetchMock);
     expect(twoBody.order.line_items[0].base_price_money.amount).toBe(52000);
     expect(twoBody.payment_note).toContain('Second child age: 6');
     expect(twoBody.payment_note).toContain('Swimmers: 2');
@@ -62,10 +73,9 @@ describe('/api/book swimmer ages', () => {
       env,
     });
     expect(three.status).toBe(200);
-    const threeBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
-    expect(threeBody.order.line_items).toHaveLength(1);
+    const threeBody = paymentBody(fetchMock, 1);
     expect(threeBody.order.line_items[0].base_price_money.amount).toBe(7500);
-    expect(JSON.stringify(threeBody.order.line_items)).not.toMatch(/registration/i);
+    expect(threeBody.order.line_items[1]).toMatchObject({ name: 'Annual Registration', base_price_money: { amount: 6000, currency: 'USD' } });
     expect(threeBody.payment_note).toContain('Third child age: 2');
     expect(threeBody.payment_note).toContain('Swimmers: 3');
   });
@@ -78,7 +88,7 @@ describe('/api/book swimmer ages', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     const ignored = await onRequestPost({ request: request(booking({ swimmers: 1, childAge2: '9' })), env });
     expect(ignored.status).toBe(200);
-    const sent = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+    const sent = paymentBody(vi.mocked(fetch) as unknown as { mock: { calls: Array<[unknown, { body?: unknown }?]> } });
     expect(sent.payment_note).not.toContain('Second child age');
   });
 
@@ -87,26 +97,29 @@ describe('/api/book swimmer ages', () => {
     vi.stubGlobal('fetch', fetchMock);
     const one = await onRequestPost({ request: request(booking({ option: 'single' })), env });
     expect(one.status).toBe(200);
-    const oneBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    const oneBody = paymentBody(fetchMock);
     expect(oneBody.order.line_items).toEqual([
       expect.objectContaining({
         name: 'Single lesson',
         quantity: '1',
         base_price_money: { amount: 7500, currency: 'USD' },
       }),
+      expect.objectContaining({
+        name: 'Annual Registration',
+        quantity: '1',
+        base_price_money: { amount: 3500, currency: 'USD' },
+      }),
     ]);
-    expect(JSON.stringify(oneBody.order.line_items)).not.toMatch(/registration/i);
 
     const two = await onRequestPost({
       request: request(booking({ option: 'single', swimmers: 2, childAge2: '6' })),
       env,
     });
     expect(two.status).toBe(200);
-    const twoBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
-    expect(twoBody.order.line_items).toHaveLength(1);
+    const twoBody = paymentBody(fetchMock, 1);
     expect(twoBody.order.line_items[0].name).toBe('Single lesson');
     expect(twoBody.order.line_items[0].base_price_money).toEqual({ amount: 7500, currency: 'USD' });
-    expect(JSON.stringify(twoBody.order.line_items)).not.toMatch(/registration/i);
+    expect(twoBody.order.line_items[1]).toMatchObject({ name: 'Annual Registration', base_price_money: { amount: 5000, currency: 'USD' } });
     expect(twoBody.payment_note).toContain('Swimmers: 2');
   });
 });
@@ -270,7 +283,8 @@ describe('/api/book Square buyer errors', () => {
     const response = await onRequestPost({ request: request(booking()), env });
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ message: FRIENDLY, field: 'email' });
-    expect(JSON.parse(logs[0])).toEqual({
+    const paymentLog = logs.map((line) => JSON.parse(line)).find((item) => item.step === 'payment-link');
+    expect(paymentLog).toEqual({
       step: 'payment-link',
       status: 400,
       errors: [{ code: 'INVALID_EMAIL_ADDRESS', category: 'INVALID_REQUEST_ERROR', field: 'pre_populated_data.buyer_email' }],
