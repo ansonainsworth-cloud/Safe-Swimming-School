@@ -2,9 +2,9 @@
 import '@fontsource/fraunces/latin-600.css';
 import Header from '../components/Header.astro';
 import Dec31Banner from '../components/Dec31Banner.astro';
+import GoogleRating from '../components/GoogleRating.astro';
 import Footer from '../components/Footer.astro';
 import { GA_ID, SITE } from '../data/site.js';
-import { bookingHref } from '../data/payment-links';
 import { clientCatalog, REGISTRATION_TIER_CENTS } from '../../functions/_lib/prices';
 const { title, description, path, bodyClass = 'page wpex-theme wpex-responsive full-width-main-layout no-composer content-full-width sidebar-widget-icons hasnt-overlay-header smooth-fonts wpex-mobile-toggle-menu-icon_buttons has-mobile-menu wpex-disable-mm-focus-styles wpb-js-composer js-comp-ver-6.1 vc_responsive', pageStyle = '', ldjson = [], robots = 'index, follow, max-image-preview:large', ogImage = '/images/brand/safe-swimming-school-logo-800.png', ogType = 'website', trackAnalytics = true, checkoutAnalytics = false } = Astro.props;
 const loadGtag = trackAnalytics || checkoutAnalytics;
@@ -97,6 +97,7 @@ p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep);outline-
 </head>
 <body class={bodyClass}>
 <Dec31Banner />
+{path === '/' && <GoogleRating />}
 <div class="sss-holiday-banner" role="region" aria-label="Holiday gift certificates">
 <p>Give the gift of swim lessons this holiday. <a href="/gift-certificates/">Shop gift certificates</a></p>
 </div>
@@ -108,7 +109,7 @@ p.copyright-text b:focus-visible{outline:2px solid var(--sss-blue-deep);outline-
 <main id="main" class="site-main clr"><slot /></main>
 <Footer />
 </div></div>
-<nav class="sss-mobile-bar" aria-label="Quick contact"><a href="sms:+15612368260">Text us</a><a href="mailto:info@safeswimmingschool.com">Email</a><a href={bookingHref()} class="sss-mobile-bar-cta">Enroll</a></nav>
+<nav class="sss-mobile-bar" aria-label="Quick contact"><a class="sss-mobile-bar-cta" href="sms:+15612368260">Text 561-236-8260</a><a href="/book/">Book</a></nav>
 <a href="#outer-wrap" id="site-scroll-top"><span class="ticon ticon-chevron-up" aria-hidden="true"></span><span class="screen-reader-text">Back To Top</span></a>
 <script is:inline src="/wp-includes/js/jquery/jquery.min.js"></script>
 <script is:inline src="/wp-includes/js/jquery/jquery-migrate.min.js"></script>

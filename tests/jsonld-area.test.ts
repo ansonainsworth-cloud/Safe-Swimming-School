@@ -51,6 +51,8 @@ describe('JSON-LD service area', () => {
     expect(source).toContain('areaServed: [broward, city(\'Coral Springs\', broward), city(\'Parkland\', broward)]');
     expect(source).toContain('Limited availability');
     expect(source).not.toContain('openingHours');
+    expect(source).not.toContain('Tuesday and Friday');
+    expect(source).not.toContain('Thursday mornings');
     expect(source).not.toContain(oldLimit);
   });
 });
