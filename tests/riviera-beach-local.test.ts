@@ -56,7 +56,7 @@ describe('Riviera Beach local page', () => {
     expect(schema.slice(0, 4)).toEqual(localFaqs);
     expect(visible.slice(0, 4)).toEqual(localFaqs);
     expect(schema.filter(([question]) => localFaqs.some(([name]) => name === question))).toEqual(localFaqs);
-    expect(schema.at(-5)?.[1]).toContain('two gift certificates');
+    expect(schema.at(-5)?.[1]).toBe('Safe Swimming School offers three gift certificates for private swim lessons. The holiday gift certificate is 8 private 30-minute lessons for $475, the 12-lesson gift certificate is 12 private 30-minute lessons for $720, and the 20-lesson gift certificate is 20 private 30-minute lessons for $1,100. The $35 annual registration is waived on all three.');
     expect(schema.at(-3)?.[1]).toBe('Gift certificates expire December 31, 2027.');
     const body = strip(article).toLowerCase();
     expect(body).not.toContain('survival swim lessons');

@@ -20,7 +20,7 @@ const pages = [
   '/swim-lessons-coral-springs-parkland/',
 ];
 const giftFaqs: Array<[string, string]> = [
-  ['Do you offer swim lesson gift certificates?', 'Yes. Safe Swimming School offers two gift certificates for private swim lessons. The holiday gift certificate is 8 private 30-minute lessons for $475, and the 20-lesson gift certificate is 20 private 30-minute lessons for $1,100. The $35 annual registration is waived on both.'],
+  ['Do you offer swim lesson gift certificates?', 'Safe Swimming School offers three gift certificates for private swim lessons. The holiday gift certificate is 8 private 30-minute lessons for $475, the 12-lesson gift certificate is 12 private 30-minute lessons for $720, and the 20-lesson gift certificate is 20 private 30-minute lessons for $1,100. The $35 annual registration is waived on all three.'],
   ['How much is the holiday swim lesson gift certificate?', 'It is $475 for 8 private 30-minute lessons, and the $35 annual registration is waived. The $475 gift offer ends December 24, 2026.'],
   ['When does a swim lesson gift certificate expire?', 'Gift certificates expire December 31, 2027.'],
   ['How does the recipient schedule lessons?', "The recipient books days and times when they redeem the certificate. Lessons are private 30-minute lessons at the family's home or community pool."],
@@ -84,6 +84,7 @@ describe('town gift certificate FAQs', () => {
       '$475 for 8 private 30-minute lessons plus the $35 annual registration',
       '$475 including annual registration',
       '8 private 30 minute lessons plus the $35 annual registration',
+      'two gift certificates',
     ];
     const hits: string[] = [];
     const walk = (dir: string) => {
