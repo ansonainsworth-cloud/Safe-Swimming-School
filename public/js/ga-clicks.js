@@ -1,4 +1,5 @@
 /** Click events for the GA4 tag already in the layout. Sends nothing when gtag is absent. */
+import { trackMeta } from './meta-pixel.js';
 
 const KNOWN_PATHS = {
   '/u/VHbjtGE5': 'trial',
@@ -162,11 +163,18 @@ export function submitHit(form, pagePath) {
 }
 
 export function sendGa(target, hit) {
-  if (!hit || !target || typeof target.gtag !== 'function') return;
-  try {
-    target.gtag('event', hit.name, hit.params);
-  } catch {
-    /* The tag can reject an event. The click still continues. */
+  if (!hit || !target) return;
+  if (typeof target.gtag === 'function') {
+    try {
+      target.gtag('event', hit.name, hit.params);
+    } catch {
+      /* The tag can reject an event. The click still continues. */
+    }
+  }
+  if (hit.name === 'phone_call_click') trackMeta(target, 'Contact');
+  if (hit.name === 'square_checkout_click') {
+    const params = hit.params && hit.params.item ? { content_name: hit.params.item } : undefined;
+    trackMeta(target, 'InitiateCheckout', params);
   }
 }
 
