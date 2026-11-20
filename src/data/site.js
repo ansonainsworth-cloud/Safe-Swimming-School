@@ -1,6 +1,6 @@
 export const GA_ID = 'G-QYHBN3T4DB';
 // Meta Pixel/Dataset ID. An empty value disables the pixel.
-export const META_PIXEL_ID = '';
+export const META_PIXEL_ID = '210969262714524';
 export const SITE = 'https://safeswimmingschool.com';
 export const NAV = [
   { href: '/', label: 'Home' },

@@ -21,18 +21,17 @@ function htmlFiles(dir: string): string[] {
 }
 
 describe('Meta Pixel', () => {
-  it('ships with an empty ID and no pixel in the built pages', () => {
-    const site = readFileSync(new URL('../src/data/site.js', import.meta.url), 'utf8');
-    expect(site).toContain("export const META_PIXEL_ID = ''");
+  it('emits nothing for an empty ID and renders the live pixel on every built page', () => {
     expect(metaPixelMarkup('')).toBe('');
+    expect(metaPixelMarkup('')).not.toContain('fbq');
+    expect(metaPixelMarkup('')).not.toContain('connect.facebook.net');
     execSync('npm run build', { cwd: root, stdio: 'pipe' });
     const files = htmlFiles(join(root, 'dist'));
     expect(files.length).toBeGreaterThan(10);
     for (const file of files) {
       const html = readFileSync(file, 'utf8');
-      expect(html, file).not.toContain('fbq');
-      expect(html, file).not.toContain('connect.facebook.net');
-      expect(html, file).not.toContain('facebook.com/tr');
+      expect(html, file).toContain("fbq('init','210969262714524')");
+      expect(html, file).toContain('https://www.facebook.com/tr?id=210969262714524&ev=PageView&noscript=1');
     }
   });
 
@@ -45,7 +44,7 @@ describe('Meta Pixel', () => {
     expect(markup).toContain(`https://www.facebook.com/tr?id=${dummyId}&ev=PageView&noscript=1`);
     expect(markup).not.toContain('info@');
     const layout = readFileSync(new URL('../src/layouts/Base.astro', import.meta.url), 'utf8');
-    expect(layout).toContain('const pixelMarkup = loadGtag ? metaPixelMarkup(META_PIXEL_ID) : \'\'');
+    expect(layout).toContain('const pixelMarkup = metaPixelMarkup(META_PIXEL_ID)');
     const site = readFileSync(new URL('../src/data/site.js', import.meta.url), 'utf8');
     expect(site).not.toContain(dummyId);
   });
