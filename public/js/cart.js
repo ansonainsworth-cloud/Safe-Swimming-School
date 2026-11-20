@@ -54,6 +54,13 @@
       finished = true;
       if (typeof done === 'function') done();
     }
+    if (typeof window.fbq === 'function') {
+      try {
+        window.fbq('track', 'InitiateCheckout', { value: cents / 100, currency: 'USD' });
+      } catch (err) {
+        /* The pixel can reject an event. Checkout still continues. */
+      }
+    }
     if (typeof window.gtag !== 'function') {
       finish();
       return;

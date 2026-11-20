@@ -1,4 +1,5 @@
 /** GA4 conversion events for pages that already load gtag. Not loaded on /cart/ or /checkout/thanks/. */
+import { trackMeta } from './meta-pixel.js';
 
 export function leadFromTallyMessage(event, pagePath) {
   if (!event || typeof event.origin !== 'string') return null;
@@ -26,8 +27,10 @@ export function clickEvent(href, pagePath) {
 }
 
 function send(target, hit) {
-  if (!hit || typeof target.gtag !== 'function') return;
-  target.gtag('event', hit.name, hit.params);
+  if (!hit) return;
+  if (typeof target.gtag === 'function') target.gtag('event', hit.name, hit.params);
+  if (hit.name === 'generate_lead') trackMeta(target, 'Lead', { content_name: hit.params.form_id });
+  if (hit.name === 'phone_click' || hit.name === 'sms_click') trackMeta(target, 'Contact');
 }
 
 export function installGaEvents(target) {
