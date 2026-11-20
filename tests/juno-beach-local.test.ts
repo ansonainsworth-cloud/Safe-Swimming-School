@@ -8,7 +8,7 @@ const meta = 'Private lessons at your Juno Beach home or community pool. Same in
 const opening = 'Juno Beach is a small oceanfront town between Jupiter and North Palm Beach.';
 const faqs: Array<[string, string]> = [
   ['Do you come to my pool in Juno Beach?', 'Yes. We teach at home pools, condo pools, and community pools in Juno Beach. Tell us your pool type when you text, and check building or community rules if that is where you want to swim.'],
-  ['Do you teach in Juno Beach?', 'Yes. Juno Beach is in our Palm Beach County service area. Town pages are examples, not a limit. ZIP 33408 is also used in North Palm Beach, and we can help you sort out the right fit. See swim lessons in North Palm Beach.'],
+  ['Do you teach in Juno Beach?', 'Yes. Juno Beach is in our Palm Beach County service area. Town pages are examples, not a limit. The town ZIP is also used in North Palm Beach, and we can help you sort out the right fit. See swim lessons in North Palm Beach.'],
   ['Do you keep the same instructor every lesson?', 'Yes. You have the same instructor every lesson.'],
   ['What ages do you teach?', 'From 3 months to adults. Infant lessons start with a parent in the water, then move to private lessons. See infant swim lessons.'],
   ['How much do lessons cost?', '8 lessons for $520, 12 for $720, and 20 for $1,100. Annual registration ($35 for one swimmer, $50 for two siblings, $60 for three or more) is waived on lock in packages bought by December 31, 2026. A single lesson is $75 and can be credited toward a package.'],
@@ -55,6 +55,9 @@ describe('Juno Beach local page', () => {
     expect(meta).toHaveLength(141);
     expect(html).not.toMatch(/8 AM–7 PM/);
     expect(strip(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || '')).toBe('Private Swim Lessons in Juno Beach, FL');
+    const articleEarly = html.slice(html.indexOf('<article'), html.indexOf('<aside'));
+    expect(strip(articleEarly).match(/33408/g)).toEqual(['33408']);
+    expect(articleEarly).toContain('ZIP 33408 is the town ZIP, and North Palm Beach uses that ZIP too.');
     const article = html.slice(html.indexOf('<article'), html.indexOf('<aside'));
     expect(article).toContain(opening);
     expect(article).toContain('same instructor every lesson');
@@ -74,6 +77,9 @@ describe('Juno Beach local page', () => {
     for (const name of places) expect(article, name).toContain(name);
     const visible = [...article.matchAll(/<p><strong>([\s\S]*?)<\/strong><\/p>\s*<p>([\s\S]*?)<\/p>/g)].map((match) => [strip(match[1]), strip(match[2])]);
     const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
+    expect(JSON.stringify(blocks)).not.toContain('33408');
+    expect(html.match(/<title>([^<]*)<\/title>/)?.[1] || '').not.toContain('33408');
+    expect(html).not.toMatch(/canonical[^>]*33408|og:url[^>]*33408/);
     const nodes = blocks.flatMap((block) => (Array.isArray(block['@graph']) ? block['@graph'] : [block]));
     expect(nodes.filter((node) => node['@type'] === 'FAQPage')).toHaveLength(1);
     expect(nodes.some((node) => node['@type'] === 'Review' || node['@type'] === 'AggregateRating')).toBe(false);
