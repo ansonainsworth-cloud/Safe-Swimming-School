@@ -37,7 +37,7 @@ describe('Riviera Beach local page', () => {
     execSync('npm run build', { cwd: root, stdio: 'pipe' });
     const html = readFileSync(join(root, 'dist/locations/riviera-beach/index.html'), 'utf8');
     expect(strip(html.match(/<title>([^<]*)<\/title>/)?.[1] || '')).toBe('Survival Swim Lessons in Riviera Beach & Singer Island, FL | Safe Swimming School');
-    expect(html).toContain('content="Private lessons at your Riviera Beach or Singer Island pool. Same instructor every lesson. 8 lessons for $520, registration waived by Dec 31. Text 561-236-8260."');
+    expect(html).toContain('content="Private lessons at your Riviera Beach or Singer Island pool. Same instructor every lesson. 8 lessons for $520, registration waived if bought by Dec 31. Text 561-236-8260."');
     expect(html).not.toMatch(/8 AM–7 PM/);
     expect(strip(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || '')).toBe('Private Swim Lessons in Riviera Beach and Singer Island, FL');
     const article = html.slice(html.indexOf('<article'), html.indexOf('<aside'));
