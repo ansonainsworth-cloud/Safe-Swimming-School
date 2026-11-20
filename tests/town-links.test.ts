@@ -49,7 +49,9 @@ describe('town page links', () => {
     const broward = read('src/pages/swim-lessons-coral-springs-parkland.astro');
     for (const href of hubs) expect(broward, href).toContain(`href="${href}"`);
     for (const href of pbcTowns) expect(broward, href).not.toContain(`href="${href}"`);
-    expect(broward).toContain('>Wellington</a>');
-    expect(broward).toContain('>Royal Palm Beach</a>');
+    expect(broward).toContain('nearby Broward towns. Wellington and Royal Palm Beach are examples. <a href="/locations/">All locations</a>.');
+    expect(broward.match(/href="\/locations\/"/g)).toEqual(['href="/locations/"']);
+    expect(broward).not.toContain('>Wellington</a>');
+    expect(broward).not.toContain('>Royal Palm Beach</a>');
   });
 });
