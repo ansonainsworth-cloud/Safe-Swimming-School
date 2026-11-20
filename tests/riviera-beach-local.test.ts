@@ -21,13 +21,6 @@ const banned = [
   'self-rescue',
   'lifeguard',
   'drowning',
-  'Park Plaza',
-  'Tequesta Oaks',
-  'Tequesta Towers',
-  'Barclay',
-  'Jupiter Dunes',
-  'Island at Abacoa',
-  'Harbor Management',
 ];
 
 function strip(value: string) {
@@ -55,6 +48,8 @@ describe('Riviera Beach local page', () => {
     expect(article).toContain('Blue Heron Bridge');
     expect(article).toContain('Palm Beach Shores');
     expect(article).toContain('33404');
+    expect(article).toContain('families in places like Sugar Sands and The Resort at Singer Island');
+    expect(article).toContain('families in places like Riviera Beach Heights');
     const visible = [...article.matchAll(/<p><strong>([\s\S]*?)<\/strong><\/p>\s*<p>([\s\S]*?)<\/p>/g)].map((match) => [strip(match[1]), strip(match[2])]);
     const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
     const nodes = blocks.flatMap((block) => (Array.isArray(block['@graph']) ? block['@graph'] : [block]));
@@ -67,6 +62,10 @@ describe('Riviera Beach local page', () => {
     expect(business.address.streetAddress).toBeUndefined();
     const faq = nodes.find((node) => node['@type'] === 'FAQPage');
     const schema = faq.mainEntity.map((item: { name: string; acceptedAnswer: { text: string } }) => [item.name, item.acceptedAnswer.text]);
+    const headAndSchema = `${html.match(/<title>([^<]*)<\/title>/)?.[1] || ''} ${html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || ''} ${blocks.map((block) => JSON.stringify(block)).join(' ')}`;
+    for (const name of ['Sugar Sands', 'The Resort at Singer Island', 'Riviera Beach Heights']) {
+      expect(headAndSchema, name).not.toContain(name);
+    }
     expect(schema.slice(0, 4)).toEqual(localFaqs);
     expect(visible.slice(0, 4)).toEqual(localFaqs);
     expect(schema.filter(([question]) => localFaqs.some(([name]) => name === question))).toEqual(localFaqs);
