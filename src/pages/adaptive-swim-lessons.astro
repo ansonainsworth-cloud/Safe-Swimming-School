@@ -1,10 +1,21 @@
 ---
 import Base from '../layouts/Base.astro';
 import PageShell from '../components/PageShell.astro';
-import { pageChrome, webPage, faqSchema } from '../data/newpage.js';
+import { SITE, pageChrome, webPage, faqSchema } from '../data/newpage.js';
 const path = '/adaptive-swim-lessons/';
-const title = 'Adaptive Swim Lessons Jupiter & PBG | Safe Swimming';
-const description = 'Adaptive swim lessons for autism, ADHD, and CP. Founder Cortney Berry has 20 years of experience. Cofounder Anson Ainsworth has 18 years. Call 561-236-8260.';
+const title = 'Adaptive Swim Lessons in Palm Beach County | Safe Swimming School';
+const description = 'Private adaptive swim lessons in Palm Beach County for children with autism, ADHD, and CP, at your home or community pool. Call or text 561-236-8260.';
+const schemaName = 'Adaptive Swim Lessons in Palm Beach County';
+const palmBeach = { '@type': 'AdministrativeArea', name: 'Palm Beach County', containedInPlace: { '@type': 'State', name: 'Florida' } };
+const service = {
+  '@type': 'Service',
+  name: schemaName,
+  serviceType: 'Adaptive swim lessons',
+  url: `${SITE}${path}`,
+  description,
+  provider: { '@id': `${SITE}/#localbusiness` },
+  areaServed: palmBeach,
+};
 const faqs = [
   ['Do you work with children who have autism, ADHD, Down syndrome or cerebral palsy?', 'Yes. Our cofounder, Anson Ainsworth, has hands-on experience teaching swimmers with autism (ASD), ADHD, Down syndrome and cerebral palsy. Every lesson is one-on-one and adjusted to the swimmer, and we’ll talk about your child’s needs before the first lesson.'],
   ['Where do lessons take place?', 'In your own pool, at home or in your community/HOA pool.'],
@@ -17,7 +28,7 @@ const faqs = [
   ['How do I get started?', 'Call or text 561-236-8260 between 8 AM and 7 PM.'],
 ];
 ---
-<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, 'Adaptive Swim Lessons', description), faqSchema(faqs)]}>
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, schemaName, description, [service]), faqSchema(faqs)]}>
 <PageShell h1="Adaptive Swim Lessons in Palm Beach County">
 <p><strong>Private, one-on-one survival swim lessons in your own pool, at your swimmer’s pace, led by founder Cortney Berry and cofounder Anson Ainsworth.</strong></p>
 <p>Every swimmer learns differently. For children, teens and adults with autism (ASD), ADHD, Down syndrome or cerebral palsy, a new face each week can make the water feel harder. At Safe Swimming School, you get experienced, consistent instruction in a familiar place. Lessons start with safety skills, then strokes: roll to back, float and rest, and swim to the wall.</p>
