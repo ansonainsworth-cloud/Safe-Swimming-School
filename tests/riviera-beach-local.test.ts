@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = new URL('..', import.meta.url).pathname;
-const opening = 'Riviera Beach and Singer Island families learn in the pool they already use.';
+const opening = 'Riviera Beach has a mainland side and Singer Island, with the Lake Worth Lagoon between them.';
 const localFaqs: Array<[string, string]> = [
-  ['Do you teach at home pools on Singer Island and in inland Riviera Beach?', 'Yes. We come to home pools on Singer Island and in inland Riviera Beach, and to community pools in both areas.'],
-  ['Can a lesson be at an oceanfront condo pool or a community pool?', 'Yes. On Singer Island, families often use an oceanfront condo pool or a community pool. Inland in Riviera Beach, families often use a home pool or a community or HOA pool. Each lesson is private and 30 minutes, with the same instructor every lesson.'],
-  ['Can we schedule lessons around school?', 'Yes. Lessons run every day from 8 AM to 7 PM, so you can book before school, after school, or on a weekend.'],
-  ['Do you teach only in Riviera Beach?', 'No. Riviera Beach and Singer Island are examples, not a limit. We teach across Palm Beach County, including West Palm Beach and surrounding areas.'],
+  ['Do you come to pools on Singer Island and in mainland Riviera Beach?', 'Yes. We teach at home pools, condo pools, and community pools on Singer Island and on the mainland in Riviera Beach. Tell us your pool type when you text. If the lesson is at a condo or community pool, check the building or community rules first. Swimmers practice how to roll to back, float and rest, and swim to the wall. These skills are one layer of protection. Nothing replaces adult supervision and pool barriers.'],
+  ['Can you teach at a Singer Island condo pool?', "Yes, when the family has access to that pool and the building allows an instructor to visit. We come to you. Please confirm the rules with the building before the first lesson. A backyard pool on the mainland is the family's own pool."],
+  ['Do you keep the same instructor every lesson?', 'Yes. You have the same instructor every lesson.'],
+  ['What ages do you teach?', 'From 3 months to adults. Infant lessons start with a parent in the water, then move to private lessons. See infant swim lessons.'],
 ];
 const banned = [
   'water-safe in 5 days',
@@ -21,7 +21,6 @@ const banned = [
   'self-rescue',
   'lifeguard',
   'drowning',
-  'group lessons',
   'Park Plaza',
   'Tequesta Oaks',
   'Tequesta Towers',
@@ -44,13 +43,28 @@ describe('Riviera Beach local page', () => {
   it('shows the local opening and FAQs, matching the schema, without banned phrases', () => {
     execSync('npm run build', { cwd: root, stdio: 'pipe' });
     const html = readFileSync(join(root, 'dist/locations/riviera-beach/index.html'), 'utf8');
-    expect(strip(html.match(/<title>([^<]*)<\/title>/)?.[1] || '')).toBe('Survival Swim Lessons in Riviera Beach & Singer Island, FL');
-    expect(strip(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || '')).toBe('Private Swim Lessons in Riviera Beach & Singer Island');
-    const article = html.slice(html.indexOf('single-content'), html.indexOf('single-blog-article') > -1 ? html.length : html.lastIndexOf('sidebar'));
+    expect(strip(html.match(/<title>([^<]*)<\/title>/)?.[1] || '')).toBe('Survival Swim Lessons in Riviera Beach & Singer Island, FL | Safe Swimming School');
+    expect(html).toContain('content="Private lessons at your Riviera Beach or Singer Island pool. Same instructor every lesson. 8 lessons $520, plus $35 registration. Text 561-236-8260."');
+    expect(html).not.toMatch(/8 AM–7 PM/);
+    expect(strip(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || '')).toBe('Private Swim Lessons in Riviera Beach and Singer Island, FL');
+    const article = html.slice(html.indexOf('<article'), html.indexOf('<aside'));
     expect(article).toContain(opening);
+    expect(article).toContain('same instructor every lesson');
+    expect(article).toContain('href="/infant-swim-lessons-palm-beach-county/"');
+    expect(article).toContain('href="/survival-swim-lessons-palm-beach-county/"');
+    expect(article).toContain('Blue Heron Bridge');
+    expect(article).toContain('Palm Beach Shores');
+    expect(article).toContain('33404');
     const visible = [...article.matchAll(/<p><strong>([\s\S]*?)<\/strong><\/p>\s*<p>([\s\S]*?)<\/p>/g)].map((match) => [strip(match[1]), strip(match[2])]);
     const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
     const nodes = blocks.flatMap((block) => (Array.isArray(block['@graph']) ? block['@graph'] : [block]));
+    expect(nodes.filter((node) => node['@type'] === 'FAQPage')).toHaveLength(1);
+    expect(nodes.some((node) => node['@type'] === 'Review' || node['@type'] === 'AggregateRating')).toBe(false);
+    const business = nodes.find((node) => node['@type'] === 'LocalBusiness');
+    const singer = business.areaServed.find((area: { name?: string }) => area.name === 'Singer Island');
+    expect(singer['@type']).toBe('Place');
+    expect(singer.containedInPlace.name).toBe('Riviera Beach');
+    expect(business.address.streetAddress).toBeUndefined();
     const faq = nodes.find((node) => node['@type'] === 'FAQPage');
     const schema = faq.mainEntity.map((item: { name: string; acceptedAnswer: { text: string } }) => [item.name, item.acceptedAnswer.text]);
     expect(schema.slice(0, 4)).toEqual(localFaqs);
