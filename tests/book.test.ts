@@ -187,8 +187,11 @@ describe('booking form swimmer fields', () => {
     };
     vi.stubGlobal('document', documentMock);
     vi.stubGlobal('window', windowMock);
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: { body: string }) => {
-      posted.push(JSON.parse(init.body));
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: { body: string }) => {
+      if (String(url).includes('/api/availability')) {
+        return { ok: true, status: 200, json: async () => ({ source: 'fallback', busy: [] }) };
+      }
+      posted.push(JSON.parse(init?.body || '{}'));
       return { ok: true, status: 200, json: async () => ({ url: 'https://square.test/pay' }) };
     }));
     new Function(source)();
@@ -260,6 +263,7 @@ type FakeEl = {
   addEventListener: (type: string, fn: (event?: { preventDefault(): void }) => void) => void;
   querySelector: (sel: string) => FakeEl | null;
   querySelectorAll: () => FakeEl[];
+  getAttribute?: (name: string) => string | null;
 };
 
 const FRIENDLY = 'Please check your email address and phone number, then try again.';
@@ -376,7 +380,10 @@ describe('booking form checkout errors', () => {
     ];
     vi.stubGlobal('document', { getElementById: (id: string) => ids[id] || null });
     vi.stubGlobal('window', { SSS_REGISTRATION_TIERS: { 1: 3500, 2: 5000, 3: 6000 }, location: { href: '' } });
-    vi.stubGlobal('fetch', vi.fn(async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('/api/availability')) {
+        return { ok: false, status: 503, json: async () => ({ source: 'fallback', busy: [] }) };
+      }
       const next = replies.shift();
       return { ok: false, status: next?.status, json: async () => next?.body };
     }));
@@ -388,6 +395,54 @@ describe('booking form checkout errors', () => {
     expect(message.textContent).not.toContain('561-236-8260');
     form.listeners.submit.forEach((fn) => fn({ preventDefault() {} }));
     await vi.waitFor(() => expect(message.textContent).toContain('Text 561-236-8260'));
+  });
+
+  it('hides calendar busy times and keeps the picker when availability fails', async () => {
+    const source = readFileSync(new URL('../public/js/book.js', import.meta.url), 'utf8');
+    const slot = fakeEl('slot');
+    slot.hidden = false;
+    slot.disabled = false;
+    const grid = fakeEl('book-grid');
+    grid.querySelectorAll = () => [slot];
+    const ids: Record<string, FakeEl> = {
+      'book-form': fakeEl('book-form'),
+      'book-town': fakeEl('book-town'),
+      'book-day': fakeEl('book-day'),
+      'book-time': fakeEl('book-time'),
+      'book-grid': grid,
+      'book-times': fakeEl('book-times'),
+      'book-limited': fakeEl('book-limited'),
+      'book-message': fakeEl('book-message'),
+      'book-blocks': fakeEl('book-blocks'),
+      'book-submit': fakeEl('book-submit'),
+      'book-summary-choice': fakeEl('book-summary-choice'),
+      'book-summary-fee': fakeEl('book-summary-fee'),
+      'book-summary-note': fakeEl('book-summary-note'),
+      'book-mobile-summary': fakeEl('book-mobile-summary'),
+      'book-mobile-choice': fakeEl('book-mobile-choice'),
+      'book-mobile-note': fakeEl('book-mobile-note'),
+      'book-swimmers': fakeEl('book-swimmers'),
+      'book-child-2': fakeEl('book-child-2'),
+      'book-child-3': fakeEl('book-child-3'),
+    };
+    ids['book-blocks'].textContent = '[]';
+    ids['book-day'].value = 'Mon';
+    slot.getAttribute = (name: string) => (name === 'data-day' ? 'Mon' : '09:00');
+    vi.stubGlobal('document', { getElementById: (id: string) => ids[id] || null });
+    vi.stubGlobal('window', { SSS_REGISTRATION_TIERS: { 1: 3500 }, location: { href: '' } });
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ source: 'calendar', busy: [{ day: 'Mon', start: '09:00' }] }),
+    })));
+    new Function(source)();
+    await vi.waitFor(() => expect(slot.hidden).toBe(true));
+    expect(slot.disabled).toBe(true);
+
+    slot.hidden = false;
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
+    new Function(source)();
+    await vi.waitFor(() => expect(slot.hidden).toBe(false));
   });
 });
 
