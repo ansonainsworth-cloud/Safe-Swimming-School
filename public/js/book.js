@@ -9,6 +9,7 @@
   var limited = document.getElementById('book-limited');
   var message = document.getElementById('book-message');
   var blocks = [];
+  var busy = [];
   try {
     blocks = JSON.parse(document.getElementById('book-blocks').textContent || '[]');
   } catch (error) {
@@ -40,6 +41,12 @@
     });
   }
 
+  function calendarBusy(dayValue, start) {
+    return busy.some(function (slot) {
+      return slot && slot.day === dayValue && slot.start === start;
+    });
+  }
+
   function showMessage(text) {
     message.hidden = false;
     message.textContent = text;
@@ -51,10 +58,14 @@
     times.hidden = coral;
     limited.hidden = !coral;
     Array.prototype.forEach.call(grid.querySelectorAll('[data-day]'), function (button) {
-      var open = !blocked(button.getAttribute('data-day'), button.getAttribute('data-start'));
+      var dayValue = button.getAttribute('data-day');
+      var start = button.getAttribute('data-start');
+      var taken = blocked(dayValue, start);
+      var hiddenByCalendar = calendarBusy(dayValue, start);
+      var open = !taken && !hiddenByCalendar;
       button.disabled = !open;
-      button.classList.toggle('is-blocked', !open);
-      button.hidden = button.getAttribute('data-day') !== selectedDay;
+      button.classList.toggle('is-blocked', taken && !hiddenByCalendar);
+      button.hidden = dayValue !== selectedDay || hiddenByCalendar;
       if (!open) button.classList.remove('is-selected');
     });
     if (coral || (time.value && blocked(selectedDay, time.value))) time.value = '';
@@ -205,4 +216,15 @@
   paintSummary();
 
   paint();
+
+  if (typeof fetch === 'function') {
+    fetch('/api/availability', { headers: { accept: 'application/json' } }).then(function (response) {
+      if (!response || !response.ok || !response.json) return null;
+      return response.json();
+    }).then(function (body) {
+      if (!body || body.source !== 'calendar' || !Array.isArray(body.busy)) return;
+      busy = body.busy;
+      paint();
+    }).catch(function () {});
+  }
 })();
