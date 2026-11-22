@@ -1,4 +1,5 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { onRequestGet } from '../functions/api/availability';
 import { busyBookSlots, freeBusyChunks, FREEBUSY_MAX_MS, readBusyIntervals } from '../functions/_lib/calendar';
@@ -72,5 +73,13 @@ describe('calendar free/busy', () => {
     expect(body.source).toBe('calendar');
     expect(body.busy).toContainEqual({ day: 'Mon', start: '09:00' });
     expect(body.busy.some((slot) => slot.start === '15:00')).toBe(false);
+  });
+
+  it('lists every functions/api route in _routes.json', () => {
+    const routes = JSON.parse(readFileSync(new URL('../public/_routes.json', import.meta.url), 'utf8')) as { include: string[] };
+    const files = readdirSync(new URL('../functions/api/', import.meta.url));
+    const apiRoutes = files.filter((file) => file.endsWith('.ts')).map((file) => `/api/${file.replace(/\.ts$/, '')}`);
+    expect(apiRoutes).toContain('/api/availability');
+    for (const route of apiRoutes) expect(routes.include, route).toContain(route);
   });
 });
