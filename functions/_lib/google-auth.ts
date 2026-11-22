@@ -35,13 +35,16 @@ export async function signServiceAccountJwt(account: ServiceAccount, scope: stri
   return `${unsigned}.${bytesToBase64Url(signature)}`;
 }
 
-export async function fetchGoogleAccessToken(account: ServiceAccount, scope: string, fetchImpl: typeof fetch = fetch, now = Date.now()): Promise<string> {
+const callFetch: typeof fetch = (input, init) => fetch(input, init);
+
+export async function fetchGoogleAccessToken(account: ServiceAccount, scope: string, fetchImpl: typeof fetch = callFetch, now = Date.now()): Promise<string> {
   const assertion = await signServiceAccountJwt(account, scope, now);
   const body = new URLSearchParams({
     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
     assertion,
   });
-  const response = await fetchImpl('https://oauth2.googleapis.com/token', {
+  const request = fetchImpl;
+  const response = await request('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body,

@@ -6,6 +6,11 @@ export const FREEBUSY_SCOPE = 'https://www.googleapis.com/auth/calendar.freebusy
 export const FREEBUSY_MAX_MS = 60 * 24 * 60 * 60 * 1000;
 export const DEFAULT_CALENDAR_ID = 'anson@safeswimmingschool.com';
 const FETCH_TIMEOUT_MS = 8000;
+const callFetch: typeof fetch = (input, init) => fetch(input, init);
+
+function availabilityError(err: unknown): string {
+  return err instanceof Error ? err.name + ': ' + err.message : 'unknown';
+}
 
 export type BusyInterval = { start: string; end: string };
 
@@ -78,7 +83,7 @@ export class GoogleCalendar {
   constructor(
     private readonly calendarId: string,
     private readonly account: ServiceAccount,
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly fetchImpl: typeof fetch = callFetch,
   ) {}
 
   private token(): Promise<string> {
@@ -96,7 +101,8 @@ export class GoogleCalendar {
 
   private async freeBusy(fromIso: string, toIso: string): Promise<BusyInterval[]> {
     const token = await this.token();
-    const response = await this.fetchImpl('https://www.googleapis.com/calendar/v3/freeBusy', {
+    const request = this.fetchImpl;
+    const response = await request('https://www.googleapis.com/calendar/v3/freeBusy', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: JSON.stringify({ timeMin: fromIso, timeMax: toIso, items: [{ id: this.calendarId }] }),
@@ -110,7 +116,7 @@ export class GoogleCalendar {
   }
 }
 
-export function calendarFromEnv(env: CalendarEnv, fetchImpl: typeof fetch = fetch): GoogleCalendar | null {
+export function calendarFromEnv(env: CalendarEnv, fetchImpl: typeof fetch = callFetch): GoogleCalendar | null {
   if (!env.GOOGLE_SERVICE_ACCOUNT_JSON) return null;
   try {
     const account = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON) as { client_email?: string; private_key?: string };
@@ -120,17 +126,19 @@ export function calendarFromEnv(env: CalendarEnv, fetchImpl: typeof fetch = fetc
       { client_email: account.client_email, private_key: account.private_key },
       fetchImpl,
     );
-  } catch {
+  } catch (err) {
+    console.error('availability:', availabilityError(err));
     return null;
   }
 }
 
-export async function readBusyIntervals(env: CalendarEnv, fromIso: string, toIso: string, fetchImpl: typeof fetch = fetch): Promise<BusyInterval[] | null> {
+export async function readBusyIntervals(env: CalendarEnv, fromIso: string, toIso: string, fetchImpl: typeof fetch = callFetch): Promise<BusyInterval[] | null> {
   const calendar = calendarFromEnv(env, fetchImpl);
   if (!calendar) return null;
   try {
     return await calendar.busyIntervals(fromIso, toIso);
-  } catch {
+  } catch (err) {
+    console.error('availability:', availabilityError(err));
     return null;
   }
 }

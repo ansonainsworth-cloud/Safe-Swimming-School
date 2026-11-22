@@ -75,6 +75,20 @@ describe('calendar free/busy', () => {
     expect(body.busy.some((slot) => slot.start === '15:00')).toBe(false);
   });
 
+  it('calls fetch with an unbound this, the way Cloudflare Workers requires', async () => {
+    const calls: string[] = [];
+    const workersFetch = vi.fn(async function (this: unknown, url: string, init?: RequestInit) {
+      if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
+      calls.push(String(url));
+      if (String(url).includes('oauth2.googleapis.com')) return Response.json({ access_token: 'tok' });
+      return Response.json({ calendars: { [calendarId]: { busy: [{ start: '2026-11-16T14:00:00.000Z', end: '2026-11-16T14:30:00.000Z' }] } } });
+    });
+    const intervals = await readBusyIntervals(googleEnv, '2026-11-16T16:00:00.000Z', '2026-12-16T16:00:00.000Z', workersFetch);
+    expect(intervals).toEqual([{ start: '2026-11-16T14:00:00.000Z', end: '2026-11-16T14:30:00.000Z' }]);
+    expect(calls.some((url) => url.includes('freeBusy'))).toBe(true);
+    expect(calls.some((url) => url.includes('oauth2.googleapis.com'))).toBe(true);
+  });
+
   it('lists every functions/api route in _routes.json', () => {
     const routes = JSON.parse(readFileSync(new URL('../public/_routes.json', import.meta.url), 'utf8')) as { include: string[] };
     const files = readdirSync(new URL('../functions/api/', import.meta.url));
