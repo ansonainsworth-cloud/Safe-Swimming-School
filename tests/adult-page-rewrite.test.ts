@@ -8,7 +8,7 @@ const title = 'Adult Swim Lessons in Palm Beach County';
 const description = 'Private adult swim lessons at your home or community pool in Palm Beach County. Beginners and nervous swimmers welcome. Text 561-236-8260.';
 const faqs: Array<[string, string]> = [
   ['Do you teach adult beginners and nervous swimmers?', 'Yes. We teach private, one-on-one adult lessons at your home or community pool for beginners, nervous swimmers, and adults who want to rebuild skills. Lessons move at your pace, starting with water comfort and breathing.'],
-  ['Can I try one adult lesson before buying a package?', 'Yes. A single lesson is $75, and it can be credited toward a package. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100, plus annual registration of $35 for one swimmer, $50 for two, or $60 for three or more. Annual registration is waived on lock in packages bought by December 31, 2026.'],
+  ['Can I try one adult lesson before buying a package?', 'Yes. A single lesson is $75, and it can be credited toward a package. Packages are 8 lessons for $520, 12 for $720, or 20 for $1,100. Annual registration is $35 for one swimmer, $50 for two siblings, or $60 for three or more, and it is waived on lock-in packages of 8, 12 or 20 lessons bought by December 31, 2026.'],
   ['Can you keep my lessons private?', 'Yes. Lessons are one-on-one at your home or community pool, and we are happy to sign an NDA on request.'],
   ['When and where are adult lessons?', 'Your instructor comes to your home or community pool across Palm Beach County, including West Palm Beach and surrounding areas, any day from 8 AM to 7 PM.'],
 ];
