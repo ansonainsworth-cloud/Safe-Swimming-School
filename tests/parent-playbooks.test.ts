@@ -56,15 +56,15 @@ describe('parent playbooks', () => {
     expect(landing).toContain('rel="canonical" href="https://safeswimmingschool.com/parent-playbooks/"');
     expect(landing).toContain('googletagmanager.com/gtag/js');
     expect(thanks).toContain('noindex');
-    expect(thanks).toContain('The library is on its way by email.');
-    expect(thanks).toContain('Trust Before Technique');
-    expect(thanks).toContain('Video link: TODO');
-    expect(thanks).toContain('Calendar link: TODO');
+    expect(thanks).toContain('<title>Your playbooks are on the way | Safe Swimming School</title>');
+    expect(thanksArticle).toContain('Your playbooks are on the way to your inbox. Start with Playbook 1, then watch Trust Before Technique when you have ten minutes. If you are in Palm Beach County and you want to talk through whether lessons fit your child, text me at');
+    expect(thanksArticle).toContain('href="sms:+15612368260"');
+    expect(thanksArticle).toContain('>561 236 8260</a>');
+    expect(thanksArticle).toContain('Check your spam folder if you do not see it soon.');
+    expect(thanksArticle).not.toContain('Video link: TODO');
+    expect(thanksArticle).not.toContain('Calendar link: TODO');
+    expect(thanksArticle).not.toContain('TODO');
     expect(thanksArticle).not.toContain('<img');
-    const thanksSource = readFileSync(join(root, 'src/pages/parent-playbooks/thank-you.astro'), 'utf8');
-    expect(thanksSource).toContain('TODO: hero image');
-    expect(thanksSource).toContain('Video link: TODO');
-    expect(thanksSource).toContain('Calendar link: TODO');
 
     for (const html of [landing, thanks, landingArticle, thanksArticle]) {
       expect(html).not.toContain('Find Your Float');
