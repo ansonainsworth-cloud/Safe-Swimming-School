@@ -4,7 +4,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
 import Landing from '../src/pages/parent-playbooks/index.astro';
 import Thanks from '../src/pages/parent-playbooks/thank-you.astro';
-import { PARENT_PLAYBOOKS_TALLY_ID } from '../src/data/parent-playbooks';
+import { PARENT_PLAYBOOKS_TALLY_ID, playbookEmbedUrl } from '../src/data/parent-playbooks';
 
 const root = new URL('..', import.meta.url).pathname;
 
@@ -20,7 +20,20 @@ function schemas(html: string) {
 
 describe('parent playbooks', () => {
   it('renders the landing page and the noindex thank-you page without banned copy', async () => {
-    expect(PARENT_PLAYBOOKS_TALLY_ID).toBe('');
+    expect(PARENT_PLAYBOOKS_TALLY_ID).toBe('e5RAAJ');
+    const embed = new URL(playbookEmbedUrl('https://safeswimmingschool.com/parent-playbooks/?utm_source=ig&utm_medium=social&utm_campaign=playbooks&utm_content=bio&gclid=skip'));
+    expect(embed.origin + embed.pathname).toBe('https://tally.so/embed/e5RAAJ');
+    expect(embed.searchParams.get('dynamicHeight')).toBe('1');
+    expect(embed.searchParams.get('alignLeft')).toBe('1');
+    expect(embed.searchParams.get('hideTitle')).toBe('1');
+    expect(embed.searchParams.get('transparentBackground')).toBe('1');
+    expect(embed.searchParams.get('utm_source')).toBe('ig');
+    expect(embed.searchParams.get('utm_medium')).toBe('social');
+    expect(embed.searchParams.get('utm_campaign')).toBe('playbooks');
+    expect(embed.searchParams.get('utm_content')).toBe('bio');
+    expect(embed.searchParams.get('gclid')).toBeNull();
+    expect(embed.searchParams.get('page_url')).toBe('https://safeswimmingschool.com/parent-playbooks/?utm_source=ig&utm_medium=social&utm_campaign=playbooks&utm_content=bio&gclid=skip');
+    expect(playbookEmbedUrl('https://safeswimmingschool.com/parent-playbooks/').includes('utm_source=')).toBe(false);
     const container = await AstroContainer.create();
     const landing = await container.renderToString(Landing);
     const thanks = await container.renderToString(Thanks);
@@ -30,8 +43,16 @@ describe('parent playbooks', () => {
     expect(landing).toContain('<title>Get the Parent Playbooks | Safe Swimming School</title>');
     expect(landing).toContain('Get the Parent Playbooks for free');
     expect(landing).toContain('I have taught survival swim in home pools across Palm Beach County since 2009.');
-    expect(landing).toContain('Form placeholder.');
-    expect(landing.match(/Form placeholder\./g)).toHaveLength(2);
+    expect(landing).not.toContain('Form placeholder.');
+    const embeds = [...landing.matchAll(/data-tally-src="([^"]+)"/g)].map((match) => match[1]);
+    expect(embeds).toHaveLength(2);
+    expect(embeds[0]).toBe(embeds[1]);
+    expect(embeds[0]).toContain('https://tally.so/embed/e5RAAJ');
+    expect(embeds[0]).toContain('dynamicHeight=1');
+    const formSource = readFileSync(join(root, 'src/components/PlaybookForm.astro'), 'utf8');
+    expect(formSource).toContain('https://tally.so/widgets/embed.js');
+    expect(formSource).toContain('playbookEmbedUrl');
+    expect(formSource).not.toContain('webhook');
     expect(landing).toContain('rel="canonical" href="https://safeswimmingschool.com/parent-playbooks/"');
     expect(landing).toContain('googletagmanager.com/gtag/js');
     expect(thanks).toContain('noindex');
