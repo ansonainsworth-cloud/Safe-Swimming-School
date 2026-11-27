@@ -20,9 +20,12 @@ describe('title and meta descriptions', () => {
     expect(page('/').description).toBe('Private home pool swim lessons in Palm Beach County, at your home or community pool. 30-minute one-on-one lessons, 8 AM to 7 PM. Text 561-236-8260.');
     expect(page('/locations/jupiter/').title).toBe('Private Swim Lessons in Jupiter, FL | Safe Swimming School');
     expect(page('/locations/jupiter/').description).toBe('Swim lessons in Jupiter, FL at your home or community pool. Private 30-minute lessons, same instructor every time. Packages from $520. Text 561-236-8260.');
+    expect(page('/locations/palm-beach-gardens/').title).toBe('Swim Lessons in Palm Beach Gardens FL | Safe Swimming School');
+    expect(page('/locations/palm-beach-gardens/').title).toHaveLength(60);
     expect(page('/locations/').title).toBe('Palm Beach County Areas We Serve | Safe Swimming School');
     expect(page('/locations/').description).toBe('Private lessons at your pool across Palm Beach County, including West Palm Beach, Jupiter, Wellington and nearby towns. Text 561-236-8260.');
     expect(layout).toContain('<meta property="og:title" content={title} />');
+    expect(layout).toContain('<meta name="twitter:title" content={title} />');
     expect(layout).toContain('<meta property="og:description" content={description} />');
   });
 });
