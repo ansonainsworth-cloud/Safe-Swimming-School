@@ -22,7 +22,7 @@ describe('outside audit fixes', () => {
   it('shares one open town list, hides an empty Google strip, and drops Broward schedules', () => {
     expect(required.every((name) => serviceTowns.some((town) => town.name === name))).toBe(true);
     expect(googleReviewsReady({ rating: null, count: null, url: null, checkedDate: null })).toBe(false);
-    expect(googleReviewsReady({ rating: 4.3, count: null, url: 'https://maps.app.goo.gl/uhvbr4NSqpAEsPSE9', checkedDate: '2026-11-16' })).toBe(false);
+    expect(googleReviewsReady({ rating: 4.4, count: null, url: 'https://maps.app.goo.gl/uhvbr4NSqpAEsPSE9', checkedDate: '2026-11-16' })).toBe(false);
 
     execSync('npm run build', { cwd: root, stdio: 'pipe' });
     const home = readFileSync(join(root, 'dist/index.html'), 'utf8');
@@ -41,8 +41,8 @@ describe('outside audit fixes', () => {
     expect(home).toContain('href="https://maps.app.goo.gl/uhvbr4NSqpAEsPSE9"');
     expect(home).toContain('target="_blank"');
     expect(home).toContain('rel="noopener"');
-    expect(home).toContain('>4.3 on Google (6 reviews)</a>');
-    expect(googleReviews).toEqual({ rating: 4.3, count: 6, url: 'https://maps.app.goo.gl/uhvbr4NSqpAEsPSE9', checkedDate: '2026-11-16' });
+    expect(home).toContain('>4.4 on Google (7 reviews)</a>');
+    expect(googleReviews).toEqual({ rating: 4.4, count: 7, url: 'https://maps.app.goo.gl/uhvbr4NSqpAEsPSE9', checkedDate: '2026-11-26' });
     expect(googleReviewsReady()).toBe(true);
     const homeBlocks = [...home.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
     const homeNodes = homeBlocks.flatMap((block) => (Array.isArray(block['@graph']) ? block['@graph'] : [block]));
