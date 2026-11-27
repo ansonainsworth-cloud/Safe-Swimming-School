@@ -196,14 +196,14 @@
     if (note) {
       note.textContent = single
         ? 'A single lesson is $75 (can be credited toward a package). Annual registration is not waived on a single lesson.'
-        : 'Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026.';
+        : 'Annual registration is $35 for one swimmer, $50 for two siblings, or $60 for three or more, and it is waived on lock-in packages of 8, 12 or 20 lessons bought by December 31, 2026.';
     }
     if (mobile && mobileChoice && mobileNote) {
       mobile.hidden = !checked;
       mobileChoice.textContent = label;
       mobileNote.textContent = single
         ? 'Annual registration is not waived on a single lesson.'
-        : 'Annual registration (the $35, $50 or $60 fee) is waived on lock in packages bought by December 31, 2026.';
+        : 'Annual registration is $35 for one swimmer, $50 for two siblings, or $60 for three or more, and it is waived on lock-in packages of 8, 12 or 20 lessons bought by December 31, 2026.';
     }
   }
   var swimmers = document.getElementById('book-swimmers');
