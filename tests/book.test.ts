@@ -201,6 +201,9 @@ describe('booking form swimmer fields', () => {
     expect(child2.required).toBe(false);
     expect(child2.disabled).toBe(true);
     expect(fee.textContent).toBe('Annual registration is $35 for one swimmer.');
+    expect(note.textContent).toBe('Annual registration is $35 for one swimmer, $50 for two siblings, or $60 for three or more, and it is waived on lock-in packages of 8, 12 or 20 lessons bought by December 31, 2026.');
+    expect(ids['book-mobile-note'].textContent).toBe(note.textContent);
+    expect(note.textContent).not.toContain('December 15');
 
     swimmers.value = '2';
     swimmers.listeners.change.forEach((fn) => fn());
