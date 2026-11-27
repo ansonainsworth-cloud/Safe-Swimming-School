@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageShell from '../../components/PageShell.astro';
+import PlaybookForm from '../../components/PlaybookForm.astro';
+import { pageChrome, webPage, faqSchema } from '../../data/newpage.js';
+
+const path = '/parent-playbooks/';
+const title = 'Get the Parent Playbooks | Safe Swimming School';
+const description = 'Free parent playbooks for families in Palm Beach County. Short guides on first lessons, fear, what to say, and safe practice at home.';
+const h1 = 'Get the Parent Playbooks for free';
+const faqs: Array<[string, string]> = [
+  ['Is this a replacement for lessons?', 'No. These guides help you understand and support the work. They do not replace lessons, and they never replace supervision in or near the water.'],
+  ['Do I need a home pool?', 'For local lessons, yes, I teach at your home pool. For the guides and videos, no. They help any parent.'],
+  ['What happens after I sign up?', 'I will email you the library right away. Over the next week I will send a few short notes with the videos and guides in a helpful order. If you live in Palm Beach County, I will also offer you a free 10 minute Parent Fit Call. You can ignore it if you only wanted the guides.'],
+];
+const included = [
+  'Playbook 1. The Parent Starter Guide. Five pages on how survival swim works, what a first lesson looks like, and how the float is learned. Start here.',
+  'Playbook 2. Trust Before Technique. Why a child has to feel safe before their body can learn, and what that looks like in a real lesson.',
+  'Playbook 3. Fear and Panic, How to Tell the Difference. Protest is normal. Panic is different. This guide shows you both, in plain words, so you know when to encourage and when to pause.',
+  'Playbook 4. What to Say Before a Lesson. The exact words that help in the first week, and the common phrases that make week one harder.',
+  'Playbook 5. Home Practice, Week One. Safe, simple practice you can do in your own pool between lessons. The full four week plan is linked inside for families who want the whole program.',
+  'And the video library in order, so you can watch the topic your family needs today.',
+];
+const perfectFor = [
+  'Parents of babies, starting at 3 months old',
+  'Parents of toddlers, ages 1 to 4',
+  'Parents of a child who is fearful in the water',
+  'Families of children with special needs, including Down syndrome, autism spectrum, and cerebral palsy',
+  'Grandparents and caregivers who take children to the pool',
+];
+---
+<Base title={title} description={description} path={path} {...pageChrome} ldjson={[webPage(path, h1, description), faqSchema(faqs)]}>
+<PageShell h1={h1}>
+<p>I have taught survival swim in home pools across Palm Beach County since 2009. These are the short, practical guides I give my own families before, during, and after lessons. They will help you understand what your child is feeling in the water, what to say, and how to practice safely at home between lessons.</p>
+<PlaybookForm />
+<p>Free. No card. I will email the library to you.</p>
+<h2 class="wp-block-heading">What is included</h2>
+<ul class="wp-block-list">
+  {included.map((item) => <li>{item}</li>)}
+</ul>
+<h2 class="wp-block-heading">This is perfect for</h2>
+<ul class="wp-block-list">
+  {perfectFor.map((item) => <li>{item}</li>)}
+</ul>
+<h2 class="wp-block-heading">About Anson</h2>
+<p>I am Anson Ainsworth, cofounder and lead instructor at Safe Swimming School. We are a mobile program, which means I come to your home pool anywhere in Palm Beach County. I have been teaching since 2009, and my whole approach is built on one idea. Trust before technique.</p>
+<h2 class="wp-block-heading">Common questions</h2>
+{faqs.map(([question, answer]) => (
+  <Fragment>
+    <p><strong>{question}</strong></p>
+    <p>{answer}</p>
+  </Fragment>
+))}
+<PlaybookForm />
+<p>Safe Swimming School, Palm Beach County, Florida / Text <a href="sms:+15612368260">561 236 8260</a> / Hours 8 AM to 7 PM daily</p>
+</PageShell>
+</Base>

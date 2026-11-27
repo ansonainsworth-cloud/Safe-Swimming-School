@@ -1,0 +1,41 @@
+---
+import { PARENT_PLAYBOOKS_TALLY_ID } from '../data/parent-playbooks';
+
+const formId = PARENT_PLAYBOOKS_TALLY_ID.trim();
+const baseSrc = formId
+  ? `https://tally.so/embed/${formId}?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1`
+  : '';
+---
+{formId ? (
+  <iframe data-playbook-form data-tally-src={baseSrc} loading="lazy" width="100%" height="320" frameborder="0" marginheight="0" marginwidth="0" title="Get the Parent Playbooks"></iframe>
+) : (
+  <p class="sss-form-placeholder" role="note"><strong>Form placeholder.</strong> The signup form is not connected yet.</p>
+)}
+<script>
+  import { playbookEmbedUrl } from '../data/parent-playbooks';
+
+  const embedUrl = playbookEmbedUrl(window.location.href);
+  document.querySelectorAll('iframe[data-playbook-form]').forEach((frame) => {
+    frame.setAttribute('data-tally-src', embedUrl);
+  });
+  const widget = 'https://tally.so/widgets/embed.js';
+  const loadEmbeds = () => {
+    const tally = (window as Window & { Tally?: { loadEmbeds: () => void } }).Tally;
+    if (tally) {
+      tally.loadEmbeds();
+      return;
+    }
+    document.querySelectorAll('iframe[data-tally-src]:not([src])').forEach((frame) => {
+      const source = frame.getAttribute('data-tally-src');
+      if (source) frame.setAttribute('src', source);
+    });
+  };
+  if ((window as Window & { Tally?: unknown }).Tally) loadEmbeds();
+  else if (!document.querySelector(`script[src="${widget}"]`)) {
+    const script = document.createElement('script');
+    script.src = widget;
+    script.onload = loadEmbeds;
+    script.onerror = loadEmbeds;
+    document.body.appendChild(script);
+  }
+</script>

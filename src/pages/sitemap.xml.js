@@ -1,6 +1,6 @@
 import pages from '../data/migrated-pages.json';
 const SITE = 'https://safeswimmingschool.com';
-const extra = ['/books/', '/adaptive-swim-lessons/', '/water-aerobics/', '/baby-bath-time-water-comfort/', '/infant-swim-lessons-palm-beach-county/', '/survival-swim-lessons-palm-beach-county/', '/adult-swim-lessons-palm-beach-county/', '/locations/wellington/winter-package/', '/gift-certificates/', '/gift/', '/swim-lessons-coral-springs-parkland/', '/lock-in/'];
+const extra = ['/books/', '/adaptive-swim-lessons/', '/water-aerobics/', '/baby-bath-time-water-comfort/', '/infant-swim-lessons-palm-beach-county/', '/survival-swim-lessons-palm-beach-county/', '/adult-swim-lessons-palm-beach-county/', '/locations/wellington/winter-package/', '/gift-certificates/', '/gift/', '/swim-lessons-coral-springs-parkland/', '/lock-in/', '/parent-playbooks/'];
 export function GET() {
   const paths = [...pages.map((p) => p.path), ...extra];
   const today = new Date().toISOString().slice(0, 10);
