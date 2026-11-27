@@ -1,13 +1,14 @@
 ---
 import { PARENT_PLAYBOOKS_TALLY_ID } from '../data/parent-playbooks';
 
+const { anchor = false } = Astro.props;
 const formId = PARENT_PLAYBOOKS_TALLY_ID.trim();
 const baseSrc = formId
   ? `https://tally.so/embed/${formId}?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1`
   : '';
 ---
 {formId ? (
-  <iframe data-playbook-form data-tally-src={baseSrc} loading="lazy" width="100%" height="320" frameborder="0" marginheight="0" marginwidth="0" title="Get the Parent Playbooks"></iframe>
+  <iframe id={anchor ? 'playbook-form' : undefined} data-playbook-form data-tally-src={baseSrc} loading="lazy" width="100%" height="320" frameborder="0" marginheight="0" marginwidth="0" title="Get the Parent Playbooks"></iframe>
 ) : (
   <p class="sss-form-placeholder" role="note"><strong>Form placeholder.</strong> The signup form is not connected yet.</p>
 )}
@@ -39,3 +40,20 @@ const baseSrc = formId
     document.body.appendChild(script);
   }
 </script>
+<style is:global>
+  /* Sticky header is 96px (84px logo + 12px padding), 76px when the logo is 64px. */
+  html:has(iframe[data-playbook-form]) {
+    scroll-padding-top: 96px;
+  }
+  iframe[data-playbook-form] {
+    scroll-margin-top: 96px;
+  }
+  @media (max-width: 767px) {
+    html:has(iframe[data-playbook-form]) {
+      scroll-padding-top: 76px;
+    }
+    iframe[data-playbook-form] {
+      scroll-margin-top: 76px;
+    }
+  }
+</style>
