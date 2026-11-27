@@ -50,7 +50,11 @@ describe('parent playbooks', () => {
     expect(embeds[0]).toContain('https://tally.so/embed/e5RAAJ');
     expect(embeds[0]).toContain('dynamicHeight=1');
     const formSource = readFileSync(join(root, 'src/components/PlaybookForm.astro'), 'utf8');
+    expect(formSource).toContain('scroll-padding-top: 96px');
+    expect(formSource).toContain('scroll-margin-top: 96px');
+    expect(formSource).toContain('scroll-padding-top: 76px');
     expect(formSource).toContain('https://tally.so/widgets/embed.js');
+    expect(landing).toContain('id="playbook-form"');
     expect(formSource).toContain('playbookEmbedUrl');
     expect(formSource).not.toContain('webhook');
     expect(landing).toContain('rel="canonical" href="https://safeswimmingschool.com/parent-playbooks/"');
