@@ -11,7 +11,7 @@ const faqs: Array<[string, string]> = [
   ['Do you come to my home pool?', 'Yes. We teach private, one-on-one lessons at your home pool or community pool across Palm Beach County, including West Palm Beach and surrounding areas.'],
   ['How long is a lesson, and is it one-on-one?', 'Every lesson is private and 30 minutes long, with one instructor and one swimmer. You have the same instructor every lesson. Siblings can share a semi-private lesson at the same per-lesson price.'],
   ['What does my family need to have ready?', "You need access to a home pool or a community pool. Text 561-236-8260 with the swimmer's age, your city or neighborhood, your pool access, your main goal, and your best days and times."],
-  ['How much do home swim lessons cost?', 'Packages are 8 lessons for $520, 12 lessons for $720, or 20 lessons for $1,100, plus annual registration of $35 for one swimmer, $50 for two siblings, and $60 for a family with three or more swimmers. A single lesson is $75 and can be credited toward a package. Annual registration is waived on lock-in packages bought by December 31, 2026, and those lessons never expire.'],
+  ['How much do home swim lessons cost?', 'Packages are 8 lessons for $520, 12 lessons for $720, or 20 lessons for $1,100. Annual registration is $35 for one swimmer, $50 for two siblings, or $60 for three or more, and it is waived on lock-in packages of 8, 12 or 20 lessons bought by December 31, 2026. A single lesson is $75 and can be credited toward a package. Those lessons never expire.'],
   ['How do I book in-home swim lessons?', 'Text or call 561-236-8260, or complete the form on our Enroll page. Lessons are scheduled from 8 AM to 7 PM daily.'],
 ];
 
