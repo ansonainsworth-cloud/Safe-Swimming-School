@@ -1,0 +1,18 @@
+---
+import { PARENT_PLAYBOOKS_TALLY_ID } from '../data/parent-playbooks';
+
+const formId = PARENT_PLAYBOOKS_TALLY_ID.trim();
+---
+{formId ? (
+  <iframe data-tally-src={`https://tally.so/embed/${formId}?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1`} loading="lazy" width="100%" height="320" frameborder="0" marginheight="0" marginwidth="0" title="Get the Parent Playbooks"></iframe>
+) : (
+  <p class="sss-form-placeholder" role="note"><strong>Form placeholder.</strong> The signup form is not connected yet.</p>
+)}
+<style>
+  .sss-form-placeholder {
+    margin: 16px 0;
+    padding: 16px;
+    border: 2px dashed var(--sss-line, #d7e3ee);
+    background: #f4f8fb;
+  }
+</style>

@@ -1,0 +1,18 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageShell from '../../components/PageShell.astro';
+import { pageChrome, webPage } from '../../data/newpage.js';
+
+const path = '/parent-playbooks/thank-you/';
+const title = 'Your playbooks are on the way | Safe Swimming School';
+const description = 'Your parent playbook library is on the way by email. Check spam if you do not see it soon.';
+const h1 = 'Your playbooks are on the way';
+---
+<Base title={title} description={description} path={path} robots="noindex, nofollow" {...pageChrome} ldjson={[webPage(path, h1, description)]}>
+<PageShell h1={h1}>
+<!-- TODO: hero image -->
+<p>The library is on its way by email. Check your spam folder if you do not see it soon.</p>
+<p>Start with Trust Before Technique. Video link: TODO</p>
+<p>If you live in Palm Beach County, you can book a free 10 minute Parent Fit Call. Calendar link: TODO</p>
+</PageShell>
+</Base>
